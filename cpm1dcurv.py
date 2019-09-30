@@ -118,10 +118,10 @@ def calculate_tracking_data(r, ks, sphere=False):
             "address_funcs": (jki, ki)}
 
 
-def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
+def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder"):
     """Calculate the reduced escape probabilities in the given geometry type.
-    These quantities are needed to calculate the positive partial current in
-    the 1D curvilinear frames."""
+    These quantities are needed to calculate the partial currents in the 1D
+    curvilinear frames."""
     lg.info("Calculate the reduced escape probabilities.")
     I = r.size - 1  # nb of rings
     if not np.all(np.diff(r) > 0):
@@ -173,7 +173,13 @@ def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
         raise ValueError("Unsupported geometry type")
 
     # calculate the recuced escape probabilities varepsilon (times the volume)
-    vareps = np.zeros((I, I),)  # first index is i, second index is j (sources)
+    # remind that the current vanishes at the center, and likewise the partial
+    # currents (assumption, but it shall be enough to say that they're equal!).
+    vareps = np.zeros((I, I, 2),)
+    # reference the partial currents to the main data container
+    varepsp = vareps[:,:,0]  # first index is i, second index is j (sources)
+    varepsm = vareps[:,:,1]  # (defined as negative!)
+    # varepsp is for escape whereas varepsm is for in-scape
     cumsum_ks = np.insert(np.cumsum(ks), 0, 0)
     get_ks_in_ring = lambda i0: np.arange(cumsum_ks[i0], cumsum_ks[i0+1])
     for i in range(I):
@@ -188,7 +194,7 @@ def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
         # contribution from the i-th ring through its outer surface
         idx_0 = ji_allk(0)
         tii = 2 * tau[idx_0]  # for all k tracking lines
-        vareps[i,i] += np.dot(wgts, K_at_0 - K(tii)) / st[i]
+        varepsp[i,i] += np.dot(wgts, K_at_0 - K(tii)) / st[i]
 
         # contributions from the rings that are around
         tij = np.zeros(ks[i])
@@ -196,7 +202,9 @@ def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
             idx_j = ji_allk(j)
             a = tii + tij
             diffK = K(a) - K(a + tau[idx_j])
-            vareps[i,j] += np.dot(wgts, diffK) / st[j]
+            varepsp[i,j] += np.dot(wgts, diffK) / st[j]
+            diffK = K(tij) - K(tij + tau[idx_j])
+            varepsm[i,j] -= np.dot(wgts, diffK) / st[j]
             tij += tau[idx_j]
 
         # escape within (0, r_i-1/2)
@@ -214,7 +222,7 @@ def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
                 tii += tau[ji_allk(n, jm1)]
             a = tau[idx_i] + 2 * tii
             diffK += K(a) - K(a + tau[idx_i])
-            vareps[i,i] += np.dot(wgts, diffK) / st[i]
+            varepsp[i,i] += np.dot(wgts, diffK) / st[i]
 
             # contribution from the outer rings (new index n)
             a += tau[idx_i]
@@ -223,7 +231,9 @@ def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
                 a += tij
                 idx_n = ji_allk(n, jm1)
                 diffK = K(a) - K(a + tau[idx_n])
-                vareps[i,n] += np.dot(wgts, diffK) / st[n]
+                varepsp[i,n] += np.dot(wgts, diffK) / st[n]
+                diffK = K(tij) - K(tij + tau[idx_n])
+                varepsm[i,n] -= np.dot(wgts, diffK) / st[n]
                 tij += tau[idx_n]
 
             # contribution from the inner rings (again with the new index n)
@@ -240,15 +250,17 @@ def calculate_escape_prob_plus(r, st, tr_data, geometry_type="cylinder"):
                     tjj += tau[ji_allk(m, jm1)]
                 a += tau[idx_n] + 2 * tjj
                 diffK += K(a) - K(a + tau[idx_n])
-                vareps[i,n] += np.dot(wgts, diffK) / st[n]
+                varepsp[i,n] += np.dot(wgts, diffK) / st[n]
 
                 tij += tau[idx_n]
 
     rinv = 1. / r[1:]
     Rinv = np.tile(rinv, (I, 1)).T
-    vareps *= 2 * Rinv
+    varepsp *= 2 * Rinv
+    varepsm *= 2 * Rinv
     if geometry_type == "sphere":
-        vareps *= np.pi * Rinv
+        varepsp *= np.pi * Rinv
+        varepsm *= np.pi * Rinv
     return vareps
 
 
@@ -278,7 +290,7 @@ if __name__ == "__main__":
     # center because of the central symmetry. There is no need to store this.
     J = np.zeros((G, I),)
 
-    lg.info("Verify the implementation with the following test case")
-
-    vareps_plus = np.zeros((G, I, I),)
-    vareps_plus[0,:,:] = calculate_escape_prob_plus(r, st_r[0,:], tr_data, geometry_type)
+    # reduced escape probabilities for partial currents (2 for plus and minus)
+    vareps = np.zeros((G, I, I, 2),)
+    vareps[0,:,:,:] = calculate_escape_prob(r, st_r[0,:], tr_data,
+                                            geometry_type)
