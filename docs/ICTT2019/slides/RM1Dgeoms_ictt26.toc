@@ -1,0 +1,14 @@
+\beamer@sectionintoc {1}{Introduction}{3}{0}{1}
+\beamer@sectionintoc {2}{Core Calculations}{4}{0}{2}
+\beamer@subsectionintoc {2}{1}{Two-step calculation scheme}{4}{0}{2}
+\beamer@subsectionintoc {2}{2}{Transport effects in core calculations}{5}{0}{2}
+\beamer@sectionintoc {3}{Diffusion Theory}{6}{0}{3}
+\beamer@subsectionintoc {3}{1}{Conservation equation and Fick's law}{6}{0}{3}
+\beamer@subsectionintoc {3}{2}{About the diffusion coefficient}{7}{0}{3}
+\beamer@subsectionintoc {3}{3}{Diffusion tensors}{10}{0}{3}
+\beamer@sectionintoc {4}{The Ronen Method}{11}{0}{4}
+\beamer@subsectionintoc {4}{1}{Principles \& Implementation}{11}{0}{4}
+\beamer@subsectionintoc {4}{2}{Expressions for the current in simple 1D geometries}{19}{0}{4}
+\beamer@subsubsectionintoc {4}{2}{1}{Slab}{20}{0}{4}
+\beamer@subsubsectionintoc {4}{2}{2}{Curvilinear geometries}{24}{0}{4}
+\beamer@sectionintoc {5}{Conclusion}{25}{0}{5}

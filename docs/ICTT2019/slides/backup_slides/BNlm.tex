@@ -1,0 +1,29 @@
+\begin{frame}
+  \frametitle{The $B_N$ leakage model}
+  \begin{alertblock}{Objective}
+    Get a critical flux by adjusting the leakage in each group, and obtain a consistent definition of the diffusion coefficient \cite{benoist1964theorie, hebert2009applied}.
+  \end{alertblock}
+  %
+  \begin{block}{Assumptions}
+  {
+  \begin{itemize} \normalsize
+    \item Closed system by \emph{reflective} or \emph{periodic} bnd. conds. in a \textcolor{ceagreen1}{finite lattice of cells or assemblies}.
+    \item Flux factorization with a \emph{macroscopic} quantity $\phi$ and a \emph{homogeneous} or \emph{periodic} \textcolor{ceablue1}{fundamental flux} $\psi$, \[\textcolor{ceared1}{\varphi(\mathbf{r}[, \ast]) = \phi(\mathbf{r})\, \psi(\mathbf{r}[, \ast])},\] where $\phi$ fulfills the Helmholtz eqn. $\nabla^2 \phi + B^2 \phi = 0$ with the (\underline{critical}) buckling $B^2 \in \mathbb{R}$. It follows that $\phi \propto \exp(i \mathbf{B} \cdot \mathbf{r})\; (B^2 = \mathbf{B} \cdot \mathbf{B})$.
+    \item homogeneous or heterogeneous variants (acc. to the dependence of $\psi$ on $\mathbf{r}$)
+  \end{itemize}
+  }
+  \end{block}
+  %
+  \begin{exampleblock}{Homogeneous $B_1$ Equations}
+  {
+  After a flux-volume homogenization of the NTE, substitute $\varphi = \psi(E, \bOm)\exp(i \mathbf{B} \cdot \mathbf{r})$ and integrate on angle to obtain the system of eqs. (with $\gamma$ as polynomial function of $(B/\Sigma_t)^2$):
+  %\[ \left\{ \begin{split}
+  \begin{align*}[left=\empheqlbrace]
+    (\Sigma_t(E) + D(B, E)B^2) \psi(E) = \int_{0}^{\infty}{dE' \left(\Sigma_{s,0}(E' \rightarrow E) + \chi(E) \nu\Sigma_f(E') \right)\psi(E')}\\
+    \textcolor{ceared1}{
+    D(B, E) = \frac{1}{3\gamma(B, \Sigma_t)\Sigma_t}\left[ 1 + 3\int_{0}^{\infty} {dE' \Sigma_{s,1}(E' \rightarrow E) D(B, E') \frac{\psi(E')}{\psi(E)}} \right]}
+  \end{align*}
+  %\end{split} \right. \]
+  }
+  \end{exampleblock}
+\end{frame}

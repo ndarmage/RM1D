@@ -133,7 +133,7 @@ CEA, Universit\'e Paris-Saclay, F-91191 Gif-sur-Yvette, France\\
 daniele.tomatis@cea.fr\\
 \vspace{0.25in}
 \textbf{Roy Gross and Erez Gilad}\\
-The Unit of Nuclear Engineering\\
+Unit of Nuclear Engineering\\
 Ben-Gurion University of the Negev, Israel\\
 roygros@post.bgu.ac.il, gilade@bgu.ac.il\\
 \end{center}
@@ -260,6 +260,9 @@ The $g$-th source $q_{g,j}$ is the volume-average in the cell $j$. The optical l
 \right].
 \end{aligned}
 \end{equation*}
+These quantities can be computed only for $i > j$ since the others are simply opposite in sign.
+
+{\color{red}Roy-Erez: Please add a paragraph or reformulate the previous one to introduce the escape probabilities in the slab.}
 
 \subsection{Cylindrical geometry}
 \label{sec:cylinder}
@@ -271,11 +274,11 @@ The expression of the current in curvilinear geometries is derived in this secti
 \end{equation}
 that is considering the contribution of the source $q$ within the distance $S'(\mathbf{r}, \mathbf{\Omega})$ from the boundary, and the possible entering amount of particles therein. We examine first the case of the cylinder. In planar geometry the angular flux and the source do not depend on the coordinate $z$. Hence, the position on the characteristic line identified by $\mathbf{\Omega}$ is projected on the $x$-$y$ plane (see Fig. \ref{fig:fullframe}): $\varphi(\mathbf{r} - s' \mathbf{\Omega},\mathbf{\Omega}) = \varphi(\mathbf{r} - s \mathbf{\Omega}_p,\mathbf{\Omega})$ and likewise for $q$, with the unit vector $\mathbf{\Omega}_p$ lying on the $x$-$y$ plane. $\theta$ is the polar angle measured between $\hat{e}_z$ and $\mathbf{\Omega}$. In absence of incoming particles, this allows to rewrite Eq. \ref{eq:ITE_angflx} as:
 \begin{equation}
-\varphi(\mathbf{r}, \mathbf{\Omega}) = \int_0^S{ds\, \frac{q(\mathbf{r} - s \mathbf{\Omega}_p, \mathbf{\Omega})}{\sin \theta} \exp(-\frac{\tau(\mathbf{r}, \mathbf{r} - s \mathbf{\Omega}_p)}{\sin \theta})}. % + \varphi(\mathbf{r} - S \mathbf{\Omega}_p, \mathbf{\Omega}) \exp(-\frac{\tau(\mathbf{r}, \mathbf{r} - S' \mathbf{\Omega})}{\sin \theta}).
+\varphi(\mathbf{r}, \mathbf{\Omega}) = \int_0^S{ds\, \frac{q(\mathbf{r} - s \mathbf{\Omega}_p, \mathbf{\Omega})}{\sin \theta} \exp \left[ -\frac{\tau(\mathbf{r}, \mathbf{r} - s \mathbf{\Omega}_p)}{\sin \theta} \right]}. % + \varphi(\mathbf{r} - S \mathbf{\Omega}_p, \mathbf{\Omega}) \exp(-\frac{\tau(\mathbf{r}, \mathbf{r} - S' \mathbf{\Omega})}{\sin \theta}).
 \label{eq:ITE_xy}
 \end{equation}
 
-As well, integration of Eq. \ref{eq:ITE_xy} over the solid angle $d\mathbf{\Omega} = \sin \theta d\omega d \theta$ yields the scalar flux. The theory of collision probability methods originates from the use of isotropic sources, which are also considered as uniform in the cells of the spatial mesh. Two integration in space arise for each direction $\mathbf{\Omega}$, connecting the source in region $j$ to the flux (or its total reaction rate) in region $i$ by means of its collision probability. The incoming flux is considered as isotropic too, or linearly anisotropic in angle as in \cite{hebert2009applied} to relate the partial entering and outgoing currents to the only first flux moments. These partial currents on the boundary must satisfy a condition of albedo. Transfer probabilities across this outer surface are then derived to take into account of incoming particles in the equation for the $i$-th scalar flux. Escape probabilities accounts for neutrons produced in every region and leaving the outer surface uncollided.
+As well, integration of Eq. \ref{eq:ITE_xy} over the solid angle $d\mathbf{\Omega} = \sin \theta d\omega d \theta$ yields the scalar flux. The theory of collision probability methods originates from the use of isotropic sources, which are also considered as uniform in the cells of the spatial mesh. Two integrations in space arise for each direction $\mathbf{\Omega}$, connecting the source in region $j$ to the flux (or its total reaction rate) in region $i$ by means of its collision probability. The incoming flux is considered as isotropic too, or linearly anisotropic in angle as in \cite{hebert2009applied} to relate the partial entering and outgoing currents to the only first flux moments. These partial currents on the boundary must satisfy a condition of albedo. Transfer probabilities across this outer surface are then derived to take into account of incoming particles in the equation for the $i$-th scalar flux. Escape probabilities accounts for neutrons produced in every region and leaving the outer surface uncollided.
 
 The projections of partial currents on the outward normal $\hat{n}$ to a given surface are obtained from integration of Eq. \ref{eq:ITE_xy} with the weight $| \hat{n} \cdot \mathbf{\Omega} | = \sin \theta | \hat{n} \cdot \mathbf{\Omega}_p |$ on $\hat{n} \cdot \mathbf{\Omega} \lessgtr 0$. Higher moments are obtained by the weights associated to the corresponding spherical harmonics. Integrations along the polar angle are resolved with the introduction of the Bickley-Naylor functions \cite{amos1983uniform}:
 \begin{equation}
@@ -293,7 +296,7 @@ J^+(\mathbf{r}) = \frac{1}{2\pi}\int_{W^+}{
   q(\mathbf{r} - s \mathbf{\Omega}_p)},
 \label{eq:currp_cylinder1}
 \end{equation}
-with $W^+ = \left\{\omega \mid \hat{n}\cdot \mathbf{\Omega}_p > 0\right\}$. Using the surface element $dA' = s d\omega ds$ and $\mathbf{r}'_p = s \mathbf{\Omega}_p$, it is also:
+with $W^+ = \left\{\omega \mid \hat{n}\cdot \mathbf{\Omega}_p > 0\right\}$. Using the surface element $dA' = s d\omega ds$ and $\mathbf{r}'_p = \mathbf{r} - s \mathbf{\Omega}_p$, it is also:
 \begin{equation}
 J^+(\mathbf{r}) = \int_{W^+ \times [0, S]}{
   dA'\, \hat{n} \cdot (\mathbf{r} - \mathbf{r}'_p) \,
@@ -357,19 +360,17 @@ $L^\pm_j(h) = [-Y,\pm y] \cap V_j$ and where $V_j$ is the ring area. The integra
 \end{equation}
 using the Kronecker function $\delta_{ij} = 1$ only if $i=j$ and null otherwise. $\tau_{ij}$ and $\tau_{ii}$ are respectively the optical lengths between the rings $i$ and $j$, and across the outer diameter of ring $i$. Reciprocity and conservation properties can be applied only after calculating the collision probabilities. The integrals involving the Ki function are solved thanks to the property $d_{\tau}\text{Ki}_n(\tau) = -\text{Ki}_{n-1}(\tau)$.
 
-\textcolor{magenta}{
-	The corresponding form for the reduced escape probability for the incoming current is $\varepsilon^-_{i+1/2,j}$:
-	\begin{equation}
-	\label{eq:esc_prob_cyij-}
-	\varepsilon^-_{i+1/2,j} = \frac{2}{r_{i+1/2}} 
-	\displaystyle ~\int_0^{r_{i+1/2}} { dh\, y
-		\int_0^{\ell_j}{ d\ell 
-			\text{Ki}_2\left(\tau_{ji} + \sigma_j \ell \right)
-		}
-	} \,\, ,
-	\end{equation}
-	for $i<j$, where $\varepsilon^-_{i+1/2,j}\equiv 0$ for $i\geq j$ since in this case a neutron born in volume $j$ (or in volume $j=i$) cannot enter volume $i$ through its outer surface at radius $r_{i+1/2}$ without undergo a collision. 
-}
+The corresponding form for the reduced escape probability for the incoming current is $\varepsilon^-_{i+1/2,j}$:
+\begin{equation}
+\label{eq:esc_prob_cyij-}
+  \varepsilon^-_{i+1/2,j} = \frac{2}{r_{i+1/2}}
+    \displaystyle ~\int_0^{r_{i+1/2}} { dh\, y
+        \int_0^{\ell_j}{
+            d\ell \text{Ki}_2 \left(\tau_{ji} + \sigma_j \ell \right)
+        }
+	},
+\end{equation}
+for $i<j$, where $\varepsilon^-_{i+1/2,j}\equiv 0$ for $i\geq j$ since in this case a neutron born in volume $j$ (or in volume $j=i$) cannot enter volume $i$ through its outer surface at radius $r_{i+1/2}$ without undergoing a collision. 
 
 Singularity of the integrand for the $h$-integration is noticed in the convex part while computing the collision probabilities \cite{hebert2009applied}; this notably happens at the outer radius of $j$-th ring where $\hat{n}$ is perpendicular to $\mathbf{\Omega}_p$. However, that integral can be regularized by a suitable change of variable. % $\varrho = \sqrt{r - h}$.
 The calculation of the escape probabilities is not affected by this problem because of the factor $y$ that comes from the cosine of the angle described by the normal $\hat{n}$ and $\mathbf{\Omega}_p$, which cancels the endpoint singularity. The integral in $h$ can be resolved numerically with weights and points by the Gauss-Legendre quadrature in absence of endpoint singularities. Gauss-Jacobi quadrature is recommended in that case.
@@ -410,6 +411,33 @@ to get the total partial currents yields a situation similar to the case of the 
 \label{eq:esc_prob_sph}
 \end{equation}
 Endpoint singularities are avoided also in this case. The derivation of the equation for the current leaving the $i$-th spherical surface can be obtained straightforwardly from Eq. \ref{eq:esc_prob_cyij}.
+
+\subsection{Derivation of collision probabilities}
+\label{sec:cp}
+
+After all escape and inscape probabilities are known, the first flight collision probabilities can be determined by conservation properties in order to reduce the amount of total operations. For instance, the probability for a neutron emitted isotropically in the region $i$ to collide in the same region must fulfill the following relation:
+\begin{subequations}
+\begin{equation}
+p_{ii} + e^+_{i+1/2,i} + e^-_{i-1/2,i} = 1 \; \forall i.
+\label{eq:pii}
+\end{equation}
+This can be generalized with neutrons coming from region $j$ and colliding in region $i$ as:
+\begin{equation}
+p_{ij} = e^+_{i-1/2,j} - e^+_{i+1/2,j} + e^-_{i+1/2,j} - e^-_{i-1/2,j},
+\label{eq:pij}
+\end{equation}
+\label{eq:cps}
+\end{subequations}
+with $e^+_{i-1/2,i} = e^-_{i+1/2,i} = 0$ to find again Eq. \ref{eq:pii}.
+
+Particle conservation on the full domain requires $\sum_i p_{ij} + e^+_{I+1/2,j} = 1$, $\forall j$. At last, reciprocity implies
+\[
+  \frac{p_{ij}}{V_i \sigma_i} = \frac{p_{ji}}{V_j \sigma_j} \quad \text{and} \quad
+  \frac{p_{j, i+1/2}}{V_j \sigma_j} = \frac{4 e_{i+1/2, j}}{S_{i+1/2}} \quad \text{for } 1 \leq i,j, \leq I,
+\]
+with the escape probability counting for both contributions from partial currents. These expressions can be used to verify Eqs. \ref{eq:cps}.
+
+Transmission probabilities between surfaces are also needed with boundary conditions different from vacuum. We do not derive them in this work because we only treat bare problems.
 
 
 \section{BOUNDARY CONDITIONS}
@@ -461,8 +489,13 @@ The convergence on the flux is rather slow as shown in Fig. \ref{fig:kflx} and F
   \label{fig:eflx}
 \end{figure}
 
-Results in the cylindrical and spherical coordinate systems will be presented in the final version of the article.
+A one-group homogeneous problem is proposed hereafter in order to study the application of the Ronen method with angular redistribution in curvilinear geometries. Reference solutions are provided by collision probability method solvers, whose development take advantage of the implementation for the escape probabilities derived in section~\ref{sec:ce}. This choice is supported by the use of integral operators in the same Ronen method. Again, the implementation follows H\'ebert's textbook. The problems are solved in units of optical length, which means by simply setting the input total cross section equal to 1. The multiplying source becomes then $q = (c + \nu f) \phi_0 / 4\pi$, thus isotropic in angle, and with $c$ and $\nu f$ respectively as positive real numbers of secondaries per scattering and fission events. These numbers can be interpreted as conditional probabilities as well. The multiplicity $\nu$ acts as the eigenvalue of the problem. After the fundamental eigen-pair is known for given values of the constants and for a given size $L$, it is worthless to change $f$ alone to study the problem since only the product $\nu f$ counts for the balance (associated to the same eigenfunction). We choose then $f = 1$, ending up in only two free parameters for our study: $c_s$ and $L$. Even if this choice is unphysical for the assumed value of the total cross section together with $c > 0$, physical meaning is recovered by the fundamental value of $\nu$.
 
+\textcolor{red}{Roy will be able to check these assertions in the coming days.}
+
+\textcolor{blue}{The source assumes this form because the integration variables also have to the normalized by the mean free path (i.e. multiplied by the total cross section).}
+
+\textcolor{green}{The use of the integral transport eqn. to get reference solutions is motivated by two main reasons. The first is to use again what we're implementing now for the escape probabilities. The second is to get the reference solution by inverting the operator used in the RM. So that we'll really know what is the solution to match. Furthermore, this won't be affected by ray effects of any kind. Lastly, we'll have to be very careful to the endpoint singularity when computing the collision probabilities.}
 
 \section{CONCLUSION}
 \label{sec:cncls}
