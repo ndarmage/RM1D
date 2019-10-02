@@ -1,0 +1,255 @@
+% Encoding: UTF-8
+@book{duderstadt1979transport,
+  title={Transport theory},
+  author={Duderstadt, James J and Martin, William R},
+  publisher={John Wiley \& Sons},
+  year={1979}
+}
+
+@book{hebert2009applied,
+  title={{Applied Reactor Physics}},
+  author={H{\'e}bert, Alain},
+  year={2009},
+  publisher={Presses inter Polytechnique}
+}
+
+@book{bell1970nuclear,
+  title={Nuclear reactor theory},
+  author={Bell, George I and Glasstone, Samuel},
+  year={1970},
+  publisher={Van Nostrand Reinhold, New York}
+}
+
+@techreport{gelbard1960application,
+  title={Application of spherical harmonics method to reactor problems},
+  author={Gelbard, Ely M},
+  note={Technical Report No. WAPD-BT-20},
+  institution={Bettis Atomic Power Laboratory, West Mifflin, PA},
+  year={1960}
+}
+
+@article{boffi1972tensorial,
+  title={Tensorial formulation of neutron diffusion theory},
+  author={Boffi, Vinico C and Trombetti, Tullio},
+  journal={Meccanica},
+  volume={7},
+  number={3},
+  pages={131--140},
+  year={1972},
+  publisher={Springer}
+}
+
+@book{lamarsh1966introduction,
+  title={Introduction to nuclear reactor theory},
+  author={Lamarsh, John R},
+  publisher={Addison-Wesley, Reading, MA, USA},
+  year={1966}
+}
+
+@article{coppa2016an,
+  title={{$A_\infty$ and $A_N$ formulations of the linear transport equation in heterogeneous media}},
+  author={Coppa, G},
+  journal={Annals of Nuclear Energy},
+  volume={87},
+  pages={630--636},
+  year={2016},
+  publisher={Elsevier}
+}
+
+
+@article{brantley2000simplified,
+  title={The simplified P 3 approximation},
+  author={Brantley, Patrick S and Larsen, Edward W},
+  journal={Nuclear Science and Engineering},
+  volume={134},
+  number={1},
+  pages={1--21},
+  year={2000},
+  publisher={Taylor \& Francis}
+}
+
+
+@article{PieroSNandAN,
+  author = {Ciolini,~R. and Coppa,~G.G.M. and Montagnini,~B. and Ravetto,~P.},
+  title = {{Simplified $P_N$ and $A_N$ methods in neutron transport}},
+  journal = {Progress in Nuclear Energy},
+  year = {2002},
+  volume = {40},
+  pages = {237--264},
+  number = {2},
+  publisher = {Elsevier}
+}
+
+@article{pomraning1982flux,
+  title={{Flux limiters and Eddington factors}},
+  author={Pomraning, G. C.},
+  journal={Journal of Quantitative Spectroscopy and Radiative Transfer},
+  volume={27},
+  number={5},
+  pages={517--530},
+  year={1982},
+  publisher={Elsevier}
+}
+
+@techreport{benoist1964theorie,
+  title={Th{\'e}orie du coefficient de diffusion des neutrons dans un r{\'e}seau comportant des cavit{\'e}s},
+  author={Benoist, Pierre},
+  year={1964},
+  note={PhD Thesis, Note CEA--R 2278 (in French)},
+  institution={CEA Saclay France}
+}
+
+@article{pounders2009diffusion,
+  title={On the diffusion coefficients for reactor physics applications},
+  author={Pounders, Justin M and Rahnema, Farzad},
+  journal={Nuclear Science and Engineering},
+  volume={163},
+  number={3},
+  pages={243--262},
+  year={2009},
+  publisher={Taylor \& Francis}
+}
+
+@article{levermore1981flux,
+  title={A flux-limited diffusion theory},
+  author={Levermore, CD and Pomraning, GC},
+  journal={The Astrophysical Journal},
+  volume={248},
+  pages={321--334},
+  year={1981}
+}
+
+@inproceedings{tomatis2011application,
+  title={Application of a numerical transport correction in diffusion calculations},
+  booktitle={Proc. Int. Conf. on Mathematics and Computational Methods Applied to Nuclear Science and Engineering (M\&C 2011), Rio de Janeiro, RJ Brazil},
+  month={May 8--12},
+  author={Tomatis, Daniele and Dall'Osso, Aldo},
+  year={2011}
+}
+
+@article{ronen2004accurate,
+  title={Accurate relations between the neutron current densities and the neutron fluxes},
+  author={Ronen, Yigal},
+  journal={Nuclear science and engineering},
+  volume={146},
+  number={2},
+  pages={245--247},
+  year={2004},
+  publisher={Taylor \& Francis}
+}
+
+@book{stacey2018nuclear,
+  title={Nuclear reactor physics},
+  author={Stacey, Weston M},
+  year={2018},
+  publisher={John Wiley \& Sons}
+}
+
+@Article{smith1983nodal,
+  author  = {Smith, K. S.},
+  title   = {Nodal method storage reduction by nonlinear iteration},
+  journal = {Trans. Am. Nucl. Soc.},
+  year    = {1983},
+  volume  = {44},
+  pages   = {265--266},
+}
+
+@Article{Smith-1986,
+  author    = {Smith, Kord S.},
+  title     = {Assembly homogenization techniques for light water reactor analysis},
+  journal   = {Progress in Nuclear Energy},
+  year      = {1986},
+  volume    = {17},
+  number    = {3},
+  pages     = {303--335},
+  publisher = {Elsevier},
+}
+
+@Article{lawrence1986progress,
+  author    = {Lawrence, R. D.},
+  title     = {Progress in nodal methods for the solution of the neutron diffusion and transport equations},
+  journal   = {Progress in Nuclear Energy},
+  year      = {1986},
+  volume    = {17},
+  number    = {3},
+  pages     = {271--301},
+  publisher = {Elsevier},
+}
+
+@book{meghreblian1960reactor,
+  title={Reactor analysis},
+  author={Meghreblian, Robert Vartan and Holmes, David K},
+  year={1960},
+  publisher={McGraw-Hill}
+}
+
+@Book{AS1964handbook,
+  title     = {Handbook of mathematical functions with formulas, graphs, and mathematical tables},
+  publisher = {Dover Publications New York},
+  year      = {1964},
+  author    = {Abramowitz, Milton and Stegun, Irene A.},
+}
+
+@Article{Martin-2012,
+  author  = {Martin, W. R.},
+  title   = {Challenges and prospects for whole-core {M}onte {C}arlo analysis},
+  journal = {Nuclear Engineering and Technology},
+  year    = {2012},
+  volume  = {44},
+  number  = {2},
+  pages   = {151--160},
+}
+
+@Conference{Smith-2011,
+  author    = {Smith, K.},
+  title     = {Monte {C}arlo for practical {LWR} analysis: what's needed to get to the goal?},
+  booktitle = {American Nuclear Society Summer Meeting, M\&C Division, Computational Roundtable, Hollywood, FL, June 27, 2011.},
+  year      = {2011},
+}
+
+@Book{lewis1984computational,
+  title     = {Computational methods of neutron transport},
+  publisher = {John Wiley and Sons, Inc.,New York, NY},
+  year      = {1984},
+  author    = {Lewis, E. E. and Miller, W. F.},
+}
+
+@Article{amos1983uniform,
+  author     = {Amos, D. E.},
+  title      = {Uniform asymptotic expansions for exponential integrals {E}$_n(x)$ and {B}ickley functions {K}i$_n(x)$},
+  journal    = {ACM Transactions on Mathematical Software (TOMS)},
+  year       = {1983},
+  volume     = {9},
+  number     = {4},
+  pages      = {467--479},
+  month      = dec,
+  issn       = {0098-3500},
+  acmid      = {356063},
+  address    = {New York, NY, USA},
+  doi        = {10.1145/356056.356063},
+  issue_date = {Dec. 1983},
+  numpages   = {13},
+  publisher  = {ACM},
+  url        = {http://doi.acm.org/10.1145/356056.356063},
+}
+
+@Article{amos1983algorithm,
+  author     = {Amos, D. E.},
+  title      = {Algorithm 609: {A} portable {FORTRAN} subroutine for the {B}ickley functions {K}i%_n(x)$},
+  journal    = {ACM Transactions on Mathematical Software (TOMS)},
+  year       = {1983},
+  volume     = {9},
+  number     = {4},
+  pages      = {480--493},
+  month      = dec,
+  issn       = {0098-3500},
+  acmid      = {356064},
+  address    = {New York, NY, USA},
+  doi        = {10.1145/356056.356064},
+  issue_date = {Dec. 1983},
+  numpages   = {14},
+  publisher  = {ACM},
+  url        = {http://doi.acm.org/10.1145/356056.356064},
+}
+
+@Comment{jabref-meta: databaseType:bibtex;}

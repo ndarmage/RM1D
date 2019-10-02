@@ -1,0 +1,15 @@
+\begin{tikzpicture}
+  \tikzstyle{every node}=[font=\footnotesize]
+  \draw[thick,->] (0,0) -- (10.5,0) node[anchor=west] {$x$};
+  \draw ( 0 cm,1pt) -- ( 0 cm,-1pt) node[anchor=north] {$-1/2$};
+  \node[anchor=south] at (1cm,1pt) {$0$};
+  \draw ( 2 cm,1pt) -- ( 2 cm,-1pt) node[anchor=north] {$1/2$};
+  \node[anchor=south] at (3cm,1pt) {$\ldots$};
+  \draw ( 4 cm,1pt) -- ( 4 cm,-1pt) node[anchor=north] {$i-1/2$};
+  \node[anchor=south] at (5cm,1pt) {$i$};
+  \draw ( 6 cm,1pt) -- ( 6 cm,-1pt) node[anchor=north] {$i+1/2$};
+  \node[anchor=south] at (7cm,1pt) {$\ldots$};
+  \draw ( 8 cm,1pt) -- ( 8 cm,-1pt) node[anchor=north] {$I-3/2$};
+  \node[anchor=south] at (9cm,1pt) {$I-1$};
+  \draw (10 cm,1pt) -- (10 cm,-1pt) node[anchor=north] {$I-1/2$};
+\end{tikzpicture}

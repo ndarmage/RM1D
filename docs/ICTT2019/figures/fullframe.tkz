@@ -1,0 +1,122 @@
+%Angle Definitions
+%-----------------
+
+%set the plot display orientation
+%synatax: \tdplotsetdisplay{\theta_d}{\phi_d}
+\tdplotsetmaincoords{60}{140}
+
+%define polar coordinates for some vector
+%TODO: look into using 3d spherical coordinate system
+\pgfmathsetmacro{\rvec}{.8}
+\pgfmathsetmacro{\thetavec}{120}
+\pgfmathsetmacro{\phivec}{10}
+
+%start tikz picture, and use the tdplot_main_coords style to implement the display 
+%coordinate transformation provided by 3dplot
+\begin{tikzpicture}[scale=5,tdplot_main_coords]
+
+%set up some coordinates 
+%-----------------------
+\coordinate (O) at (0,0,0);
+
+%determine a coordinate (P) using (r,\theta,\phi) coordinates.  This command
+%also determines (Pxy), (Pxz), and (Pyz): the xy-, xz-, and yz-projections
+%of the point (P).
+%syntax: \tdplotsetcoord{Coordinate name without parentheses}{r}{\theta}{\phi}
+\tdplotsetcoord{P}{\rvec}{\thetavec}{\phivec}
+
+%draw figure contents
+%--------------------
+
+%draw the main coordinate system axes
+\draw[thick,->] (0,0,0) -- (1,0,0) node[anchor=north east]{$x$};
+\draw[thick,->] (0,0,0) -- (0,1,0) node[anchor=north west]{$y$};
+\draw[thick,->] (0,0,0) -- (0,0,0.25) node[anchor=south]{$z$};
+
+%draw a vector from origin to point (P)
+\draw[-stealth,color=black,thick] (O) -- (P) node[anchor=south east]{$\mathbf{r}'$};
+
+%draw projection on xy plane, and a connecting line
+\draw[dashed, color=black] (O) node[anchor=south east] {$O$} -- (Pxy);
+\draw[dashed, color=black] (P) -- (Pxy);
+
+\pgfmathsetmacro{\Rrvec}{.8}
+\pgfmathsetmacro{\Rthetavec}{90}
+\pgfmathsetmacro{\Rphivec}{70}
+\tdplotsetcoord{R}{\Rrvec}{\Rthetavec}{\Rphivec}
+\draw[-stealth,color=black,thick] (O) -- node[below left, midway]{$\mathbf{r}$} (R);
+\draw[color=black, thin] (P) -- node[inner sep=1mm, fill=white, midway] (sp) {$s'$} (R);
+\draw[color=black, thin] (Pxy) -- node[inner sep=1mm, fill=white, midway]{$s$} (R);
+\node[draw=none, below right of=sp] {$s = s' \sin \theta$};
+
+%draw the angle \phi, and label it
+%syntax: \tdplotdrawarc[coordinate frame, draw options]{center point}{r}{angle}{label options}{label}
+% \tdplotdrawarc{(O)}{0.2}{0}{\phivec}{anchor=north}{$\phi$}
+
+
+%set the rotated coordinate system so the x'-y' plane lies within the
+%"theta plane" of the main coordinate system
+%syntax: \tdplotsetthetaplanecoords{\phi}
+% \tdplotsetthetaplanecoords{\phivec}
+\pgfmathsetmacro{\ydiff}{abs(sin(\Rphivec)*\Rrvec*sin(\Rthetavec) - sin(\thetavec)*sin(\phivec)*\rvec)}
+\pgfmathsetmacro{\xdiff}{abs(cos(\Rphivec)*\Rrvec*sin(\Rthetavec) - sin(\thetavec)*cos(\phivec)*\rvec)}
+\pgfmathsetmacro{\Pzc}{abs(cos(\thetavec)*\rvec)}
+\pgfmathsetmacro{\tangle}{atan(sqrt(\ydiff*\ydiff + \xdiff*\xdiff) / \Pzc)}
+\pgfmathsetmacro{\Opr}{0.25}
+\tdplotsetrotatedcoords{ 90 - atan(\ydiff / \xdiff) }{ -90 }{ 0 }
+
+%translate the rotated coordinate system
+%syntax: \tdplotsetrotatedcoordsorigin{point}
+\tdplotsetrotatedcoordsorigin{(R)}
+
+%draw theta arc and label, using rotated coordinate system
+\tdplotdrawarc[tdplot_rotated_coords,<->]{(0,0,0)}{0.75*\Opr}{0}{\tangle}{anchor=north east}{$\theta$}
+
+%draw some dashed arcs, demonstrating direct arc drawing
+% \draw[dashed,tdplot_rotated_coords] (\rvec,0,0) arc (0:90:\rvec);
+% \draw[dashed] (\rvec,0,0) arc (0:90:\rvec);
+
+%set the rotated coordinate definition within display using a translation
+%coordinate and Euler angles in the "z(\alpha)y(\beta)z(\gamma)" euler rotation convention
+%syntax: \tdplotsetrotatedcoords{\alpha}{\beta}{\gamma}
+% \tdplotsetrotatedcoords{\phivec}{\thetavec}{0}
+
+%use the tdplot_rotated_coords style to work in the rotated, translated coordinate frame
+\draw[thin,tdplot_rotated_coords] (-0.1,0,0) -- (.4,0,0);
+\draw[thick,tdplot_rotated_coords,->] (0,0,0) -- (0,\Opr,0) node[anchor=north west]{$\mathbf{\Omega}_p$};
+% \draw[thick,tdplot_rotated_coords,->] (0,0,0) -- (0,0,.25) node[anchor=south]{$z'$};
+\draw[thick,tdplot_rotated_coords,->] (0,0,0) -- ({\Opr*cos(\tangle)},{\Opr*sin(\tangle)},0) node[anchor=south west]{$\mathbf{\Omega}$};
+
+%WARNING:  coordinates defined by the \coordinate command (eg. (O), (P), etc.)
+%cannot be used in rotated coordinate frames.  Use only literal coordinates.  
+
+%draw some vector, and its projection, in the rotated coordinate frame
+% \draw[-stealth,color=blue,tdplot_rotated_coords] (0,0,0) -- (.2,.2,.2);
+% \draw[dashed,color=blue,tdplot_rotated_coords] (0,0,0) -- (.2,.2,0);
+% \draw[dashed,color=blue,tdplot_rotated_coords] (.2,.2,0) -- (.2,.2,.2);
+
+%show its phi arc and label
+% \tdplotdrawarc[tdplot_rotated_coords,color=blue]{(0,0,0)}{0.2}{0}{45}{anchor=north west,color=black}{$\phi'$}
+
+%\draw[thick,tdplot_rotated_coords,->,red] (0,0,0) -- (0,0,.25) node[anchor=south]{$z'$}; %% debug
+%\draw[thick,tdplot_rotated_coords,->,red] (0,0,0) -- (0,0.25,0) node[anchor=south]{$y'$};
+%\draw[thin,tdplot_rotated_coords, ->,red] (0,0,0) -- (0.4,0,0) node {$x'$};
+
+%change the rotated coordinate frame so that it lies in its theta plane.
+%Note that this overwrites the original rotated coordinate frame
+%syntax: \tdplotsetrotatedthetaplanecoords{\phi'}
+% \tdplotsetrotatedthetaplanecoords{45}
+\pgfmathsetmacro{\zangle}{30}
+%\tdplotresetrotatedcoordsorigin
+\tdplotsetrotatedcoords{ 180 - atan(\ydiff / \xdiff) - \zangle }{ 0 }{ 0 }
+%\tdplotsetrotatedcoords{ 0 }{ 0 }{ 0 }
+
+%draw theta arc and label
+%\tdplotdrawarc[tdplot_rotated_coords,color=blue]{(0,0,0)}{0.2}{0}{30}{anchor=south west,color=black}{$\theta'$}
+% \draw[thick,tdplot_rotated_coords,->,blue] (0,0,0) -- (0,0,.25) node[anchor=south]{$z''$}; %% debug
+% \draw[thick,tdplot_rotated_coords,->,blue] (0,0,0) -- (0,0.25,0) node[anchor=south]{$y''$};
+\draw[thin,tdplot_rotated_coords] (0,0,0) -- (0.2,0,0);
+\tdplotdrawarc[tdplot_rotated_coords]{(0,0,0)}{0.5*\Opr}{0}{\zangle)}{anchor=north east}{$\omega$}
+%\tdplotdrawarc[tdplot_rotated_coords,<->]{(0,0,0)}{0.5*\Opr}{0}{180 - atan(\ydiff / \xdiff)}{anchor=north east}{$\omega$}
+
+\end{tikzpicture}

@@ -1,0 +1,58 @@
+\begin{thebibliography}{1}
+
+\bibitem{ronen2004accurate}
+Yigal Ronen.
+\newblock Accurate relations between the neutron current densities and the
+  neutron fluxes.
+\newblock {\em Nuclear science and engineering}, 146(2):245--247, 2004.
+
+\bibitem{tomatis2011application}
+Daniele Tomatis and Aldo Dall'Osso.
+\newblock Application of a numerical transport correction in diffusion
+  calculations.
+\newblock In {\em Proc. Int. Conf. on Mathematics and Computational Methods
+  Applied to Nuclear Science and Engineering (M\&C 2011), Rio de Janeiro, RJ
+  Brazil}, May 8--12 2011.
+
+\bibitem{smith1983nodal}
+K.~S. Smith.
+\newblock Nodal method storage reduction by nonlinear iteration.
+\newblock {\em Trans. Am. Nucl. Soc.}, 44:265--266, 1983.
+
+\bibitem{lawrence1986progress}
+R.~D. Lawrence.
+\newblock Progress in nodal methods for the solution of the neutron diffusion
+  and transport equations.
+\newblock {\em Progress in Nuclear Energy}, 17(3):271--301, 1986.
+
+\bibitem{AS1964handbook}
+Milton Abramowitz and Irene~A. Stegun.
+\newblock {\em Handbook of mathematical functions with formulas, graphs, and
+  mathematical tables}.
+\newblock Dover Publications New York, 1964.
+
+\bibitem{lewis1984computational}
+E.~E. Lewis and W.~F. Miller.
+\newblock {\em Computational methods of neutron transport}.
+\newblock John Wiley and Sons, Inc.,New York, NY, 1984.
+
+\bibitem{hebert2009applied}
+Alain H{\'e}bert.
+\newblock {\em {Applied Reactor Physics}}.
+\newblock Presses inter Polytechnique, 2009.
+
+\bibitem{amos1983uniform}
+D.~E. Amos.
+\newblock Uniform asymptotic expansions for exponential integrals {E}$_n(x)$
+  and {B}ickley functions {K}i$_n(x)$.
+\newblock {\em ACM Transactions on Mathematical Software (TOMS)},
+  9(4):467--479, December 1983.
+
+\bibitem{amos1983algorithm}
+D.~E. Amos.
+\newblock Algorithm 609: {A} portable {FORTRAN} subroutine for the {B}ickley
+  functions {K}i$_n(x)$.
+\newblock {\em ACM Transactions on Mathematical Software (TOMS)},
+  9(4):480--493, December 1983.
+
+\end{thebibliography}
