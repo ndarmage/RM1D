@@ -32,6 +32,20 @@ min_float = np.finfo(float).min
 np.set_printoptions(precision=5)
 
 
+def calculate_volumes(r, geometry_type="cylinder"):
+    "Compute the cell volumes with the input 1d mesh in r."
+    V = r[1:] - r[:-1]  # slab as default case
+    if geometry_type != "slab":
+        V *= np.pi
+        if geometry_type == "cylinder":
+            V *= (r[1:] + r[:-1])
+        elif geometry_type == "sphere":
+            V *= 4. / 3. * (r[1:]**2 + r[1:]*r[:-1] + r[:-1]**2)
+        else:
+            raise ValueError("Invalid input geometry_type")
+    return V
+
+
 def y(r, h):
     "Obtain the right side from the hypotenuse r and the other side h."
     if np.any(r < h):
@@ -78,7 +92,7 @@ def calculate_tracking_data(r, ks, sphere=False):
         raise ValueError("Invalid input, ks has zero or negative values")
     if not np.all(np.diff(r) > 0):
         raise ValueError("Invalid input, r is not in increasing order")
-    # the total number of tracks is sum_{i=0}^{I-1} ks(i)*(I-1)
+    # the total number of tracks is sum_{i=0}^{I-1} ks(i)*(I-i)
     nb_tracks = I * sum(ks) - np.dot(np.arange(I), ks)
     tracks = np.zeros(nb_tracks)
 
@@ -109,7 +123,7 @@ def calculate_tracking_data(r, ks, sphere=False):
 
     # define functions to address the elements in 1D arrays
     # get the j-th element along the k-th line in the i-th ring (for tracks)
-    jki = lambda j, k, i: np.dot(ks[:i], np.arange(I, I-i, -1)) + k * (I-i) + j
+    jki = lambda j, k, i: np.dot(ks[:i], np.arange(I,I-i,-1)) + k * (I-i) + j
     # get the k-th element in the i-th ring (for wks or xks)
     ki = lambda k, i: sum(ks[:i]) + k
 
@@ -136,7 +150,7 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder"):
     jki, ki = tr_data["address_funcs"]
 
     # compute the optical lengths by multiplying the tracks by the
-    # corresponding total cross sections (remind that the tau data relates
+    # corresponding total cross sections (remind that the tau data relate
     # still to a rectangular sector in the circle).
     tau = np.array(tracks, copy=True)
     for i in range(I):
@@ -199,7 +213,7 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder"):
         # contributions from the rings that are around
         tij = np.zeros(ks[i])
         for j in range(i+1,I):
-            idx_j = ji_allk(j)
+            idx_j = ji_allk(j-i)
             a = tii + tij
             diffK = K(a) - K(a + tau[idx_j])
             varepsp[i,j] += np.dot(wgts, diffK) / st[j]
@@ -215,7 +229,7 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder"):
             hk, wk = hks[idx], wks[idx]
             wgts = w(wk, r[i+1], hk)
             # contribution from the same ring, whose index is still i
-            idx_i = ji_allk(i, jm1)
+            idx_i = ji_allk(i - jm1, jm1)
             diffK = K_at_0 - K(tau[idx_i])
             tii = np.zeros_like(hk)
             for n in range(j):
@@ -264,6 +278,20 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder"):
     return vareps
 
 
+def ep2cp(ep):
+    "Derive first flight collision probabilities by input escape ones."
+    # ep are organized as (G, I, I, 2) where the last index is used for
+    # positive and negative currents in order. Remind that the reduced
+    # escape terms (wrongly called probability sometimes) for the incoming
+    # (negative-minus) currents are already stored as negative quantities.
+    cp = np.zeros((G, I, I),)
+    ep_minus, ep_plus = ep[:,:,:,1], ep[:,:,:,0]
+    cp[:, 0,:] = ep_plus[:,0,:] + ep_minus[:,0,:]
+    cp[:,1:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
+               + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
+    return cp
+
+
 if __name__ == "__main__":
 
     logfile = os.path.splitext(os.path.basename(__file__))[0] + '.log'
@@ -271,16 +299,20 @@ if __name__ == "__main__":
     lg.info("* verbose output only in DEBUG logging mode *")
 
     # nb of rings in the cylinder
-    r = np.array([0., .075, .15])
-    I = r.size - 1
-    ks = np.full(I, 1)
+    L = .5  # cm, body thickness
+    I = 4  # number of cells in the spatial mesh
+    r = np.linspace(0, L, I+1)
+    # r = np.array([0., .075, .15]); I = r.size - 1;  # test
+    V = calculate_volumes(r, geometry_type)
+    ks = np.full(I, 1)  # quadrature order for each spatial cell
 
-    # nb of energy groups
-    G = 1
+    G = 1  # nb of energy groups
     c = 0.5  # number of secondaries by scattering
     st = np.ones(G)
-    ss = c * st
     st_r = np.tile(st, (I, 1)).T
+    ss_r = c * st_r
+    # we use st / 8 for nsf
+    nsf_r = 0.125 * st_r
 
     tr_data = calculate_tracking_data(r, ks)
 
@@ -292,5 +324,11 @@ if __name__ == "__main__":
 
     # reduced escape probabilities for partial currents (2 for plus and minus)
     vareps = np.zeros((G, I, I, 2),)
-    vareps[0,:,:,:] = calculate_escape_prob(r, st_r[0,:], tr_data,
-                                            geometry_type)
+    for g in range(G):
+        vareps[g,:,:,:] = calculate_escape_prob(r, st_r[g,:], tr_data,
+                                                geometry_type)
+
+    # derive collision probabilities from escape probabilities
+    # first multiply by the volumes of starting cells to get the probabilities
+    ep = vareps / np.moveaxis(np.tile(V, (G, 2, I, 1)), 1, -1)
+    cp = ep2cp(ep)
