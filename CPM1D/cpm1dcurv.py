@@ -285,6 +285,8 @@ def ep2cp(ep):
     # escape terms (wrongly called probability sometimes) for the incoming
     # (negative-minus) currents are already stored as negative quantities.
     cp = np.zeros((G, I, I),)
+    if np.any(ep > 1):
+        lg.warn("Detected escape probabilities greater than 1!")
     ep_minus, ep_plus = ep[:,:,:,1], ep[:,:,:,0]
     cp[:, 0,:] = ep_plus[:,0,:] + ep_minus[:,0,:]
     cp[:,1:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
