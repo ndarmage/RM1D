@@ -194,77 +194,84 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder"):
     varepsp = vareps[:,:,0]  # first index is i, second index is j (sources)
     varepsm = vareps[:,:,1]  # (defined as negative!)
     # varepsp is for escape whereas varepsm is for in-scape
+
+    # local functions
     cumsum_ks = np.insert(np.cumsum(ks), 0, 0)
     get_ks_in_ring = lambda i0: np.arange(cumsum_ks[i0], cumsum_ks[i0+1])
-    for i in range(I):
+    ji_allk = lambda j, i: np.asarray([jki(j,k,i) for k in range(ks[i])])
+    def get_weights(i, r):
         idx = get_ks_in_ring(i)
         hk, wk = hks[idx], wks[idx]
-        wgts = w(wk, r[i+1], hk)
+        return w(wk, r, hk)
 
-        ji_allk = lambda j, i0=i: \
-            np.asarray([jki(j,k,i0) for k in range(ks[i0])])
+    # process the surfaces outwards
+    for i in range(I):
+        wgts = get_weights(i, r[i+1])
 
         # escape within (r_i-1/2, r_i+1/2)
         # contribution from the i-th ring through its outer surface
-        idx_0 = ji_allk(0)
+        idx_0, invsti = ji_allk(0, i), 1. / st[i]
         tii = 2 * tau[idx_0]  # for all k tracking lines
-        varepsp[i,i] += np.dot(wgts, K_at_0 - K(tii)) / st[i]
+        varepsp[i,i] += np.dot(wgts, K_at_0 - K(tii)) * invsti
 
         # contributions from the rings that are around
-        tij = np.zeros(ks[i])
+        tij = np.zeros_like(wgts)
         for j in range(i+1,I):
-            idx_j = ji_allk(j-i)
+            idx_j, invstj = ji_allk(j-i, i), 1. / st[j]
             a = tii + tij
             diffK = K(a) - K(a + tau[idx_j])
-            varepsp[i,j] += np.dot(wgts, diffK) / st[j]
+            varepsp[i,j] += np.dot(wgts, diffK) * invstj
             diffK = K(tij) - K(tij + tau[idx_j])
-            varepsm[i,j] -= np.dot(wgts, diffK) / st[j]
+            varepsm[i,j] -= np.dot(wgts, diffK) * invstj
             tij += tau[idx_j]
 
         # escape within (0, r_i-1/2)
-        for j in range(i,0,-1):
-            # the index of the ring proceeding backwards is j-1
-            jm1 = j - 1
-            idx = get_ks_in_ring(jm1)
-            hk, wk = hks[idx], wks[idx]
-            wgts = w(wk, r[i+1], hk)
+        for j in range(i-1,-1,-1):
+            # the index decreases inwards
+            # escape within (r_j-1/2, r_j+1/2)
+            wgts = get_weights(j, r[i+1])
+            # w.r.t. the jik notation, the same ring is at the ji-th position
+            # starting from radial zero level
+            ji = i - j
             # contribution from the same ring, whose index is still i
-            idx_i = ji_allk(i - jm1, jm1)
+            idx_i = ji_allk(ji, j)
             diffK = K_at_0 - K(tau[idx_i])
-            tii = np.zeros_like(hk)
-            for n in range(j):
-                tii += tau[ji_allk(n, jm1)]
+            # varepsp[i,i] += np.dot(wgts, diffK) * invsti
+            tii = np.zeros_like(wgts)
+            for n in range(ji):
+                tii += tau[ji_allk(n, j)]
             a = tau[idx_i] + 2 * tii
             diffK += K(a) - K(a + tau[idx_i])
-            varepsp[i,i] += np.dot(wgts, diffK) / st[i]
+            varepsp[i,i] += np.dot(wgts, diffK) * invsti
 
             # contribution from the outer rings (new index n)
             a += tau[idx_i]
-            tij = np.zeros_like(hk)
+            tij = np.zeros_like(wgts)
             for n in range(i+1, I):
+                idx_n, invstn = ji_allk(n - j, j), 1. / st[n]
                 a += tij
-                idx_n = ji_allk(n, jm1)
                 diffK = K(a) - K(a + tau[idx_n])
-                varepsp[i,n] += np.dot(wgts, diffK) / st[n]
+                varepsp[i,n] += np.dot(wgts, diffK) * invstn
                 diffK = K(tij) - K(tij + tau[idx_n])
-                varepsm[i,n] -= np.dot(wgts, diffK) / st[n]
+                varepsm[i,n] -= np.dot(wgts, diffK) * invstn
                 tij += tau[idx_n]
 
             # contribution from the inner rings (again with the new index n)
-            tij = np.zeros_like(hk)
-            for n in range(i-1,-1,-1):
+            tij = np.zeros_like(wgts)
+            for n in range(i-1,j-1,-1):
                 # upper quadrant (closest to the outer surface i+1/2)
-                idx_n = ji_allk(n, jm1)
+                idx_n, invstn = ji_allk(n - j, j), 1. / st[n]
                 a = tau[idx_i] + tij
                 diffK = K(a) - K(a + tau[idx_n])
+                # varepsp[i,n] += np.dot(wgts, diffK) * invstn
 
                 # lower quadrant (farer to the outer surface i+1/2)
-                tjj = np.zeros_like(hk)
-                for m in range(n):
-                    tjj += tau[ji_allk(m, jm1)]
+                tjj = np.zeros_like(wgts)
+                for m in range(n - j):
+                    tjj += tau[ji_allk(m, j)]
                 a += tau[idx_n] + 2 * tjj
                 diffK += K(a) - K(a + tau[idx_n])
-                varepsp[i,n] += np.dot(wgts, diffK) / st[n]
+                varepsp[i,n] += np.dot(wgts, diffK) * invstn
 
                 tij += tau[idx_n]
 
@@ -285,8 +292,8 @@ def ep2cp(ep):
     # escape terms (wrongly called probability sometimes) for the incoming
     # (negative-minus) currents are already stored as negative quantities.
     cp = np.zeros((G, I, I),)
-    if np.any(ep > 1):
-        lg.warn("Detected escape probabilities greater than 1!")
+    if np.any(abs(ep) > 1):
+        lg.warning("Detected escape probabilities greater than 1!")
     ep_minus, ep_plus = ep[:,:,:,1], ep[:,:,:,0]
     cp[:, 0,:] = ep_plus[:,0,:] + ep_minus[:,0,:]
     cp[:,1:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
