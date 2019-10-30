@@ -1,0 +1,231 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  This is a sample LaTeX input file for your contribution to
+%  the PHYSOR2020 topical meeting.
+%
+%  Please use it as a template for your full paper
+%    Accompanying/related file(s) include:
+%       1. Document class/format file: physor2020.cls
+%       2. Sample Postscript Figure:   figure.pdf
+%       3. A PDF file showing the desired appearance: physor2020_template.pdf
+%       4. cites.sty and citesort.sty that might be needed by some users
+%    Direct questions about these files to: rcarlos.lope@gmail.com
+%											armando.gomez@inin.gob.mx
+%
+%    Notes:
+%      (1) You can use the "dvips" utility to convert .dvi
+%          files to PostScript.  Then, use either Acrobat
+%          Distiller or "ps2pdf" to convert to PDF format.
+%      (2) Different versions of LaTeX have been observed to
+%          shift the page down, causing improper margins.
+%          If this occurs, adjust the "topmargin" value in the
+%          physor2020.cls file to achieve the proper margins.
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[letterpaper]{physor2020}
+%
+%  various packages that you may wish to activate for usage
+\usepackage{tabls}
+\usepackage{cites}
+\usepackage{epsf}
+\usepackage{appendix}
+\usepackage{ragged2e}
+\usepackage[top=1in, bottom=1.in, left=1.in, right=1.in]{geometry}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*}
+\usepackage{caption}
+\captionsetup{width=1.0\textwidth,font={bf,normalsize},%
+              skip=0.3cm,within=none,justification=centering}
+
+% Daniele: I commented this part because it was not present in the original
+% conference template.
+% % for quotes
+% \usepackage[english]{babel}
+% \usepackage[autostyle, english = american]{csquotes}
+% \MakeOuterQuote{"}
+%
+% \newcommand{\eq}[1]{Eq.~(\ref{#1})}
+% \newcommand{\eqnolabel}[1]{(\ref{#1})}
+% \newcommand{\eqs}[1]{Eqs.~(\ref{#1})}
+% \newcommand{\eqsthru}[2]{Eqs.~(\ref{#1})--(\ref{#2})}
+% \newcommand{\eqsand}[2]{Eqs.~(\ref{#1}) and (\ref{#2})}
+% \newcommand{\tbl}[1]{Table~\ref{#1}}
+% \newcommand{\tblnolabel}[1]{\ref{#1}}
+% \newcommand{\tbls}[1]{Tables~\ref{#1}}
+% \newcommand{\tblsthru}[2]{Tables~\ref{#1}--\ref{#2}}
+% \newcommand{\tblsand}[2]{Tables~\ref{#1} and \ref{#2}}
+% \newcommand{\fig}[1]{Fig.~\ref{#1}}
+% \newcommand{\fignolabel}[1]{\ref{#1}}
+% \newcommand{\figs}[1]{Figs.~\ref{#1}}
+% \newcommand{\figsthru}[2]{Figs.~\ref{#1}--\ref{#2}}
+% \newcommand{\figsand}[2]{Figs.~\ref{#1} and \ref{#2}}
+% \newcommand{\sxn}[1]{Section~\ref{#1}}
+%
+% \newcommand{\revised}[1]{{\color{red}{#1}}}
+% \newcommand{\tsup}[1]{\textsuperscript{#1}}
+% \newcommand{\tsub}[1]{\textsubscript{#1}}
+%
+% \newcommand{\keff}{{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}}
+% \newcommand{\beff}{\ensuremath{\beta_{\textrm{eff}}}}
+% \newcommand{\rr}{\ensuremath{\bm{r}}}
+% \newcommand{\OO}{\ensuremath{\hat{\bm{\Omega}}}}
+% \newcommand{\bnabla}{\ensuremath{\bm{\nabla}}}
+% \newcommand{\rE}{\ensuremath{(\rr,E)}}
+%
+% \newcommand{\ftr}{\ensuremath{\phi_{\textrm{\scriptsize{tr}}}}}
+% \newcommand{\jtr}{\ensuremath{\bm{J}_{\textrm{\scriptsize{tr}}}}}
+% \newcommand{\jtrr}{\ensuremath{J_{\textrm{\scriptsize{tr}}}}}
+% %\newcommand{\mcL}{\mathcal{L}}
+% \newcommand{\mcL}{\tau}
+% \newcommand{\pl}[1]{\ensuremath{P_l(#1)}}
+% \newcommand{\dx}{\ensuremath{\Delta x}}
+%
+% \newcommand{\jp}{\ensuremath{\bm{J}^+}}
+% \newcommand{\jm}{\ensuremath{\bm{J}^-}}
+% \newcommand{\jpm}{\ensuremath{\bm{J}^\pm}}
+% \newcommand{\jD}{\ensuremath{\bm{J}^{\textrm{\scriptsize{D}}}}}
+
+% about notes and comments from each author
+\newcommand{\erez}[1]{{\color{blue}{\textsuperscript{EREZ:}#1}}}
+\newcommand{\roy}[1]{{\color{blue}{\textsuperscript{ROY:}#1}}}
+\newcommand{\daniele}[1]{{\color{blue}{\textsuperscript{DANIELE:}#1}}}
+
+
+%\usepackage[justification=centering]{caption}
+
+%
+% Define title...
+%
+\title{INTEGRAL TRANSPORT CORRECTION \\TO DIFFUSION CALCULATIONS BY pCMFD}
+%
+% ...and authors
+%
+\author{%
+  % FIRST AUTHORS
+  %
+  \textbf{Roy Gross$^1$\footnote{Corresponding author: xxx.},
+          Daniele Tomatis$^2$,
+          and Erez Gilad$^1$} \\
+  $^1$The Unit of Nuclear Engineering, \\
+  Ben-Gurion University of the Negev, 8410501 Beer-Sheva, Israel \\
+\\
+  $^2$CEA, DEN, Service d’\'etudes des r\'eacteurs et
+      de math\'ematiques appliqu\'ees (SERMA), \\
+    Universit\'e Paris-Saclay, F-91191, Gif-sur-Yvette, France \\
+     \\
+  \url{roygross@post.bgu.ac.il}, \url{daniele.tomatis@cea.fr}, \url{gilade@bgu.ac.il}
+}
+%
+% Insert authors' names and short version of title in lines below
+%
+\newcommand{\authorHead}      % Author's names here use et al. if more than 3
+           {R. Gross, D. Tomatis, E. Gilad}
+\newcommand{\shortTitle}      % Short title here (Shorten to fit all into a single line)
+           {The Ronen Method by pCMFD}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   BEGIN DOCUMENT
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+\justify
+
+% ------------------------------------------
+\begin{abstract}
+  The Ronen method is implemented and studied numerically in two-group one-dimensional homogeneous slab configuration. Since slow convergence is observed for the scalar flux especially near the vacuum boundary, new methods for accelerating the convergence are reported. For example, the use of the integral flux intermediate values as new boundary conditions in each iteration and iterative updating of the extrapolated boundary using the corrected local diffusion coefficients. Moreover, the pCMFD scheme is implemented and its performances are compared with those of standard CMFD scheme.
+\end{abstract}
+\keywords{neutron diffusion, integral transport, CMFD}
+
+% ------------------------------------------
+\section{INTRODUCTION}
+\label{sec:intro}
+
+The distribution of the neutron flux in the reactor core is described by the neutron transport equation. Transport calculations on a full core scale can be a highly intensive computational task. To overcome this difficulty, faster (but less accurate) multigroup neutron diffusion solvers are often used. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core and modern calculation schemes evolve towards best-estimate codes, aiming at high accuracy. Hence, the accuracy of diffusion calculations is investigated. A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient. The calculation of this parameter should be based on physical insights from the full transport equation such that the resulting (transport corrected) diffusion approximation can capture the transport phenomena of interest.
+
+The main hypothesis of this research, called the Ronen Method, is based on iterative calculations of the multigroup diffusion coefficients, driven by the accurate relations between the neutron current density and the neutron flux as derived from the integral transport equation. The iterative scheme calculates new flux distribution using a diffusion solver but with a (spatially) modified diffusion coefficient according to the current calculated using the integral transport equation. However, the direct resolution of the integral relation between the diffusion coefficient and the transport current would imply the inversion of large matrices, with poor control of their conditioning. Nonetheless, the integral current can be enforced in the CMFD discretized form of the diffusion equation, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.
+
+
+% ------------------------------------------
+\section{THE RONEN METHOD}
+\label{sec:RM}
+
+% ------------------------------------------
+\section{NUMERICAL IMPLEMENTATION}
+\label{sec:RM-num}
+
+% ------------------------------------------
+\subsection{CMFD}
+\label{sec:RM-CMFD}
+
+% ------------------------------------------
+\subsection{pCMFD}
+\label{sec:RM-pCMFD}
+
+
+% ------------------------------------------
+\section{RESULTS}
+\label{sec:res}
+
+
+% ------------------------------------------
+\section{CONCLUSIONS}
+\label{sec:conc}
+
+Present your summary and conclusions here.
+
+%\begin{figure}[!htb]
+%  \centering
+%  \includegraphics[scale=0.60]{./Figures/figure.pdf}
+%  \caption{SCALE/TRITON-NEWT Model of BWR Assembly in Order to Show and Example of a Figure and a Multi-line Caption}
+%  \label{fig:amdahl}
+%\end{figure}
+
+%\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+%\item Any number, text or symbol is in Times font and is not smaller than
+%  10-point after reduction to the actual window in your paper
+%\item That it can be translated into PDF
+%\end{itemize}
+
+
+%\begin{table}[!htb]
+%  \centering
+%  \caption{\bf Parallel Performance for the Sample Problem}
+%  \label{table:example}
+%  \begin{tabular}{|c|c|c|c|} \hline
+%   Number of & Wall-Clock & Speedup & Efficiency \\
+%   Processors & Time$^{a}$ (min) & (T$_{s}$/T$_{p}$) & (\%) \\ \hline
+%    \ 1 &  100.0 & \ ---    & ---  \\ \hline
+%    \ 2 &   52.6 & \ 1.9    & 95.0 \\ \hline
+%  \end{tabular}
+%\end{table}
+
+% ------------------------------------------
+%\section*{NOMENCLATURE}
+%
+If variables are extensively used in the text, a Nomenclature section would be helpful to the readers.
+%
+% ------------------------------------------
+%\section*{ACKNOWLEDGEMENTS}
+%
+%Acknowledge the help of colleagues and sources of funding, as appropriate.
+
+% ------------------------------------------
+% You can enter a bibliography into the document using the following format, or use the
+% bibliography style file "physor.bst" found in the template directory.  You can use the bibliography style file
+% by replacing the current bibliography block with:
+\setlength{\baselineskip}{12pt}
+\bibliographystyle{physor}
+\bibliography{RM-bib}
+
+% ------------------------------------------
+%\appendix
+%\gdef\thesection{APPENDIX \Alph{section}}
+%\section{Sample Appendix 1}
+%\label{app:a}
+%If necessary, include Appendices numbered in upper case alphabetical order. This is \ref{app:a}.
+%
+\end{document}
