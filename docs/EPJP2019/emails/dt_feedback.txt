@@ -1,0 +1,113 @@
+1/ my affiliation should be :
+
+CEA, DEN, Service d\u2019études des réacteurs et de mathématiques appliquées (SERMA), Université Paris-Saclay, F-91191 Gif-sur-Yvette, France
+
+ 
+
+Done.
+
+ 
+
+2/ find 'Terra Bytes'.
+
+ 
+
+Fixed.
+
+ 
+
+3/ scattering is repeated twice after eq. 2
+
+ 
+
+Fixed.
+
+ 
+
+4/In Eq. 2, I would put 'k' in parentheses to remind that it is an iterator idex. See also Eq. 33.
+
+ 
+
+Fixed.
+
+ 
+
+5/ check for 'at th boundaries.'
+
+ 
+
+Fixed.
+
+ 
+
+6/ first line sec 3.1. check 'to be uses'. Is the last line of this section really necessary? I would stop it after power iteration algorithm. This would also imply using \mathcal{M} instead of \mathcal{A} in the following.
+
+ 
+
+Sentence removed.
+
+ 
+
+7/ sec. 3.2, would you add 'by definition' at the end of the following sentence:
+
+'Note that for void boundary conditions, the boundary terms vanish' ?
+
+ 
+
+Done.
+
+ 
+
+8/ The last sentence of sec. 3.2 is important. Would you say removal or transfer probability?
+
+ 
+
+Transfer. Done.
+
+ 
+
+9/ Using eq. 33 to introduce the enumerate-itemize may be misleading. Don't you think? About this enumerate, check the second word of a couple items for having initial upper letters.
+
+ 
+
+We agree. Eq. 33 was moved to the introduction as an example for Eq. 2.
+
+ 
+
+10/ I don't remember if the Sn code is already python3 compliant. I don't have it here. You can cite Lewis and Miller at the end of the fist sentence of sec. 4.
+
+ 
+
+Yes, it is Python3 compliant. Lewis was added.
+
+ 
+
+11/ check 'All simulation emply'. check 'A Comparison of ...'
+
+ 
+
+Fixed.
+
+ 
+
+12/ Fig. 4. It's difficult to distinguish the lines in the figure. Can you use markers for instance or different line styles, in addition to changing the colors? This holds also the other figures.
+
+ 
+
+Working on it.
+
+ 
+
+13/ about Fig 15, are the two aligned figures necessary at the same time. The left one could be removed, since you mention already the verified odd parity in the text. This current peak close to the boundary must really be understood in the future. Plotting the current given by the Sn could be worth it. I'm wandering if we're really converging to transport indeed.
+
+ 
+
+The left figure was removed. Indeed, we have ideas regarding the behavior of the correction and consequently the current. We'll discuss that. All indications seem to point that the Ronen method indeed converge to transport, but we have a long way ahead in order to prove it.
+
+ 
+
+14/ question about Fig. 14, are the corrected spatially-dependent diffusion D obtained by eq. 33? If yes, I'd mention it.
+
+ 
+
+No. They are obtained from the Ronen iteration implementation.
