@@ -198,10 +198,16 @@ C***END PROLOGUE
       REAL A, ENLIM, EXI, FN, GR, H, HN, HRTPI, SS, TOL, T1, T2, W, X,
      * XLIM, XNLIM, XP, Y, YS, YSS
       REAL GAMRN, R1MACH
-Cf2py intent(in) X, N, KODE, M
-Cf2py intent(out) Y, IERR
+      DIMENSION EXI(102), A(50), YS(3), YSS(3), H(31), Y(M)
+C     D. TOMATIS: Y(*) IS NOT TREATED CORRECTLY BY F2PY
+Cf2py intent(in) X
+Cf2py intent(in) N
+Cf2py intent(in) KODE
+Cf2py intent(in) M
+Cf2py intent(out) Y
+Cf2py intent(out) IERR
 Cf2py depend(M) Y
-      DIMENSION EXI(102), A(50), YS(3), YSS(3), H(31), Y(1)
+      SAVE A, HRTPI
 C-----------------------------------------------------------------------
 C             COEFFICIENTS IN SERIES OF EXPONENTIAL INTEGRALS
 C-----------------------------------------------------------------------
@@ -570,6 +576,7 @@ C
       REAL GAMRN, R1MACH
       DIMENSION B(120), XP(16), S(31), H(1), V(52), W(52), T(50),
      * BND(15)
+      SAVE B, BND, HRTPI
 C-----------------------------------------------------------------------
 C             COEFFICIENTS OF POLYNOMIAL P(J-1,X), J=1,15
 C-----------------------------------------------------------------------
@@ -809,7 +816,7 @@ C     SUM IS IN V(L).
 C
       INTEGER I, J, K, L
       REAL V
-      DIMENSION V(1)
+      DIMENSION V(*)
       IF (L.EQ.1) RETURN
       DO 20 J=2,L
         K = L
@@ -820,7 +827,7 @@ C
    20 CONTINUE
       RETURN
       END
-      FUNCTION GAMRN(X)                                                 GAM   10
+      REAL FUNCTION GAMRN(X)                                            GAM   10
 C
 C     WRITTEN BY D.E. AMOS, JANUARY, 1981.
 C
@@ -864,6 +871,7 @@ C
       REAL FLN, GR, RLN, S, TOL, TRM, X, XDMY, XINC, XM, XMIN, XP, XSQ
       REAL R1MACH
       DIMENSION GR(12)
+      SAVE GR
 C
       DATA GR(1), GR(2), GR(3), GR(4), GR(5), GR(6), GR(7), GR(8),
      * GR(9), GR(10), GR(11), GR(12) /1.00000000000000000E+00,
@@ -903,16 +911,14 @@ C
    20 CONTINUE
    30 CONTINUE
       S = S/SQRT(XDMY)
-      IF (XINC.NE.0.0E0) GO TO 40
-      GAMRN = S
-      RETURN
-   40 CONTINUE
-      NX = INT(XINC)
-      XP = 0.0E0
-      DO 50 I=1,NX
-        S = S*(1.0E0+0.5E0/(X+XP))
-        XP = XP + 1.0E0
-   50 CONTINUE
+      IF (XINC.NE.0.0E0) THEN
+        NX = INT(XINC)
+        XP = 0.0E0
+        DO 50 I=1,NX
+          S = S*(1.0E0+0.5E0/(X+XP))
+          XP = XP + 1.0E0
+   50   CONTINUE
+      END IF
       GAMRN = S
       RETURN
 C-----------------------------------------------------------------------
@@ -933,7 +939,8 @@ C
      * TK, TRM, TRMH, TRMR, TST, U, V, WDTOL, X, XDMY, XH, XINC, XM,
      * XMIN, YINT
       REAL R1MACH
-      DIMENSION B(22), TRM(22), TRMR(25), TRMH(25), U(25), V(25), H(1)
+      DIMENSION B(22), TRM(22), TRMR(25), TRMH(25), U(25), V(25), H(*)
+      SAVE B
 C-----------------------------------------------------------------------
 C             SCALED BERNOULLI NUMBERS 2.0*B(2K)*(1-2**(-2K))
 C-----------------------------------------------------------------------
@@ -1129,7 +1136,7 @@ C
       INTEGER I, IC, ICASE, ICT, IERR, IK, IND, IX, I1M, JSET, K, KK,
      * KN, KODE, KS, M, ML, MU, N, ND, NM
       INTEGER I1MACH
-      DIMENSION EN(1), A(99), B(99), Y(2)
+      DIMENSION EN(*), A(99), B(99), Y(2)
 C
       ETOL = AMAX1(R1MACH(4),0.5E-18)
       I1M = -I1MACH(12)
@@ -1486,6 +1493,7 @@ C
       END
 C     PROGRAM DQCKIN(INPUT,OUTPUT,TAPE6=OUTPUT)                         MAN   10
       SUBROUTINE DQCKIN()
+C      PROGRAM DQCKIN
 C                                                                       MAN   20
 C     ABSTRACT                                                          MAN   30
 C     PROGRAM DQCKIN IS A QUICK CHECK DRIVER WHICH EXERCISES THE MAJOR  MAN   40
@@ -1681,10 +1689,16 @@ C***END PROLOGUE
       DOUBLE PRECISION A, ENLIM, EXI, FN, GR, H, HN, HRTPI, SS, TOL,
      * T1, T2, W, X, XLIM, XNLIM, XP, Y, YS, YSS
       DOUBLE PRECISION DGAMRN, D1MACH
-Cf2py intent(in) X, N, KODE, M
-Cf2py intent(out) Y, IERR
+      DIMENSION EXI(102), A(50), YS(3), YSS(3), H(31), Y(M)
+C     D. TOMATIS: Y(*) IS NOT TREATED CORRECTLY BY F2PY
+Cf2py intent(in) X
+Cf2py intent(in) N
+Cf2py intent(in) KODE
+Cf2py intent(in) M
+Cf2py intent(out) Y
+Cf2py intent(out) IERR
 Cf2py depend(M) Y
-      DIMENSION EXI(102), A(50), YS(3), YSS(3), H(31), Y(1)
+      SAVE A, HRTPI
 C-----------------------------------------------------------------------
 C             COEFFICIENTS IN SERIES OF EXPONENTIAL INTEGRALS
 C-----------------------------------------------------------------------
@@ -2292,7 +2306,7 @@ C     SUM IS IN V(L).
 C
       INTEGER I, J, K, L
       DOUBLE PRECISION V
-      DIMENSION V(1)
+      DIMENSION V(*)
       IF (L.EQ.1) RETURN
       DO 20 J=2,L
         K = L
@@ -2348,6 +2362,7 @@ C
      * XMIN, XP, XSQ
       DOUBLE PRECISION D1MACH
       DIMENSION GR(12)
+      SAVE GR
 C
       DATA GR(1), GR(2), GR(3), GR(4), GR(5), GR(6), GR(7), GR(8),
      * GR(9), GR(10), GR(11), GR(12) /1.00000000000000000D+00,
@@ -2387,16 +2402,14 @@ C
    20 CONTINUE
    30 CONTINUE
       S = S/DSQRT(XDMY)
-      IF (XINC.NE.0.0D0) GO TO 40
-      DGAMRN = S
-      RETURN
-   40 CONTINUE
-      NX = INT(SNGL(XINC))
-      XP = 0.0D0
-      DO 50 I=1,NX
-        S = S*(1.0D0+0.5D0/(X+XP))
-        XP = XP + 1.0D0
-   50 CONTINUE
+      IF (XINC.NE.0.0D0) THEN
+        NX = INT(SNGL(XINC))
+        XP = 0.0D0
+        DO 50 I=1,NX
+          S = S*(1.0D0+0.5D0/(X+XP))
+          XP = XP + 1.0D0
+   50   CONTINUE
+      END IF
       DGAMRN = S
       RETURN
 C-----------------------------------------------------------------------
@@ -3002,7 +3015,7 @@ C
 C***FIRST EXECUTABLE STATEMENT  FDUMP
       RETURN
       END
-      FUNCTION J4SAVE(IWHICH,IVALUE,ISET)                               J4SAVE 2
+      INTEGER FUNCTION J4SAVE(IWHICH,IVALUE,ISET)                       J4SAVE 2
 C***BEGIN PROLOGUE  J4SAVE
 C***REFER TO  XERROR
 C     ABSTRACT
@@ -3044,8 +3057,10 @@ C    PACKAGE*, SAND78-1189, SANDIA LABORATORIES, 1978.
 C***ROUTINES CALLED  (NONE)
 C***END PROLOGUE  J4SAVE
 C
+      INTEGER IWHICH, IVALUE
       LOGICAL ISET
       INTEGER IPARAM(9)
+      SAVE IPARAM
       DATA IPARAM(1),IPARAM(2),IPARAM(3),IPARAM(4)/0,2,0,10/
       DATA IPARAM(5)/1/
       DATA IPARAM(6),IPARAM(7),IPARAM(8),IPARAM(9)/0,0,0,0/
@@ -3071,6 +3086,7 @@ C    PACKAGE*, SAND78-1189, SANDIA LABORATORIES, 1978.
 C***ROUTINES CALLED  (NONE)
 C***END PROLOGUE  S88FMT
 C
+      INTEGER N, NT, IT, IVALUE
       DIMENSION IFMT(N),IDIGIT(10)
       DATA IDIGIT(1),IDIGIT(2),IDIGIT(3),IDIGIT(4),IDIGIT(5),
      1     IDIGIT(6),IDIGIT(7),IDIGIT(8),IDIGIT(9),IDIGIT(10)
@@ -3898,6 +3914,7 @@ C***FIRST EXECUTABLE STATEMENT  XSETUN
       RETURN
       END
       DOUBLE PRECISION FUNCTION D1MACH(I)
+      IMPLICIT NONE
 C***BEGIN PROLOGUE  D1MACH
 C***REVISION DATE  820701   (YYMMDD)
 C***CATEGORY NO.  Q
@@ -3941,19 +3958,22 @@ C  JUNE 1978, PP. 177-188.
 C***ROUTINES CALLED  XERROR
 C***END PROLOGUE  D1MACH
 C
-      INTEGER SMALL(4)
-      INTEGER LARGE(4)
-      INTEGER RIGHT(4)
-      INTEGER DIVER(4)
-      INTEGER LOG10(4)
-C
-      DOUBLE PRECISION DMACH(5)
-C
-      EQUIVALENCE (DMACH(1),SMALL(1))
-      EQUIVALENCE (DMACH(2),LARGE(1))
-      EQUIVALENCE (DMACH(3),RIGHT(1))
-      EQUIVALENCE (DMACH(4),DIVER(1))
-      EQUIVALENCE (DMACH(5),LOG10(1))
+C     MODIFIED BY D. TOMATIS ON OCT 23rd 2020
+      INTEGER I
+      DOUBLE PRECISION B, X
+C      INTEGER SMALL(4)
+C      INTEGER LARGE(4)
+C      INTEGER RIGHT(4)
+C      INTEGER DIVER(4)
+C      INTEGER LOG10(4)
+CC
+C      DOUBLE PRECISION DMACH(5)
+CC
+C      EQUIVALENCE (DMACH(1),SMALL(1))
+C      EQUIVALENCE (DMACH(2),LARGE(1))
+C      EQUIVALENCE (DMACH(3),RIGHT(1))
+C      EQUIVALENCE (DMACH(4),DIVER(1))
+C      EQUIVALENCE (DMACH(5),LOG10(1))
 C
 C     MACHINE CONSTANTS FOR THE BURROUGHS 1700 SYSTEM.
 C
@@ -4200,14 +4220,38 @@ C     DATA LOG10(1), LOG10(2) / Z209A3F9A, ZCFF884FB /
 C
 C***FIRST EXECUTABLE STATEMENT  D1MACH
 C
-      IF (I .LT. 1  .OR.  I .GT. 5)
-     1   CALL XERROR(25HD1MACH -- I OUT OF BOUNDS,25,1,2)
-C
-      D1MACH = DMACH(I)
+      X = 1.0D0
+      B = RADIX(X)
+      SELECT CASE (I)
+         CASE (1)
+C           THE SMALLEST POSITIVE MAGNITUDE
+            D1MACH = B**(MINEXPONENT(X)-1)
+         CASE (2)
+C           THE LARGEST POSITIVE MAGNITUDE
+            D1MACH = HUGE(X)
+         CASE (3)
+C           THE SMALLEST RELATIVE SPACING
+            D1MACH = B**(-DIGITS(X))
+         CASE (4)
+c           THE LARGEST RELATIVE SPACING
+            D1MACH = B**(1-DIGITS(X))
+         CASE (5)
+            D1MACH = LOG10(B)
+         CASE DEFAULT
+            WRITE (*, FMT = 9000)
+ 9000       FORMAT ('1ERROR    1 IN D1MACH - I OUT OF BOUNDS')
+            STOP
+      END SELECT
       RETURN
-C
+C     D. TOMATIS: OLD CODE
+C      IF (I .LT. 1  .OR.  I .GT. 5)
+C     1   CALL XERROR(25HD1MACH -- I OUT OF BOUNDS,25,1,2)
+CC
+C      D1MACH = DMACH(I)
+C      RETURN
       END
       INTEGER FUNCTION I1MACH(I)
+      IMPLICIT NONE
 C***BEGIN PROLOGUE  I1MACH
 C***REVISION DATE  811015   (YYMMDD)
 C***CATEGORY NO.  Q
@@ -4272,6 +4316,7 @@ C    I1MACH(14) = T, THE NUMBER OF BASE-B DIGITS.
 C    I1MACH(15) = EMIN, THE SMALLEST EXPONENT E.
 C    I1MACH(16) = EMAX, THE LARGEST EXPONENT E.
 C
+C  D. TOMATIS: THE FOLLOWING IS NOT USED BECAUSE NOT STANDARD CONFORMING
 C  TO ALTER THIS FUNCTION FOR A PARTICULAR ENVIRONMENT,
 C  THE DESIRED SET OF DATA STATEMENTS SHOULD BE ACTIVATED BY
 C  REMOVING THE C FROM COLUMN 1.  ALSO, THE VALUES OF
@@ -4285,7 +4330,11 @@ C  JUNE 1978, PP. 177-188.
 C***ROUTINES CALLED  XERROR
 C***END PROLOGUE  I1MACH
 C
-      INTEGER IMACH(16),OUTPUT
+C     MODIFIED BY D. TOMATIS ON OCT 23rd 2020
+      INTEGER I
+      REAL X
+      DOUBLE PRECISION XX
+C      INTEGER IMACH(16),OUTPUT
 C
 C     EQUIVALENCE (IMACH(4),OUTPUT)
 C
@@ -4641,21 +4690,71 @@ C     DATA IMACH(16)/  127 /
 C
 C***FIRST EXECUTABLE STATEMENT  I1MACH
 C
-      IF (I .LT. 1  .OR.  I .GT. 16) GO TO 10
+C     D. TOMATIS: COMMENT OLD PART
+C      IF (I .LT. 1  .OR.  I .GT. 16) GO TO 10
 C
-      I1MACH=IMACH(I)
+C      I1MACH=IMACH(I)
+C      RETURN
+CC
+C   10 CONTINUE
+C      WRITE(OUTPUT,9000)
+C9000  FORMAT(39H1ERROR    1 IN I1MACH - I OUT OF BOUNDS )
+CC
+CC     CALL FDUMP
+CC
+C      STOP
+
+      X  = 1.0
+      XX = 1.0D0
+
+      SELECT CASE (I)
+         CASE (1)
+C           INPUT UNIT
+            I1MACH = 5
+         CASE (2)
+C           OUTPUT UNIT
+            I1MACH = 6
+         CASE (3)
+C           PUNCH UNIT IS NO LONGER USED
+            I1MACH = 0
+         CASE (4)
+C           ERROR MESSAGE UNIT
+            I1MACH = 0
+         CASE (5)
+            I1MACH = BIT_SIZE(I)
+         CASE (6)
+C           CHARACTERS PER INTEGER IS HOPEFULLY NO LONGER USED. IF IT IS USED
+C           IT HAS TO BE SET MANUALLY. THE VALUE 4 IS CORRECT ON IEEE-MACHINES.
+            I1MACH = 4
+         CASE (7)
+            I1MACH = RADIX(1)
+         CASE (8)
+            I1MACH = BIT_SIZE(I) - 1
+         CASE (9)
+            I1MACH = HUGE(1)
+         CASE (10)
+            I1MACH = RADIX(X)
+         CASE (11)
+            I1MACH = DIGITS(X)
+         CASE (12)
+            I1MACH = MINEXPONENT(X)
+         CASE (13)
+            I1MACH = MAXEXPONENT(X)
+         CASE (14)
+            I1MACH = DIGITS(XX)
+         CASE (15)
+            I1MACH = MINEXPONENT(XX)
+         CASE (16)
+            I1MACH = MAXEXPONENT(XX)
+         CASE DEFAULT
+            WRITE(*, FMT = 9000)
+ 9000       FORMAT('1ERROR    1 IN I1MACH - I OUT OF BOUNDS')
+            STOP
+      END SELECT
       RETURN
-C
-   10 CONTINUE
-      WRITE(OUTPUT,9000)
-9000  FORMAT(39H1ERROR    1 IN I1MACH - I OUT OF BOUNDS )
-C
-C     CALL FDUMP
-C
-C
-      STOP
       END
       REAL FUNCTION R1MACH(I)
+      IMPLICIT NONE
 C***BEGIN PROLOGUE  R1MACH
 C***REVISION DATE  820701   (YYMMDD)
 C***CATEGORY NO.  Q
@@ -4684,6 +4783,22 @@ C  R1MACH(3) = B**(-T), THE SMALLEST RELATIVE SPACING.
 C  R1MACH(4) = B**(1-T), THE LARGEST RELATIVE SPACING.
 C  R1MACH(5) = LOG10(B)
 C
+C   Assume single precision numbers are represented in the T-digit,
+C   base-B form
+C
+C              sign (B**E)*( (X(1)/B) + ... + (X(T)/B**T) )
+C
+C   where 0 .LE. X(I) .LT. B for I=1,...,T, 0 .LT. X(1), and
+C   EMIN .LE. E .LE. EMAX.
+C
+C   The values of B, T, EMIN and EMAX are provided in I1MACH as
+C   follows:
+C   I1MACH(10) = B, the base.
+C   I1MACH(11) = T, the number of base-B digits.
+C   I1MACH(12) = EMIN, the smallest exponent E.
+C   I1MACH(13) = EMAX, the largest exponent E.
+C
+C  D. TOMATIS: THE FOLLOWING IS NOT USED BECAUSE NOT STANDARD CONFORMING
 C  TO ALTER THIS FUNCTION FOR A PARTICULAR ENVIRONMENT,
 C  THE DESIRED SET OF DATA STATEMENTS SHOULD BE ACTIVATED BY
 C  REMOVING THE C FROM COLUMN 1.
@@ -4699,20 +4814,23 @@ C  JUNE 1978, PP. 177-188.
 C***ROUTINES CALLED  XERROR
 C***END PROLOGUE  R1MACH
 C
-      INTEGER SMALL(2)
-      INTEGER LARGE(2)
-      INTEGER RIGHT(2)
-      INTEGER DIVER(2)
-      INTEGER LOG10(2)
+C     MODIFIED BY D. TOMATIS ON OCT 23rd 2019
+C      INTEGER SMALL(2)
+C      INTEGER LARGE(2)
+C      INTEGER RIGHT(2)
+C      INTEGER DIVER(2)
+C      INTEGER LOG10(2)
 C
-      REAL RMACH(5)
+C      REAL RMACH(5)
+CC
+C      EQUIVALENCE (RMACH(1),SMALL(1))
+C      EQUIVALENCE (RMACH(2),LARGE(1))
+C      EQUIVALENCE (RMACH(3),RIGHT(1))
+C      EQUIVALENCE (RMACH(4),DIVER(1))
+C      EQUIVALENCE (RMACH(5),LOG10(1))
 C
-      EQUIVALENCE (RMACH(1),SMALL(1))
-      EQUIVALENCE (RMACH(2),LARGE(1))
-      EQUIVALENCE (RMACH(3),RIGHT(1))
-      EQUIVALENCE (RMACH(4),DIVER(1))
-      EQUIVALENCE (RMACH(5),LOG10(1))
-C
+      INTEGER I
+      REAL B, X
 C     MACHINE CONSTANTS FOR THE BURROUGHS 1700 SYSTEM.
 C
 C     DATA RMACH(1) / Z400800000 /
@@ -4864,10 +4982,34 @@ C     DATA LOG10(1) / Z209B3F9A /
 C
 C***FIRST EXECUTABLE STATEMENT  R1MACH
 C
-      IF (I .LT. 1  .OR.  I .GT. 5)
-     1   CALL XERROR (25HR1MACH -- I OUT OF BOUNDS,25,1,2)
+      X = 1.0
+      B = RADIX(X)
 C
-      R1MACH = RMACH(I)
+      SELECT CASE (I)
+         CASE (1)
+C           THE SMALLEST POSITIVE MAGNITUDE
+            R1MACH = B**(MINEXPONENT(X)-1)
+         CASE (2)
+C           THE LARGEST POSITIVE MAGNITUDE
+            R1MACH = HUGE(X)
+         CASE (3)
+C           THE SMALLEST RELATIVE SPACING
+            R1MACH = B**(-DIGITS(X))
+         CASE (4)
+c           THE LARGEST RELATIVE SPACING
+            R1MACH = B**(1-DIGITS(X))
+         CASE (5)
+            R1MACH = LOG10(B)
+         CASE DEFAULT
+C             CALL XERROR (25HR1MACH -- I OUT OF BOUNDS,25,1,2)
+            WRITE (*, FMT = 9000)
+ 9000       FORMAT ('1ERROR    1 IN R1MACH - I OUT OF BOUNDS')
+            STOP
+      END SELECT
+C     D. TOMATIS: OLD CODE
+C      IF (I .LT. 1  .OR.  I .GT. 5)
+C     1   CALL XERROR (25HR1MACH -- I OUT OF BOUNDS,25,1,2)
+CC
+C      R1MACH = RMACH(I)
       RETURN
-C
       END
