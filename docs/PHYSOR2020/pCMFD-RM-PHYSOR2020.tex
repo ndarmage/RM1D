@@ -1,25 +1,25 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-%  This is a sample LaTeX input file for your contribution to 
+%  This is a sample LaTeX input file for your contribution to
 %  the PHYSOR2020 topical meeting.
 %
-%  Please use it as a template for your full paper 
-%    Accompanying/related file(s) include: 
+%  Please use it as a template for your full paper
+%    Accompanying/related file(s) include:
 %       1. Document class/format file: physor2020.cls
 %       2. Sample Postscript Figure:   figure.pdf
 %       3. A PDF file showing the desired appearance: physor2020_template.pdf
-%       4. cites.sty and citesort.sty that might be needed by some users 
+%       4. cites.sty and citesort.sty that might be needed by some users
 %    Direct questions about these files to: rcarlos.lope@gmail.com
 %											armando.gomez@inin.gob.mx
 %
-%    Notes: 
-%      (1) You can use the "dvips" utility to convert .dvi 
-%          files to PostScript.  Then, use either Acrobat 
-%          Distiller or "ps2pdf" to convert to PDF format. 
-%      (2) Different versions of LaTeX have been observed to 
+%    Notes:
+%      (1) You can use the "dvips" utility to convert .dvi
+%          files to PostScript.  Then, use either Acrobat
+%          Distiller or "ps2pdf" to convert to PDF format.
+%      (2) Different versions of LaTeX have been observed to
 %          shift the page down, causing improper margins.
 %          If this occurs, adjust the "topmargin" value in the
-%          physor2020.cls file to achieve the proper margins. 
+%          physor2020.cls file to achieve the proper margins.
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -27,9 +27,9 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \documentclass[letterpaper]{physor2020}
 %
-%  various packages that you may wish to activate for usage 
+%  various packages that you may wish to activate for usage
 \usepackage{tabls}
-\usepackage{cite}
+\usepackage{cites}
 \usepackage{epsf}
 \usepackage{appendix}
 \usepackage{ragged2e}
@@ -37,17 +37,20 @@
 \usepackage{enumitem}
 \setlist[itemize]{leftmargin=*}
 \usepackage{caption}
-\captionsetup{width=1.0\textwidth,font={bf,normalsize},skip=0.3cm,within=none,justification=centering}
+\captionsetup{width=1.0\textwidth,font={bf,normalsize},%
+              skip=0.3cm,within=none,justification=centering}
 \usepackage{bm}
 \usepackage{tikz}
 \usepackage{xfrac}
 \usepackage{units}
 
-% for quotes
-\usepackage [english]{babel}
-\usepackage [autostyle, english = american]{csquotes}
-\MakeOuterQuote{"}
-
+% Daniele: I commented this part because it was not present in the original
+% conference template.
+% % for quotes
+% \usepackage[english]{babel}
+% \usepackage[autostyle, english = american]{csquotes}
+% \MakeOuterQuote{"}
+%
 \newcommand{\eq}[1]{Eq.~(\ref{#1})}
 \newcommand{\eqnolabel}[1]{(\ref{#1})}
 \newcommand{\eqs}[1]{Eqs.~(\ref{#1})}
@@ -64,13 +67,37 @@
 \newcommand{\figsthru}[2]{Figs.~\ref{#1}--\ref{#2}}
 \newcommand{\figsand}[2]{Figs.~\ref{#1} and \ref{#2}}
 \newcommand{\sxn}[1]{Section~\ref{#1}}
+%
+% \newcommand{\revised}[1]{{\color{red}{#1}}}
+% \newcommand{\tsup}[1]{\textsuperscript{#1}}
+% \newcommand{\tsub}[1]{\textsubscript{#1}}
+%
+\newcommand{\keff}{{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}}
+\newcommand{\beff}{\ensuremath{\beta_{\textrm{eff}}}}
+\newcommand{\rr}{\ensuremath{\bm{r}}}
+\newcommand{\OO}{\ensuremath{\hat{\bm{\Omega}}}}
+\newcommand{\bnabla}{\ensuremath{\bm{\nabla}}}
+\newcommand{\rE}{\ensuremath{(\rr,E)}}
 
-\newcommand{\revised}[1]{{\color{red}{#1}}}
-\newcommand{\tsup}[1]{\textsuperscript{#1}}
-\newcommand{\tsub}[1]{\textsubscript{#1}}
+\newcommand{\ftr}{\ensuremath{\phi_{\textrm{\scriptsize{tr}}}}}
+\newcommand{\jtr}{\ensuremath{\bm{J}_{\textrm{\scriptsize{tr}}}}}
+\newcommand{\jtrr}{\ensuremath{J_{\textrm{\scriptsize{tr}}}}}
+%\newcommand{\mcL}{\mathcal{L}}
+\newcommand{\mcL}{\tau}
+\newcommand{\pl}[1]{\ensuremath{P_l(#1)}}
+\newcommand{\dx}{\ensuremath{\Delta x}}
+%
+\newcommand{\jp}{\ensuremath{\bm{J}^+}}
+\newcommand{\jm}{\ensuremath{\bm{J}^-}}
+\newcommand{\jpm}{\ensuremath{\bm{J}^\pm}}
+\newcommand{\jD}{\ensuremath{\bm{J}^{\textrm{\scriptsize{D}}}}}
 
+\newcommand{\hzi}{\ensuremath{\sfrac{1}{2}}}
+
+% about notes and comments from each author
 \newcommand{\erez}[1]{{\color{blue}{\textsuperscript{EREZ:}#1}}}
 \newcommand{\roy}[1]{{\color{blue}{\textsuperscript{ROY:}#1}}}
+\newcommand{\daniele}[1]{{\color{blue}{\textsuperscript{DANIELE:}#1}}}
 
 \newcommand{\keff}{{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}}
 \newcommand{\beff}{\ensuremath{\beta_{\textrm{eff}}}}
@@ -100,30 +127,34 @@
 %
 % Define title...
 %
-\title{INTEGRAL TRANSPORT CORRECTION TO DIFFUSION CALCULATIONS\\USING pCMFD SCHEME}
+% \title{INTEGRAL TRANSPORT CORRECTION \\TO DIFFUSION CALCULATIONS BY pCMFD}
+\title{INTEGRAL TRANSPORT CORRECTION TO DIFFUSION CALCULATIONS\\USING THE pCMFD SCHEME}
 %
 % ...and authors
 %
 \author{%
-  % FIRST AUTHORS 
+  % FIRST AUTHORS
   %
   \textbf{Roy Gross$^1$, Daniele Tomatis$^2$, and Erez Gilad$^{1,}$}\footnote{Corresponding author} \\
   $^1$The Unit of Nuclear Engineering \\
-  Ben-Gurion University of the Negev, 8410501 Beer-Sheva, Israel\\ 
+  Ben-Gurion University of the Negev, 8410501 Beer-Sheva, Israel \\ 
 \\
   $^2$CEA, DEN, Service d’\'etudes des r\'eacteurs et
-  de math\'ematiques appliqu\'ees (SERMA) \\
-  Universit\'e Paris-Saclay, F-91191, Gif-sur-Yvette, France \\ 
-\\
-  \url{roygros@post.bgu.ac.il}, \url{daniele.tomatis@cea.fr}, \url{gilade@bgu.ac.il}
+      de math\'ematiques appliqu\'ees (SERMA), \\
+    Universit\'e Paris-Saclay, F-91191, Gif-sur-Yvette, France \\
+     \\
+  \url{roygros@post.bgu.ac.il},
+  \url{daniele.tomatis@cea.fr},
+  \url{gilade@bgu.ac.il}
 }
 %
 % Insert authors' names and short version of title in lines below
 %
 \newcommand{\authorHead}      % Author's names here use et al. if more than 3
-           {R. Gross, D. Tomatis, E. Gilad}  
+           {R. Gross, D. Tomatis, E. Gilad}
 \newcommand{\shortTitle}      % Short title here (Shorten to fit all into a single line)
-           {The Ronen Method by pCMFD}  
+           {INTEGRAL TRANSPORT CORRECTION TO 1-D DIFFUSION CALCULATIONS by pCMFD}
+%          {The Ronen Method by pCMFD}  % Daniele's suggestion (shorter)
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   BEGIN DOCUMENT
@@ -131,25 +162,26 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{document}
 \maketitle
-\justify 
+\justify
 
 % ------------------------------------------
 \begin{abstract}
   The Ronen method is implemented and studied numerically in two-group one-dimensional homogeneous slab configuration. Since slow convergence is observed for the scalar flux especially near the vacuum boundary, new methods for accelerating the convergence are reported. For example, the use of the integral flux intermediate values as new boundary conditions in each iteration and iterative updating of the extrapolated boundary using the corrected local diffusion coefficients. Moreover, the pCMFD scheme is implemented and its performances are compared with those of standard CMFD scheme.
 \end{abstract}
-\keywords{neutron diffusion ; integral transport ; non-linear transport correction ;
-CMFD ; pCMFD }
+\keywords{neutron diffusion, integral transport, non-linear transport correction, CMFD, pCMFD}
+% Daniele suggestion:
+% I would not include pCMFD since it belongs to the CMFD class of methods and shorten the list of keywords
 
 % ------------------------------------------
-\section{INTRODUCTION} 
+\section{INTRODUCTION}
 \label{sec:intro}
 
-The distribution of the neutron flux in the reactor core is described by the neutron transport equation. Transport calculations on a full core scale can be a highly intensive computational task. To overcome this difficulty, faster (but less accurate) multigroup neutron diffusion solvers are often used. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core and modern calculation schemes evolve towards best-estimate codes, aiming at high accuracy. Hence, the accuracy of diffusion calculations is investigated. A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient. The calculation of this parameter should be based on physical insights from the full transport equation such that the resulting (transport corrected) diffusion approximation can capture the transport phenomena of interest. 
+The distribution of the neutron flux in the reactor core is described by the neutron transport equation. Transport calculations on a full core scale can be a highly intensive computational task. To overcome this difficulty, faster (but less accurate) multigroup neutron diffusion solvers are often used. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core and modern calculation schemes evolve towards best-estimate codes, aiming at high accuracy. Hence, the accuracy of diffusion calculations is investigated. A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient. The calculation of this parameter should be based on physical insights from the full transport equation such that the resulting (transport corrected) diffusion approximation can capture the transport phenomena of interest.
 
-%The main hypothesis of this research, called the Ronen Method (RM)~\cite{Ronen-2004,Tomatis-2011}, is based on iterative calculations of the multigroup diffusion coefficients, driven by the accurate relations between the neutron current density and the neutron flux as derived from the integral transport equation. The iterative scheme calculates new flux distribution using a diffusion solver but with a (spatially) modified diffusion coefficient according to the current calculated using the integral transport equation. However, the direct resolution of the integral relation between the diffusion coefficient and the transport current would imply the inversion of large matrices, with poor control of their conditioning. Nonetheless, the integral current can be enforced in the Coarse Mesh Finite Difference (CMFD) discretized form of the diffusion equation, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study. 
+%The main hypothesis of this research, called the Ronen Method (RM)~\cite{Ronen-2004,Tomatis-2011}, is based on iterative calculations of the multigroup diffusion coefficients, driven by the accurate relations between the neutron current density and the neutron flux as derived from the integral transport equation. The iterative scheme calculates new flux distribution using a diffusion solver but with a (spatially) modified diffusion coefficient according to the current calculated using the integral transport equation. However, the direct resolution of the integral relation between the diffusion coefficient and the transport current would imply the inversion of large matrices, with poor control of their conditioning. Nonetheless, the integral current can be enforced in the Coarse Mesh Finite Difference (CMFD) discretized form of the diffusion equation, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.
 
 % ------------------------------------------
-%\subsection{Coarse Mesh Finite Difference (CMFD)} 
+%\subsection{Coarse Mesh Finite Difference (CMFD)}
 %\label{sec:CMFD-intro}
 
 The CMFD has been largely used in nodal diffusion codes as a technique for storage reduction, allowing the separate resolution of many two nodes problems in an iterative scheme~\cite{Smith-1983,Lawrence-1986}. Recently, multi-dimensional transport codes have used it as acceleration technique and the convergence of different implementations was studied in simple homogeneous slab problems~\cite{Jarrett-2016,Shen-2019}.
@@ -164,29 +196,29 @@ The CMFD (and its variants) was also chosen for the implementation of the RM, wh
 
 
 % ------------------------------------------
-\section{THE RONEN METHOD} 
+\section{THE RONEN METHOD}
 \label{sec:RM}
 
 In 2004, Ronen~\cite{Ronen-2004} suggested to derive corrected diffusion coefficients using Fick's law and more accurate estimations of the neutron currents by means of integral transport operators, whereas the neutron flux is resolved by diffusion theory. Denoting the integral transport and diffusion currents by $\bm{J}\rE$ and $\bm{J}^D\rE$, respectively, the Ronen idea is based on adapting the diffusion coefficient such that
 \begin{equation}\label{eq:Fick}
-\bm{J}^D\rE = -D\rE\bnabla\phi\rE = \bm{J}\rE \,\, . 
+\bm{J}^D\rE = -D\rE\bnabla\phi\rE = \bm{J}\rE. 
 \end{equation}
 
-Since these accurate estimates of the currents are based on a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficients in the global calculation according to 
+Since these accurate estimates of the currents are based on a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficients in the global calculation according to
 \begin{equation}\label{eq:RM-it}
-D^{(k+1)}\rE = - \frac{\lvert \bm{J}^{(k)}\rE\rvert}{\lvert\bnabla\phi^{(k)}\rE\rvert} \,\, ,
+D^{(k+1)}\rE = - \frac{\lvert \bm{J}^{(k)}\rE\rvert}{\lvert\bnabla\phi^{(k)}\rE\rvert},
 \end{equation}
 where $k$ is the iteration index. %The use of a tensor notation is needed for the diffusion coefficient in general multidimensional problems.
 
-The motivation for this method was to overcome the inherent limitation of Fick's law requiring smooth flux gradients and thus weakly absorbing medium. Nevertheless, isotropic scattering remained as a basic postulate. For example, in a one-dimensional homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004} 
+The motivation for this method was to overcome the inherent limitation of Fick's law requiring smooth flux gradients and thus weakly absorbing medium. Nevertheless, isotropic scattering remained as a basic postulate. For example, in a one-dimensional homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004}
 \begin{equation}\label{eq:RM-it-1D-slab}
 D^{(k+1)}(x,E) = -\frac{\frac{1}{2}\int_0^a dx' E_2[\sigma(E)\lvert
 	x-x'\rvert]\text{sign}(x-x')q^{(k)}(x',E)}
-{\partial \phi^{(k)}(x,E)/\partial x} \,\, ,
+{\partial \phi^{(k)}(x,E)/\partial x},
 \end{equation}
 where the source term $q^{(k)}(x',E)$ is calculated using the multigroup diffusion model with available diffusion coefficients, and the updated diffusion coefficients $D^{(k+1)}(x,E)$ are evaluated using the integral expression for the transport current. 
 
-In 2011, Tomatis and Dall'Osso~\cite{Tomatis-2011} provided a numerical demonstration in a simple slab problem. They adopted the Coarse Mesh Finite Differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver. 
+In 2011, Tomatis and Dall'Osso~\cite{Tomatis-2011} provided a numerical demonstration in a simple slab problem. They adopted the Coarse Mesh Finite Differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver.
 %
 %They proposed to update non-linearly the diffusion coefficients at the cell interfaces of the spatial mesh by the coarse mesh finite differences method (CMFD).
 %
@@ -194,17 +226,17 @@ This technique can avoid indeterminate divisions in case of vanishing flux gradi
 
 
 % ------------------------------------------
-\section{NUMERICAL IMPLEMENTATION} 
+\section{NUMERICAL IMPLEMENTATION}
 \label{sec:RM-num}
 
 The CMFD neutron balance equation for a $\keff$-eigenvalue problem on a one-dimensional mesh, shown in Fig.~\ref{fig:mesh1D}, is
 \begin{equation}\label{eq:balance}
-J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g} \,\, , 
+J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g}, 
 \end{equation}	
 where $J$ denotes the accurate net current at the cell surface, $\sigma$ denotes the total cross section, the subscript $g$ denotes the energy group, and $q$ is the isotropic neutron source defined as
 \begin{equation}\label{eq:qsrc}
 q_{i,g} = \sum\limits_{g'=1}^G\sigma_{s,0,i,g\leftarrow g'}\phi_{i,g'} +
-\frac{\chi_g}{2\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'} \,\, ,
+\frac{\chi_g}{2\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'},
 \end{equation}	
 where $\sigma_0$ is the isotropic scattering cross section, $\chi$ is the fission spectrum, $\keff$ is the eigenvalue, $\nu$ is the average number of neutrons emitted per thermal fission, and $\sigma_f$ is the fission cross section.   
 
@@ -265,19 +297,19 @@ E_3\left[
 where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length and the net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$.
 
 % ------------------------------------------
-\subsection{CMFD IMPLEMENTATION} 
+\subsection{CMFD IMPLEMENTATION}
 \label{sec:RM-CMFD}
 
 In standard CMFD implementation, correction terms, e.g., $\delta J_{i+\hzi,g}$, are added to the diffusion current $\jD_{i+\hzi,g}$, such that it is driven towards the accurate net current $J_{i+\hzi,g}$. The accurate net current is calculated by the integral expression given in~Eq.~\ref{eq:par-curr-calc} and using the scalar flux for evaluating the emission source $q_{i,g}$. The diffusion current is evaluated according to 
 \begin{equation}\label{eq:JD}
 \jD_{i+\hzi,g} \cong -D_{i+\hzi,g} 
 \frac{\phi_{i+1,g} - \phi_{i,g}}
-{(\Delta_{i+1} + \Delta_i)/2} \,\, ,
+{(\Delta_{i+1} + \Delta_i)/2},
 \end{equation}
 where integer and rational subscripts indicate node-averaged and interface quantities, respectively, and 
 \begin{equation}\label{eq:Ds}
 D_{i+\hzi,g} = \frac{\Delta_i D_{i,g} + \Delta_{i+1} D_{i+1,g}}
-{\Delta_i + \Delta_{i+1}} \, \, .
+{\Delta_i + \Delta_{i+1}}.
 \end{equation}
 %
 Once the accurate net current and the diffusion current are calculated using the most recent flux values, the correction terms on cell interfaces can be calculated. The discretized form of the current $\delta J_{i+\hzi,g}$ must involve the neighboring flux as well, but its representation is changed into a drift-advection term to avoid of possible undefined division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}
@@ -285,43 +317,42 @@ Once the accurate net current and the diffusion current are calculated using the
 \delta J_{i+\hzi,g} = -\delta D_{i+\hzi,g} 
 \frac{\phi_{i+1,g} + \phi_{i,g}}
 {(\Delta_{i+1} + \Delta_i)/2} 
-= J_{i+\hzi,g} - \jD_{i+\hzi,g}
-\,\, .
+= J_{i+\hzi,g} - \jD_{i+\hzi,g}.
 \end{equation}
 
 
 % ------------------------------------------
-\subsection{pCMFD IMPLEMENTATION} 
+\subsection{pCMFD IMPLEMENTATION}
 \label{sec:RM-pCMFD}
 
 The partial currents in any point $x$ in a slab are defined according to
 \begin{equation}
 \label{eq:partial-current}
-\jpm (x) \cong \frac{\phi(x)}{4} \pm \frac{\jD (x)}{2} \,\, ,
+\jpm(x) \cong \frac{\phi(x)}{4} \pm \frac{\jD (x)}{2},
 \end{equation}
 where $\jD$ denotes the diffusion current.
 %where
 %\begin{equation}
 %\label{eq:diff-current}
-%\bm{J} (x) = \jp(x) - \jm(x) \,\, .
+%\bm{J} (x) = \jp(x) - \jm(x).
 %\end{equation}
 The partial currents correction factors are defined on cell surface according to
 \begin{equation}
 \label{eq:PCCF}
 \jpm _{i+\hzi} = \frac{1}{4}\phi_{i+\hzi}
-\pm \frac{1}{2} \jD _{i+\hzi} \pm \frac{1}{2} \delta \jpm _{i+\hzi} \,\, ,
+\pm \frac{1}{2} \jD _{i+\hzi} \pm \frac{1}{2} \delta \jpm _{i+\hzi},
 \end{equation}
 where
 \begin{equation}
 \label{eq:jdiff}
-\phi_{i+\hzi} = \frac{\Delta_i \phi_i + \Delta_{i+1} \phi_{i+1}}{\Delta_i + \Delta_{i+1}} \, .
+\phi_{i+\hzi} = \frac{\Delta_i \phi_i + \Delta_{i+1} \phi_{i+1}}{\Delta_i + \Delta_{i+1}}.
 \end{equation}
 Substituting~\cite{Jarrett-2016,Zhu-2016}
 \begin{equation}
 \label{eq:CCF-sub}
-\frac{1}{2} \delta \jp _{i+\hzi} \equiv -\delta D^+ _{i+\hzi} \phi_i \,, 
+\frac{1}{2} \delta \jp _{i+\hzi} \equiv -\delta D^+ _{i+\hzi} \phi_i
 \quad
-\frac{1}{2} \delta \jm _{i+\hzi} \equiv -\delta D^- _{i+\hzi} \phi_{i+1}\,\, ,
+\frac{1}{2} \delta \jm _{i+\hzi} \equiv -\delta D^- _{i+\hzi} \phi_{i+1},
 \end{equation}
 yields
 \begin{align}
@@ -329,27 +360,27 @@ yields
 \jp _{i+\hzi} &= \frac{1}{4}\phi_{i+\hzi}
 + \frac{1}{2}\jD _{i+\hzi} - \delta D^+ _{i+\hzi} \phi_i \\
 \jm _{i+\hzi} &= \frac{1}{4}\phi_{i+\hzi}
-- \frac{1}{2}\jD _{i+\hzi} + \delta D^- _{i+\hzi} \phi_{i+1} \,\, .
+- \frac{1}{2}\jD _{i+\hzi} + \delta D^- _{i+\hzi} \phi_{i+1}.
 \end{align}
-%Recall that $\jpm$ are calculated using the integral expression. 
+%Recall that $\jpm$ are calculated using the integral expression.
 %
 Solving for the partial current correction factors gives
 \begin{equation}
 \label{eq:ccfsss1}
 \delta D^+ _{i+\hzi} = \frac{\frac{1}{4}\phi_{i+\hzi}
-	+ \frac{1}{2}\jD _{i+\hzi} - \jp _{i+\hzi}}{\phi_i} \,, \quad
+	+ \frac{1}{2}\jD _{i+\hzi} - \jp _{i+\hzi}}{\phi_i}, \quad
 \delta D^- _{i+\hzi} = \frac{-\frac{1}{4}\phi_{i+\hzi}
-	+ \frac{1}{2}\jD _{i+\hzi} + \jm _{i+\hzi}}{\phi_{i+1}} \,\, .
+	+ \frac{1}{2}\jD _{i+\hzi} + \jm _{i+\hzi}}{\phi_{i+1}}.
 \end{equation}
 
-In case the diffusion current is accurate, e.g., in a weak absorbing medium and several mfp's from the boundary or a strong absorber, the correction factors $\delta D^\pm$ vanish and~\eq{eq:ccfsss1} reduces to~\eq{eq:partial-current}, as expected, which implies for the net (accurate) current 
+In case the diffusion current is accurate, e.g., in a weak absorbing medium and several mfp's from the boundary or a strong absorber, the correction factors $\delta D^\pm$ vanish and~\eq{eq:ccfsss1} reduces to~\eq{eq:partial-current}, as expected, which implies for the net (accurate) current
 \begin{equation}
-J _{i+\hzi} = \jp _{i+\hzi} - \jm _{i+\hzi} = \jD _{i+\hzi} \,\, .
-\end{equation} 
+J _{i+\hzi} = \jp _{i+\hzi} - \jm _{i+\hzi} = \jD _{i+\hzi}.
+\end{equation}
 
 
 % ------------------------------------------
-\section{RESULTS} 
+\section{RESULTS}
 \label{sec:res}
 
 
@@ -362,12 +393,12 @@ Present your summary and conclusions here.
 %\begin{figure}[!htb]
 %  \centering
 %  \includegraphics[scale=0.60]{./Figures/figure.pdf}
-%  \caption{SCALE/TRITON-NEWT Model of BWR Assembly in Order to Show and Example of a Figure and a Multi-line Caption}   
+%  \caption{SCALE/TRITON-NEWT Model of BWR Assembly in Order to Show and Example of a Figure and a Multi-line Caption}
 %  \label{fig:amdahl}
 %\end{figure}
 
 %\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
-%\item Any number, text or symbol is in Times font and is not smaller than 
+%\item Any number, text or symbol is in Times font and is not smaller than
 %  10-point after reduction to the actual window in your paper
 %\item That it can be translated into PDF
 %\end{itemize}
@@ -376,32 +407,32 @@ Present your summary and conclusions here.
 %\begin{table}[!htb]
 %  \centering
 %  \caption{\bf Parallel Performance for the Sample Problem}
-%  \label{table:example} 
-%  \begin{tabular}{|c|c|c|c|} \hline 
+%  \label{table:example}
+%  \begin{tabular}{|c|c|c|c|} \hline
 %   Number of & Wall-Clock & Speedup & Efficiency \\
 %   Processors & Time$^{a}$ (min) & (T$_{s}$/T$_{p}$) & (\%) \\ \hline
 %    \ 1 &  100.0 & \ ---    & ---  \\ \hline
-%    \ 2 &   52.6 & \ 1.9    & 95.0 \\ \hline 
+%    \ 2 &   52.6 & \ 1.9    & 95.0 \\ \hline
 %  \end{tabular}
 %\end{table}
 
 % ------------------------------------------
-\section*{NOMENCLATURE}
-
-\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
-\item RM - Ronen Method
-\item CMFD - Coarse Mesh Finite Difference
-\item pCMFD - partial current CMFD
-\end{itemize}
-
-
+% Daniele: I would avoid the following section about the nomenclature because of the 8 pages limit. The acronyms are already explained in the text.
+%\section*{NOMENCLATURE}
+%
+%\begin{itemize} \itemsep1pt \parskip0pt \parsep0pt
+%\item RM - Ronen Method
+%\item CMFD - Coarse Mesh Finite Difference
+%\item pCMFD - partial current CMFD
+%\end{itemize}
+%
 % ------------------------------------------
-\section*{ACKNOWLEDGEMENTS}
-
-Acknowledge the help of colleagues and sources of funding, as appropriate.
-
+%\section*{ACKNOWLEDGEMENTS}
+%
+%Acknowledge the help of colleagues and sources of funding, as appropriate.
+%
 % ------------------------------------------
-% You can enter a bibliography into the document using the following format, or use the 
+% You can enter a bibliography into the document using the following format, or use the
 % bibliography style file "physor.bst" found in the template directory.  You can use the bibliography style file
 % by replacing the current bibliography block with:
 \setlength{\baselineskip}{12pt}
@@ -413,8 +444,6 @@ Acknowledge the help of colleagues and sources of funding, as appropriate.
 %\gdef\thesection{APPENDIX \Alph{section}}
 %\section{Sample Appendix 1}
 %\label{app:a}
-%If necessary, include Appendices numbered in upper case alphabetical order. This is \ref{app:a}. 
-
-
-
+%If necessary, include Appendices numbered in upper case alphabetical order. This is \ref{app:a}.
+%
 \end{document}
