@@ -12,6 +12,9 @@ If it is zero, we have the zero flux b.c., while reflection is reproduced
 by $\zeta \rightarrow \infty$. The b.c. code is in order 0, 1 and 2,
 respectively.
 
+The Ronen Method is implemented on top of the diffusion solver through
+the standard CMFD or the pCMFD version.
+
 The Cartesian (slab) is the default geometry option. Curvilinears can be
 chosen by selecting 'cylindrical' or 'spherical' for the global variable
 geometry_type.
@@ -28,7 +31,7 @@ from scipy.special import expn as En
 __title__ = "Multigroup diffusion in 1D slab by finite differences"
 __author__ = "D. Tomatis"
 __date__ = "02/04/2019"
-__version__ = "1.1.0"
+__version__ = "1.2.0"
 
 max_float = np.finfo(float).max  # float is float64!
 min_float = np.finfo(float).min
@@ -37,6 +40,7 @@ np.set_printoptions(precision=5)
 # possible options of geometry_type are slab, cylindrical, spherical
 geometry_type = "slab"
 fix_reflection_by_flx2 = True
+pCMFD = False  # disabled as default option
 
 
 def get_zeta(bc=0, D=None):
@@ -133,7 +137,13 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
     # take into account the delta-diffusion-coefficients
     if dD is None:
         dD = np.zeros((G, I+1),)
-    elif dD.shape != (G, I+1):
+    elif dD.shape == (G, I+1):
+        lg.debug('Apply corrections according to classic CMFD.')
+        # copy values to \pm terms in order to use the same implemntation
+        dD = np.concatenate((dD[:, np.newaxis], dD[:, np.newaxis]), axis=2)
+    elif dD.shape == (G, I+1, 2):
+        lg.debug('Apply corrections according to pCMFD.')
+    else:
         raise ValueError('Unexpected shape for the delta D coefficients.')
 
     # determine the diffusion coefficient on the cell borders
@@ -156,6 +166,7 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
     # print('coeffs from diffusion')
     # print (d.reshape(G,I-1))
     # print(dD)
+    # Daniele: change dD hereafter by adding the correct value of the third index 
     for g in range(G):
         idx = np.arange(g*I, (g+1)*I-1)
         coefp = d[idx-g] + dD[g,1:-1]
@@ -385,18 +396,25 @@ def solve_inners(flx, ss0, diags, sok, toll=1.e-5, iitmax=10):
     return flx
 
 
-def compute_delta_D(flx, dJ, vrbs=False):
+def compute_delta_D(flx, dJ, flxb=None, vrbs=False):
     """Compute the delta diffusion coefficients (already divided by the cell
     width, plus the possible extrapolated length); the input dJ is - (J_tran
-    - J_diff)."""
-    dD = dJ
+    - J_diff). If the interface flux flxb is not None, the pCMFD delta D are
+    computed."""
     if vrbs:
         lg.debug('currents...')
         lg.debug('diff: ', J_diff)
         lg.debug('tran: ', J_tran)
-    dD[:, 1:-1] /= (flx[:,1:] + flx[:,:-1])
-    if np.all(flx[:, 0] > 0.): dD[:, 0] /= flx[:, 0]
-    if np.all(flx[:,-1] > 0.): dD[:,-1] /= flx[:,-1]
+    dD = dJ
+    if flxb is None:
+        # use the classic CMFD scheme
+        dD[:, 1:-1] /= (flx[:,1:] + flx[:,:-1])
+        if np.all(flx[:, 0] > 0.): dD[:, 0] /= flx[:, 0]
+        if np.all(flx[:,-1] > 0.): dD[:,-1] /= flx[:,-1]
+    else:
+        # use the pCMFD scheme
+        # remind that flxb does not have the values at the bnd., like Db.
+        pass
     return dD
 
 
@@ -490,7 +508,9 @@ if __name__ == "__main__":
     itsmax = oitmax, iitmax
     # pack the b.c. identifiers
     BC = LBC, RBC
-
+    # choose the type of CMFD scheme
+    pCMFD = True  # classic CMFD scheme is False
+    
     # the diffusion coefficient is here request as space-dependent even when
     # the problem is homogeneus
     D = np.tile(D, (I, 1)).T  # cell-averaged diff. coef.
@@ -513,6 +533,7 @@ if __name__ == "__main__":
     Dflxm1 = np.zeros_like(flx)
 
     # load reference currents
+    # Daniele: move this block to a separate function in the module
     ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
     if os.path.isfile(ref_flx_file):
         ref_data = np.load(ref_flx_file)
@@ -539,10 +560,11 @@ if __name__ == "__main__":
         J_diff = compute_diff_currents(flxd, D, xv, BC)
         # compute the currents by integral transport (Ronen Method)
         # #lg.warning("CALCULATE THE TR CURRENT WITH THE REFERENCE S16 SOLUTION!")
-        ## J_tran = compute_tran_currents(flxm_SN[:,0,:] / Vi, k_SN, Di, xs, BC)
+        # J_tran = compute_tran_currents(flxm_SN[:,0,:] / Vi, k_SN, Di, xs, BC)
         J_tran = compute_tran_currents(flxd, k, Di, xs, BC)
         # compute the corrective delta-diffusion-coefficients
-        dD = compute_delta_D(flxd, J_diff - J_tran)
+        dD = compute_delta_D(flxd, J_diff - J_tran,
+                             vol_averaged_at_interface(flx, Vi) if pCMFD else None)
 
         # compute the corrective currents (determined only for debug)
         J_corr = compute_delta_diff_currents(flxd, dD, Di, BC)
