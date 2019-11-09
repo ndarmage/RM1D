@@ -37,11 +37,6 @@ max_float = np.finfo(float).max  # float is float64!
 min_float = np.finfo(float).min
 np.set_printoptions(precision=5)
 
-# possible options of geometry_type are slab, cylindrical, spherical
-geometry_type = "slab"
-fix_reflection_by_flx2 = True
-pCMFD = False  # disabled as default option
-
 
 def get_zeta(bc=0, D=None):
     "Yield the zeta boundary condition according to the input bc code"
@@ -111,19 +106,19 @@ def compute_cell_volumes(xi, geo=geometry_type):
     return Di
 
 
-def vol_averaged_at_interface(D, Vi):
+def vol_averaged_at_interface(f, Vi):
     "Compute surface quantities by volume averaging (slab geometry)."
-    G, I = D.shape
+    G, I = f.shape
     Im1 = I - 1
 
-    # Db, diff. coeff. on cell borders
-    Db = (D[:,1: ] * np.tile(Vi[1: ], G).reshape(G, Im1) +
-          D[:,:-1] * np.tile(Vi[:-1], G).reshape(G, Im1))
-    Db /= np.tile(Vi[1:] + Vi[:-1], G).reshape(G, Im1)
+    # fb, volume-average quantity on cell borders
+    fb = (f[:,1: ] * np.tile(Vi[1: ], G).reshape(G, Im1) +
+          f[:,:-1] * np.tile(Vi[:-1], G).reshape(G, Im1))
+    fb /= np.tile(Vi[1:] + Vi[:-1], G).reshape(G, Im1)
     # Db = np.zeros((G, I-1),)
     # for g in range(G):
     #     Db[g,:] = (D[g,1:] * Vi[1:] + D[g,:-1] * Vi[:-1]) / Dm
-    return Db
+    return fb
 
 
 def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
@@ -140,7 +135,7 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
     elif dD.shape == (G, I+1):
         lg.debug('Apply corrections according to classic CMFD.')
         # copy values to \pm terms in order to use the same implemntation
-        dD = np.concatenate((dD[:, np.newaxis], dD[:, np.newaxis]), axis=2)
+        #dD = np.concatenate((dD[:, np.newaxis], dD[:, np.newaxis]), axis=2)
     elif dD.shape == (G, I+1, 2):
         lg.debug('Apply corrections according to pCMFD.')
     else:
@@ -257,7 +252,10 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
     LBC, RBC = BC
     st, ss0, chi, nsf, D = xs
     G, I = st.size, Di.size
-    J = np.zeros((G,I+1),)  # currents at the cell bounds
+    J = np.zeros((G,I+1))  # currents at the cell bounds
+    Jp = np.zeros_like(J)  # plus currents at the cell bounds
+    Jm = np.zeros_like(J)  # minus currents at the cell bounds
+    
     q = compute_source(ss0, chi, nsf, flx, k).reshape(G, I)
     # divide the volume-integrated source by the cell volumes if the input
     # flux is volume-integrated
@@ -270,22 +268,45 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
     stx = np.tile(st, (I, 1)).T
     Pt = np.tile(Di, G).reshape(G, I) * stx
 
+    # Net current
+#    for g in range(G):
+#        for l in range(L):
+#            # We use here a matrix to store the transfer probabiities, although
+#            # only the elements on one colums should be stored by the recipro-
+#            # city theorem.
+#            Ajig = np.zeros((I,I+1),)
+#            # (2 * l + 1.) / 2. = l + 0.5
+#            qgoStg = (l + 0.5) * q[l,g,:] / stx[g,:]
+#            for i in range(I+1):
+#                for j in range(I):
+#                    Ajig[j,i] = (En(l+3, opl(j+1, i-1, Pt[g,:])) \
+#                               - En(l+3, opl( j , i-1, Pt[g,:]))) \
+#                                if j < i else \
+#                                (En(l+3, opl(i,  j , Pt[g,:])) \
+#                               - En(l+3, opl(i, j-1, Pt[g,:]))) * (-1)**l
+#            J[g,:] += np.dot(qgoStg, Ajig)
+
+    # partial current
     for g in range(G):
         for l in range(L):
             # We use here a matrix to store the transfer probabiities, although
             # only the elements on one colums should be stored by the recipro-
             # city theorem.
-            Ajig = np.zeros((I,I+1),)
+            Ajigp = np.zeros((I,I+1))
+            Ajigm = np.zeros((I,I+1))
             # (2 * l + 1.) / 2. = l + 0.5
             qgoStg = (l + 0.5) * q[l,g,:] / stx[g,:]
             for i in range(I+1):
                 for j in range(I):
-                    Ajig[j,i] = (En(l+3, opl(j+1, i-1, Pt[g,:])) \
-                               - En(l+3, opl( j , i-1, Pt[g,:]))) \
-                                if j < i else \
-                                (En(l+3, opl(i,  j , Pt[g,:])) \
-                               - En(l+3, opl(i, j-1, Pt[g,:]))) * (-1)**l
-            J[g,:] += np.dot(qgoStg, Ajig)
+                    if j < i: 
+                        Ajigp[j,i] = (En(l+3, opl(j+1, i-1, Pt[g,:])) \
+                                    - En(l+3, opl( j , i-1, Pt[g,:])))
+                    else:            
+                        Ajigm[j,i] = (En(l+3, opl(i,  j , Pt[g,:])) \
+                                    - En(l+3, opl(i, j-1, Pt[g,:]))) * (-1)**l
+            Jp[g,:] += np.dot(qgoStg, Ajigp)
+            Jm[g,:] -= np.dot(qgoStg, Ajigm)
+
 
         # add bnd. cnds.
         # Zero flux and vacuum have zero incoming current; a boundary term is
@@ -338,7 +359,7 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
             trR -= np.array([En(3, opl(i, I-1, Pt[g,:])) for i in range(I+1)])
             J[g,:] -= 4. * bflx2_5o16 * trR
 
-    return J
+    return Jp-Jm, Jp, Jm, np.stack((Jp,Jm),axis=Jp.ndim)
 
 
 def compute_diff_currents(flx, D, xv, BC=(0, 0)):
@@ -363,18 +384,34 @@ def compute_diff_currents(flx, D, xv, BC=(0, 0)):
     return J
 
 
-def compute_delta_diff_currents(flx, dD, Di, BC=(0, 0)):
+def compute_delta_diff_currents_CMFD(flx, dD, Di, BC=(0, 0)):
     """Compute the correction currents by delta diffusion coefficients dD."""
     LBC, RBC = BC
     G, I = dD.shape
     I -= 1
-    J = -2. * dD[:, 1:-1] * (flx[:,1:] + flx[:,:-1])
-    J /= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1)
+    dJ = -2. * dD[:, 1:-1] * (flx[:,1:] + flx[:,:-1])
+    dJ /= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1)
     # add b.c.
     zetal, zetar = get_zeta(LBC, D[:, 0]), get_zeta(RBC, D[:, -1])
-    J = np.insert(J, 0, -dD[:, 0] * flx[:, 0], axis=1)
-    J = np.insert(J, I, +dD[:,-1] * flx[:,-1], axis=1)
-    return J
+    dJ = np.insert(J, 0, -dD[:, 0] * flx[:, 0], axis=1)
+    dJ = np.insert(J, I, +dD[:,-1] * flx[:,-1], axis=1)
+    return dJ
+
+
+def compute_delta_diff_currents_pCMFD(flx, dD, BC=(0, 0)):
+    """Compute the correction currents by delta diffusion coefficients dD."""
+    LBC, RBC = BC
+    G, I, tmp = dD.shape
+    I -= 1
+    dJ = np.zeros_like(dD)
+    # J+
+    dJ[:,1:,0] = -2. * dD[:,1:,0] * flx
+    # J-
+    dJ[:,:-1,1] = -2. * dD[:,:-1,1] * flx
+        
+    # add b.c. - J+ on the left and J- on the right are zeros
+        
+    return dJ
 
 
 def solve_inners(flx, ss0, diags, sok, toll=1.e-5, iitmax=10):
@@ -396,7 +433,7 @@ def solve_inners(flx, ss0, diags, sok, toll=1.e-5, iitmax=10):
     return flx
 
 
-def compute_delta_D(flx, dJ, flxb=None, vrbs=False):
+def compute_delta_D_CMFD(flx, dJ, flxb=None, vrbs=False):
     """Compute the delta diffusion coefficients (already divided by the cell
     width, plus the possible extrapolated length); the input dJ is - (J_tran
     - J_diff). If the interface flux flxb is not None, the pCMFD delta D are
@@ -405,17 +442,42 @@ def compute_delta_D(flx, dJ, flxb=None, vrbs=False):
         lg.debug('currents...')
         lg.debug('diff: ', J_diff)
         lg.debug('tran: ', J_tran)
+        
+    # use the classic CMFD scheme
     dD = dJ
-    if flxb is None:
-        # use the classic CMFD scheme
-        dD[:, 1:-1] /= (flx[:,1:] + flx[:,:-1])
-        if np.all(flx[:, 0] > 0.): dD[:, 0] /= flx[:, 0]
-        if np.all(flx[:,-1] > 0.): dD[:,-1] /= flx[:,-1]
-    else:
-        # use the pCMFD scheme
-        # remind that flxb does not have the values at the bnd., like Db.
-        pass
+    dD[:, 1:-1] /= (flx[:,1:] + flx[:,:-1])
+    if np.all(flx[:, 0] > 0.): dD[:, 0] /= flx[:, 0]
+    if np.all(flx[:,-1] > 0.): dD[:,-1] /= flx[:,-1]
+        
     return dD
+
+
+def compute_delta_D_pCMFD(flx, flxb, Jd, Jpm):
+    """Compute the delta diffusion coefficients (already divided by the cell
+    width, plus the possible extrapolated length); """
+        
+    # use the pCMFD scheme
+    # remind that flxb does not have the values at the bnd., like Db.
+    # Jpm.shape = G, I, 2, Jpm[:,:,0/1] = Jp/Jm
+    dD = np.zeros_like(Jpm)
+    if np.all(flx > 0.):
+        # dD+
+        dD[:,1:-1,0] = (0.25*flxb[:,:] + 0.5*Jd[:,1:-1] - Jpm[:,1:-1:,0]) \
+                        / flx[:,:-1]    
+        # dD+ left BC
+        dD[:,0,0]  = .25 + .5*Jd[:,0]/flx[:,0] 
+        # dD+ right BC
+        dD[:,-1,0] = .25 + (.5*Jd[:,-1] - Jpm[:,-1,0])/flx[:,-1] 
+        
+        # dD-
+        dD[:,1:-1,1] = (-0.25*flxb[:,:] + 0.5*Jd[:,1:-1] + Jpm[:,1:-1:,1]) \
+                        / flx[:,1:]    
+        # dD- left BC
+        dD[:,0,1]  = -.25 + (.5*Jd[:,0] + Jpm[:,0,1])/flx[:,0] 
+        # dD- right BC
+        dD[:,-1,1] = -.25 + .5*Jd[:,-1]/flx[:,-1] 
+                        
+    return dD                       
 
 
 def solve_outers(flx, k, xv, xs, BC=(0, 0), itsmax=(50, 50),
@@ -465,6 +527,25 @@ def solve_outers(flx, k, xv, xs, BC=(0, 0), itsmax=(50, 50),
     return flx / np.sum(flx) * I * G, k
 
 
+def load_refSN_solutions(ref_flx_file,I,G,Di):
+    "load reference SN flux and calculate reference currents."
+    k_SN, flxm_SN = 0, 0
+    if os.path.isfile(ref_flx_file):
+        ref_data = np.load(ref_flx_file)
+        k_SN, flxm_SN = ref_data['k'], ref_data['flxm']
+        
+        # normalize the reference flux
+        flxm_SN *= (I * G) / np.sum(flxm_SN[:,0,:])
+        d_flxm0R = np.array([
+            - (estimate_derivative(flxm_SN[g,0,-3:][::-1], Di[-3:][::-1])
+            / flxm_SN[g,0,-1]) for g in range(G)
+        ])            
+        print('Estimates of the extrapolated lengths ' + str(-1. / d_flxm0R))
+        print('Values used in the diffusion solver ' + str(2.13*D[:,-1]))
+        
+    return k_SN, flxm_SN
+
+
 def to_str(v, fmt='%.13g'):
     return ', '.join([fmt%i for i in v]) + '\n'
 
@@ -501,15 +582,6 @@ if __name__ == "__main__":
 
     # initialize the unknowns
     flx, k = np.ones((G, I),), 1.
-    # tolerance on the fission rates during outer iterations
-    toll = 1.e-6
-    oitmax = 100  # max nb of outer iterations
-    iitmax = 100  # max nb of inner iterations
-    itsmax = oitmax, iitmax
-    # pack the b.c. identifiers
-    BC = LBC, RBC
-    # choose the type of CMFD scheme
-    pCMFD = True  # classic CMFD scheme is False
     
     # the diffusion coefficient is here request as space-dependent even when
     # the problem is homogeneus
@@ -527,25 +599,14 @@ if __name__ == "__main__":
     lg.info("-o"*22)
 
     # start Ronen iterations
-    ritmax = 200  # set to 1 to skip the Ronen iterations
     lg.info("Implement the Ronen Method by CMFD iterations")
     err, itr = 1.e+20, 0
     Dflxm1 = np.zeros_like(flx)
 
     # load reference currents
     # Daniele: move this block to a separate function in the module
-    ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
-    if os.path.isfile(ref_flx_file):
-        ref_data = np.load(ref_flx_file)
-        k_SN, flxm_SN = ref_data['k'], ref_data['flxm']
-        # normalize the reference flux
-        flxm_SN *= (I * G) / np.sum(flxm_SN[:,0,:])
-        d_flxm0R = np.array([
-            - (estimate_derivative(flxm_SN[g,0,-3:][::-1], Di[-3:][::-1])
-            / flxm_SN[g,0,-1]) for g in range(G)
-        ])
-        print('Estimates of the extrapolated lengths ' + str(-1. / d_flxm0R))
-        print('Values used in the diffusion solver ' + str(2.13*D[:,-1]))
+    ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)    
+    k_SN, flxm_SN = load_refSN_solutions(ref_flx_file,I,G,Di)
 
     # keep track of partial solutions on external files
     flx_save = np.empty(list(flx.shape) + [ritmax + 1])
@@ -556,18 +617,27 @@ if __name__ == "__main__":
         # revert to flux density
         # (this division does not seem to affect the final result though)
         flxd = flx / Vi  # division on last index
+        
         # compute the currents by diffusion and finite differences
         J_diff = compute_diff_currents(flxd, D, xv, BC)
+        
         # compute the currents by integral transport (Ronen Method)
         # #lg.warning("CALCULATE THE TR CURRENT WITH THE REFERENCE S16 SOLUTION!")
         # J_tran = compute_tran_currents(flxm_SN[:,0,:] / Vi, k_SN, Di, xs, BC)
-        J_tran = compute_tran_currents(flxd, k, Di, xs, BC)
+        J_tran, Jp, Jm, Jpm = compute_tran_currents(flxd, k, Di, xs, BC)
+        
         # compute the corrective delta-diffusion-coefficients
-        dD = compute_delta_D(flxd, J_diff - J_tran,
-                             vol_averaged_at_interface(flx, Vi) if pCMFD else None)
+        if pCMFD:                     
+            flxb = vol_averaged_at_interface(flxd, Vi)
+            dD = compute_delta_D_pCMFD(flxd, flxb, J_diff, Jpm)                             
+        else:
+            dD = compute_delta_D_CMFD(flxd, J_diff-J_tran)
 
         # compute the corrective currents (determined only for debug)
-        J_corr = compute_delta_diff_currents(flxd, dD, Di, BC)
+        if pCMFD:
+            dJ, dJ = compute_delta_diff_currents_pCMFD(flxd, dD, BC)
+        else:
+            J_corr = compute_delta_diff_currents_CMFD(flxd, dD, Di, BC)
 
         flxold, kold = np.array(flx, copy=True), k
         lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
@@ -598,12 +668,12 @@ if __name__ == "__main__":
                 "{:^4d}{:<+13.6e}{:^6d}{:<+13.6e}".format(
                 g, ferr[g,ierr], ierr+1, estd
             ))
-        input('press a key to continue...')
-    k_save[itr], flx_save[:,:,itr] = k, flx  # store final values
-    lg.info("Initial value of k was %13.6g." % kinit)
-    ofile = "tests/kflx_LBC%dRBC%d_I%d" % (*BC,I)
-    np.save(ofile + ".npy", [k_save, flx_save], allow_pickle=True)
-    with open(ofile + ".dat", 'w') as f:
-        for i, ki in enumerate(k_save):
-            if ki < 0: break
-            f.write(to_str(np.append(ki, flx_save[:,:,i].flatten())))
+            
+#    k_save[itr], flx_save[:,:,itr] = k, flx  # store final values
+#    lg.info("Initial value of k was %13.6g." % kinit)
+#    ofile = "tests/kflx_LBC%dRBC%d_I%d" % (*BC,I)
+#    np.save(ofile + ".npy", [k_save, flx_save], allow_pickle=True)
+#    with open(ofile + ".dat", 'w') as f:
+#        for i, ki in enumerate(k_save):
+#            if ki < 0: break
+#            f.write(to_str(np.append(ki, flx_save[:,:,i].flatten())))

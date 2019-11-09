@@ -22,16 +22,32 @@ chi = np.array([1., 0.])
 D = one_third / (st - np.sum(ss1, axis=1))
 
 # set b.c.
-LBC, RBC = 2, 0
+LBC, RBC = 0, 0
+# pack the b.c. identifiers
+BC = LBC, RBC
 
 # definition of the spatial mesh
-L = 21.5 / 2.  # slab width, equal to half pitch of a fuel assembly
-I = 6  # nb of spatial cells
+L = 21.5  # slab width, equal to half pitch of a fuel assembly
+I = 8  # nb of spatial cells
 G = st.size  # nb of energy groups
 xi = np.linspace(0, L, I+1)  # equidistant mesh
-xim = lambda x: (x[1:] + x[:-1]) / 2. # mid-points
+#xim = lambda x: (x[1:] + x[:-1]) / 2. # mid-points
 
-geometry_type = 'cylindrical'
+# tolerance on the fission rates during outer iterations
+ritmax = 5  # set to 1 to skip the Ronen iterations
+toll = 1.e-6
+oitmax = 100  # max nb of outer iterations
+iitmax = 100  # max nb of inner iterations
+itsmax = oitmax, iitmax
+
+# choose the type of CMFD scheme
+pCMFD = True  # classic CMFD scheme is False
+
+# choose geometry
+geometry_type = 'slab' # 'cylindrical'/'spherical'
+
+# reflective BC fix
+fix_reflection_by_flx2 = True
 
 
 if __name__ == "__main__":
