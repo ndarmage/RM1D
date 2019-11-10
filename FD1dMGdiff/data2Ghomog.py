@@ -28,15 +28,16 @@ BC = LBC, RBC
 
 # definition of the spatial mesh
 L = 21.5  # slab width, equal to half pitch of a fuel assembly
-I = 8  # nb of spatial cells
+I = 10  # nb of spatial cells
 G = st.size  # nb of energy groups
 xi = np.linspace(0, L, I+1)  # equidistant mesh
+xm = (xi[1:] + xi[:-1]) / 2. # mid-points
 #xim = lambda x: (x[1:] + x[:-1]) / 2. # mid-points
 
 # tolerance on the fission rates during outer iterations
-ritmax = 5  # set to 1 to skip the Ronen iterations
+ritmax = 50  # set to 1 to skip the Ronen iterations
 toll = 1.e-6
-oitmax = 100  # max nb of outer iterations
+oitmax = 50  # max nb of outer iterations
 iitmax = 100  # max nb of inner iterations
 itsmax = oitmax, iitmax
 

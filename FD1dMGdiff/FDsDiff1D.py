@@ -27,6 +27,10 @@ import sys
 import logging as lg
 import numpy as np
 from scipy.special import expn as En
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+from data2Ghomog import *
 
 __title__ = "Multigroup diffusion in 1D slab by finite differences"
 __author__ = "D. Tomatis"
@@ -131,21 +135,25 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
 
     # take into account the delta-diffusion-coefficients
     if dD is None:
-        dD = np.zeros((G, I+1),)
-    elif dD.shape == (G, I+1):
+        if pCMFD:
+            dD = np.zeros((G, I+1,2))
+        else:
+            dD = np.zeros((G, I+1))
+            
+    if dD.shape == (G, I+1):
         lg.debug('Apply corrections according to classic CMFD.')
-        # copy values to \pm terms in order to use the same implemntation
-        #dD = np.concatenate((dD[:, np.newaxis], dD[:, np.newaxis]), axis=2)
     elif dD.shape == (G, I+1, 2):
         lg.debug('Apply corrections according to pCMFD.')
+        dDp = dD[:,:,0]
+        dDm = dD[:,:,1]
     else:
         raise ValueError('Unexpected shape for the delta D coefficients.')
 
-    # determine the diffusion coefficient on the cell borders
+    # determine the diffusion coefficient on the cell borders - w/o boundaries
     Db = vol_averaged_at_interface(D, Vi)
 
     # compute the coupling coefficients by finite differences
-    iDm = 2. / (Di[1:] + Di[:-1])
+    iDm = 2. / (Di[1:] + Di[:-1]) # 1/(\Delta_i + \Delta_{i+1})/2
     # iDm = 2. / (Vi[2:] + Vi[:-2])
     xb0, xba = 1., 1.
     if geo == 'cylindrical':
@@ -157,30 +165,55 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
         dD *= xi**2
         xb0, xba = xi[0]**2, xi[-1]**2
 
+    # d = D_{i+1/2}/(\Delta_i + \Delta_{i+1})/2
     d = Db.flatten() * np.tile(iDm, G)
+    
     # print('coeffs from diffusion')
     # print (d.reshape(G,I-1))
     # print(dD)
     # Daniele: change dD hereafter by adding the correct value of the third index 
     for g in range(G):
-        idx = np.arange(g*I, (g+1)*I-1)
-        coefp = d[idx-g] + dD[g,1:-1]
-        coefm = d[idx-g] - dD[g,1:-1]
-        c[idx] = -coefp / Vi[1:]
-        b[idx] = coefm
-        b[idx+1] += coefp
-        a[idx] = -coefm / Vi[:-1]
-        # add b.c.
-        zetal, zetar = get_zeta(LBC, D[g, 0]), get_zeta(RBC, D[g, -1])
-        # # force the extrapolated lengths estimated by the reference solution
-        # zetar = np.array([0.67291, 0.33227])[g]
-        b[g*I] += D[g, 0] * xb0 / (0.5 * Di[ 0] + zetal) + dD[g, 0]
-        b[(g+1)*I-1] += D[g, -1] * xba / (0.5 * Di[-1] + zetar) - dD[g, -1]
-        # N.B.: the division by Di are needed because we solve for the volume
-        # integrated flux
-        idx = np.arange(g*I, (g+1)*I)
-        b[idx] /= Vi
-        b[idx] += np.full(I, st[g])
+        if pCMFD: 
+            idx = np.arange(g*I, (g+1)*I-1) # I-1 indices for group g, dD w/o bndry terms
+            coefp = -d[idx-g] - dDp[g,1:-1] # \phi_{i+1}
+            coefm = -d[idx-g] + dDm[g,1:-1] # \phi_{i-1}
+            c[idx] = coefp / Vi[1:] # upper diag            
+            a[idx] = coefm / Vi[:-1] # lower diag
+            # center diag
+            b[idx] = d[idx-g] - dDp[g,1:-1]
+            b[idx+1] += d[idx-g] + dDm[g,1:-1]
+            
+            # add b.c.            
+            zetal, zetar = get_zeta(LBC, D[g, 0]), get_zeta(RBC, D[g, -1])
+            b[g*I] += D[g, 0] * xb0 / (0.5 * Di[0] + zetal) + dDp[g,0]
+            b[(g+1)*I-1] += D[g, -1] * xba / (0.5 * Di[-1] + zetar) - dDm[g,-1]
+            # N.B.: the division by Di are needed because we solve for the volume
+            # integrated flux
+            idx = np.arange(g*I, (g+1)*I)
+            b[idx] /= Vi
+            b[idx] += np.full(I, st[g])
+        else:
+            idx = np.arange(g*I, (g+1)*I-1)
+            coefp = d[idx-g] + dD[g,1:-1] # \phi_{i+1}
+            coefm = d[idx-g] - dD[g,1:-1] # \phi_{i-1}
+            a[idx] = -coefm / Vi[:-1] # lower diag
+            c[idx] = -coefp / Vi[1:] # upper diag
+            b[idx] = coefm
+            b[idx+1] += coefp
+            
+            # add b.c.
+            zetal, zetar = get_zeta(LBC, D[g, 0]), get_zeta(RBC, D[g, -1])
+            # # force the extrapolated lengths estimated by the reference solution
+            # zetar = np.array([0.67291, 0.33227])[g]
+            
+            b[g*I] += D[g, 0] * xb0 / (0.5 * Di[ 0] + zetal) + dD[g, 0]            
+            b[(g+1)*I-1] += D[g, -1] * xba / (0.5 * Di[-1] + zetar) - dD[g, -1]
+            # N.B.: the division by Di are needed because we solve for the volume
+            # integrated flux
+            idx = np.arange(g*I, (g+1)*I)
+            b[idx] /= Vi
+            b[idx] += np.full(I, st[g])        
+                        
     return a, b, c
 
 
@@ -393,8 +426,8 @@ def compute_delta_diff_currents_CMFD(flx, dD, Di, BC=(0, 0)):
     dJ /= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1)
     # add b.c.
     zetal, zetar = get_zeta(LBC, D[:, 0]), get_zeta(RBC, D[:, -1])
-    dJ = np.insert(J, 0, -dD[:, 0] * flx[:, 0], axis=1)
-    dJ = np.insert(J, I, +dD[:,-1] * flx[:,-1], axis=1)
+    dJ = np.insert(dJ, 0, -dD[:, 0] * flx[:, 0], axis=1)
+    dJ = np.insert(dJ, I, +dD[:,-1] * flx[:,-1], axis=1)
     return dJ
 
 
@@ -465,17 +498,19 @@ def compute_delta_D_pCMFD(flx, flxb, Jd, Jpm):
         dD[:,1:-1,0] = (0.25*flxb[:,:] + 0.5*Jd[:,1:-1] - Jpm[:,1:-1:,0]) \
                         / flx[:,:-1]    
         # dD+ left BC
-        dD[:,0,0]  = .25 + .5*Jd[:,0]/flx[:,0] 
+        dD[:,0,0]  = 0  #.25 + .5*Jd[:,0]/flx[:,0] 
         # dD+ right BC
-        dD[:,-1,0] = .25 + (.5*Jd[:,-1] - Jpm[:,-1,0])/flx[:,-1] 
+        dD[:,-1,0] = (.25*(2*flx[:,-1]-flxb[:,-1]) + .5*Jd[:,-1] - Jpm[:,-1,0])\
+                       /flx[:,-1] 
         
         # dD-
         dD[:,1:-1,1] = (-0.25*flxb[:,:] + 0.5*Jd[:,1:-1] + Jpm[:,1:-1:,1]) \
                         / flx[:,1:]    
         # dD- left BC
-        dD[:,0,1]  = -.25 + (.5*Jd[:,0] + Jpm[:,0,1])/flx[:,0] 
+        dD[:,0,1]  = (-.25*(2.*flx[:,0]-flxb[:,0]) + .5*Jd[:,0] + Jpm[:,0,1])\
+                        / flx[:,0] 
         # dD- right BC
-        dD[:,-1,1] = -.25 + .5*Jd[:,-1]/flx[:,-1] 
+        dD[:,-1,1] = 0  #-.25 + .5*Jd[:,-1]/flx[:,-1] 
                         
     return dD                       
 
@@ -561,6 +596,45 @@ def check_current_solutions():
     print("    dD", dD[0,-6:])
 
 
+def plot_fluxes(xm,flx,L):
+       
+    # prepare the plot
+    fig = plt.figure(0)
+    # define a fake subplot that is in fact only the plot.  
+    ax = fig.add_subplot(111)
+    
+    # change the fontsize of major/minor ticks label 
+    ax.tick_params(axis='both', which='major', labelsize=12)
+    ax.tick_params(axis='both', which='minor', labelsize=10)
+
+    ax.plot(xm, flx[0,:],label='fast')
+    ax.plot(xm, flx[1,:],label='thermal')    
+    plt.xlabel(r'$x$ $[cm]$',fontsize=16)
+    plt.ylabel(r'$\phi$ $[n/cm^2\cdot s]$',fontsize=16)
+    plt.title(r'Diffusion fluxes - DT',fontsize=16)
+    plt.xlim(0, L)
+    plt.ylim(0, max(flx.flatten())+0.2)
+    plt.grid(True,'both','both')
+    ax.legend(loc='best',fontsize=12)
+    #fig.savefig('diffusion_fluxes_DT.png',dpi=150,bbox_inches='tight')
+    plt.show()
+
+
+def save_fluxes(fname,xm,flx):
+
+    # get params
+    G, I = flx.shape
+    
+    # write results to file
+    fid = open(fname,mode='w')
+    for i in range(0,I):
+        fid.write('{:7.5e}'.format(xm[i]))
+        for g in range(0,G):
+            fid.write(' {:7.5e}'.format(flx[g,i]))
+        fid.write('\n')
+        
+    fid.close()
+
 if __name__ == "__main__":
 
     logfile = os.path.splitext(os.path.basename(__file__))[0] + '.log'
@@ -568,7 +642,6 @@ if __name__ == "__main__":
     lg.info("* verbose output only in DEBUG logging mode *")
 
     lg.info("Verify the implementation with the following test case")
-    from data2Ghomog import *
     lg.info("*** Homogeneous Test Case in " + geometry_type +
             " 1D geometry ***")
 
@@ -635,7 +708,7 @@ if __name__ == "__main__":
 
         # compute the corrective currents (determined only for debug)
         if pCMFD:
-            dJ, dJ = compute_delta_diff_currents_pCMFD(flxd, dD, BC)
+            dJ = compute_delta_diff_currents_pCMFD(flxd, dD, BC)
         else:
             J_corr = compute_delta_diff_currents_CMFD(flxd, dD, Di, BC)
 
@@ -668,7 +741,14 @@ if __name__ == "__main__":
                 "{:^4d}{:<+13.6e}{:^6d}{:<+13.6e}".format(
                 g, ferr[g,ierr], ierr+1, estd
             ))
-            
+
+
+    # plot fluxes
+    plot_fluxes(xm,flx,L)
+    
+    # save fluces
+    #save_fluxes('diffusion_fluxes_DT.dat',xm,flx)            
+    
 #    k_save[itr], flx_save[:,:,itr] = k, flx  # store final values
 #    lg.info("Initial value of k was %13.6g." % kinit)
 #    ofile = "tests/kflx_LBC%dRBC%d_I%d" % (*BC,I)
