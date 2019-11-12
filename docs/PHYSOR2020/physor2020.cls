@@ -71,7 +71,7 @@
 \lfoot{}
 %\rfoot{\thepage/\totalpages{}}%
 % Daniele Tomatis: add nb of pages in the head to inform readers
-\rhead{\thepage/\totalpages{}}%
+% \rhead{\thepage/\totalpages{}}%
 \pagestyle{fancy}
 %
 % subsequent pages header and footer (must be placed after \begin{document})
