@@ -118,8 +118,9 @@
 \author{%
   % FIRST AUTHORS
   %
-  \textbf{Roy Gross$^1$\footnote{Corresponding author.},
-          Daniele Tomatis$^2$ and Erez Gilad$^1$} \\
+  \textbf{Roy Gross$^1$,
+          Daniele Tomatis$^2$\footnote{Corresponding author.}
+          ~and Erez Gilad$^1$} \\
   $^1$The Unit of Nuclear Engineering, \\
   Ben-Gurion University of the Negev, 8410501 Beer-Sheva, Israel \\
 \\
@@ -224,7 +225,7 @@ The neutron balance equation for a $k$-eigenvalue problem integrated in the $i$-
   \label{eq:balance}
   J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g},
 \end{equation}
-where $J$ denotes the accurate net current at the cell surface, $\sigma$ denotes the total cross section and the subscript $g$ denotes the energy group. $q$ is the isotropic neutron source defined as
+where $J$ denotes the net current at the cell surface, $\sigma$ denotes the total cross section and the subscript $g$ denotes the energy group. $q$ is the isotropic neutron source defined as
 \begin{equation}
   \label{eq:qsrc}
   q_{i,g} = \sum\limits_{g'=1}^G\sigma_{s,0,i,g\leftarrow g'}\phi_{i,g'} +
@@ -239,7 +240,7 @@ where $\sigma_0$ is the isotropic scattering cross section, $\chi$ is the fissio
 	\label{fig:mesh1D}
 \end{figure}
 
-The accurate net and partial currents in the case of isotropic scattering are calculated using the following expressions derived from the integral neutron transport equation~\cite{Tomatis-2011,Tomatis-2019,Gross-2020}
+The net and partial currents in the case of isotropic scattering are calculated using the following expressions derived from the integral neutron transport equation~\cite{Tomatis-2011,Tomatis-2019,Gross-2020}
 \begin{subequations}
   \label{eq:par-curr-calc}
   \begin{equation}
@@ -265,7 +266,7 @@ The accurate net and partial currents in the case of isotropic scattering are ca
             \right\},
     \end{split}
   \end{equation}
-where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length and the net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$.
+where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length and the net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$, $\forall i$. Only the zeroth moment of the angular flux, that is the scalar flux after an expansion in angle on the spherical harmonics, is used at the boundary to include the contribution of possible incoming currents. \eqs{eq:par-curr-calc} are expected to yield more accurate estimates of the currents even when using a flux distribution obtained from diffusion theory. This is the main assumption of the Ronen Method.
 \end{subequations}
 % \daniele{In case additional space will be needed, it will be possible to write \eqs{eq:par-curr-calc} in a condensed form by using $\pm$.}
 
@@ -273,7 +274,7 @@ where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length
 \subsection{CMFD IMPLEMENTATION}
 \label{sec:RM-CMFD}
 
-In standard CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by finite differences according to
+In classic CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime \cite{Smith-1983}. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by finite differences according to
 \begin{equation}
   \label{eq:JD}
   \jD_{i+\hzi,g} \cong - D_{i+\hzi,g}
@@ -286,77 +287,75 @@ where the diffusion coefficient at the interface is volume-averaged as
 {\Delta_i + \Delta_{i+1}}.
 \end{equation}
 %
-About the RM, more accurate estimates of the net current come from the integral expressions of \eqs{eq:par-curr-calc}, still using the scalar flux in the emission source $q_{i,g}$. Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
+About the RM, more accurate estimates of the net current come from the integral expressions of \eqs{eq:par-curr-calc}, still using the scalar flux in the emission source $q_{i,g}$. In linearly anisotropic problems, the net current can also be considered to compute the source. Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
 \begin{equation}
   \label{eq:dJ}
   \delta J_{i+\hzi,g} = -\delta D_{i+\hzi,g}
     \frac{\phi_{i+1,g} + \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2} =
-  J_{i+\hzi,g} - \jD_{i+\hzi,g}.
+  J_{i+\hzi,g} - \jD_{i+\hzi,g},
 \end{equation}
-The division by the spatial differences can be removed because the definition of $\delta D$ is arbitrary. Boundary conditions applies as usual on the diffusion current and on the net (more accurate) current, without any particular change for the definition of the correction term.
+for $i = 0, \ldots, I-2$. The division by the spatial differences can be removed because the definition of $\delta D$ is arbitrary.
+
+Boundary conditions applies on the diffusion current as usual by means of an extrapolated length $\zeta$, $\zeta \jD \cong D \phi$. Mark or Marshak approximations, or other constants derived from transport theory can be used for $\zeta$ \cite{meghreblian1960reactor}. About the correction terms instead, it is simply $\delta J = -\delta D \phi$ with the boundary flux approximated at first order by the cell-averaged value.
 
 % ------------------------------------------
 \subsection{pCMFD IMPLEMENTATION}
 \label{sec:RM-pCMFD}
 
-The CMFD introduces a free parameter in the numerical scheme through the correction term to adjust the diffusive solution locally. Since separate calculations of the partial currents are possible, two free parameters could be used in the discretized form of the diffusion equation.
+The CMFD introduces in the numerical scheme a free parameter per cell surface through the correction term to adjust the diffusive solution locally. Since separate calculations of the partial currents are possible, two free parameters could be used in the discretized form of the diffusion equation. This idea leads to the development of the pCMFD scheme \cite{cho2003comparison}.
 
-Thanks to P$_1$ diffusion theory, the partial currents at any point $x$ of the slab are approximated as
+Two corrective terms are then introduced: $J = \jp - \jm = \jD + \delta J^+ + \delta J^-$. An upwind definition with respect to the direction of flight of neutrons is used for the corrections~\cite{Jarrett-2016,Zhu-2016}:
 \begin{equation}
-\label{eq:partial-current}
-\jpm(x) \cong \frac{\phi(x)}{4} \pm \frac{J (x)}{2},
-\end{equation}
-still verifying the expression for the net current $J = J^+ - J^-$.
-% Daniele: the 1st moment is the scalar current and not its diffusion approx
-%where $\jD$ denotes the diffusion current.
-%where
-%\begin{equation}
-%\label{eq:diff-current}
-%\bm{J} (x) = \jp(x) - \jm(x).
-%\end{equation}
-\eq{eq:partial-current} suggests introducing two different correction terms at each cell interface depending on the sign of the partial currents
-\begin{equation}
-  \label{eq:PCCF}
-  \jpm _{i+\hzi} = \frac{1}{4} \phi_{i+\hzi} \pm \frac{1}{2}
-    \left(\jD_{i+\hzi} + \delta \jpm_{i+\hzi}\right),
-\end{equation}
-and they must fulfill again the net current $J = \jD + (\delta \jp + \delta \jm)/2$. An upwind definition with the respect to the direction of flight of neutrons is~\cite{Jarrett-2016,Zhu-2016}
-\begin{equation}
-\label{eq:CCF-sub}
-\delta \jp _{i+\hzi} = -2\delta D^+ _{i+\hzi} \phi_i
-\quad \text{and} \quad
-\delta \jm _{i+\hzi} = -2\delta D^- _{i+\hzi} \phi_{i+1}.
-\end{equation}
-% yields
-% \begin{align}
-% \label{eq:par4}
-% \jp _{i+\hzi} &= \frac{1}{4}\phi_{i+\hzi}
-% + \frac{1}{2}\jD _{i+\hzi} - \delta D^+ _{i+\hzi} \phi_i \\
-% \jm _{i+\hzi} &= \frac{1}{4}\phi_{i+\hzi}
-% - \frac{1}{2}\jD _{i+\hzi} + \delta D^- _{i+\hzi} \phi_{i+1}.
-% \end{align}
-%Recall that $\jpm$ are calculated using the integral expression.
-%
-Solving for the partial current correction factors gives
-\begin{equation}
-  \label{eq:ccfsss1}
-  \delta D^+ _{i+\hzi} = \frac{\frac{1}{4}\phi_{i+\hzi}
-  	+ \frac{1}{2}\jD _{i+\hzi} - \jp _{i+\hzi}}{\phi_i}
+  \label{eq:CCF-sub}
+  \delta \jp _{i+\hzi} = -\delta D^+ _{i+\hzi} \phi_i
   \quad \text{and} \quad
-  \delta D^- _{i+\hzi} = \frac{-\frac{1}{4}\phi_{i+\hzi}
-  	+ \frac{1}{2}\jD _{i+\hzi} + \jm _{i+\hzi}}{\phi_{i+1}},
-  \end{equation}
-where the flux at the interface can be simply volume-averaged too, see~\eq{eq:Ds} for instance.
+  \delta \jm _{i+\hzi} = -\delta D^- _{i+\hzi} \phi_{i+1}.
+\end{equation}
+The current by diffusion is distributed on the partial currents in equal parts in order to compute the new corrective coefficients $\delta D^{\pm}$,
+\begin{subequations}
+  \label{eq:delta-D-pCMFD}
+  \begin{align}
+    J^+_{i+\hzi} - \frac{1}{2}\jD_{i+\hzi} &= -\delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
+    J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= +\delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
+  \end{align}
+\end{subequations}
+still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundary, using only \eq{eq:delta-D-pCMFDm} or \eq{eq:delta-D-pCMFDp} at the left and at the right boundaries, respectively. Finally, the implementation of CMFD can be upgraded to support the pCMFD scheme with minimal changes.
+% -----------------------------------------------------------------------------
+%
+% Daniele: the following proposition has shown to be inconsistent.
+%
+% Thanks to P$_1$ diffusion theory, the partial currents at any point $x$ of the slab are approximated as
 % \begin{equation}
-%   \label{eq:jdiff}
-%   \phi_{i+\hzi} = \frac{\Delta_i \phi_i + \Delta_{i+1} \phi_{i+1}}
-%                        {\Delta_i + \Delta_{i+1}}.
+% \label{eq:partial-current}
+% \jpm(x) \cong \frac{\phi(x)}{4} \pm \frac{J (x)}{2},
 % \end{equation}
+% still verifying the expression for the net current $J = J^+ - J^-$. \eq{eq:partial-current} suggests introducing two different correction terms at each cell interface depending on the sign of the partial currents
+% \begin{equation}
+%   \label{eq:PCCF}
+%   \jpm _{i+\hzi} = \frac{1}{4} \phi_{i+\hzi} \pm \frac{1}{2}
+%     \left(\jD_{i+\hzi} + \delta \jpm_{i+\hzi}\right),
+% \end{equation}
+% and they must fulfill again the net current $J = \jD + (\delta \jp + \delta \jm)/2$. An upwind definition with the respect to the direction of flight of neutrons is~\cite{Jarrett-2016,Zhu-2016}
+% \begin{equation}
+% \label{eq:CCF-sub}
+% \delta \jp _{i+\hzi} = -2\delta D^+ _{i+\hzi} \phi_i
+% \quad \text{and} \quad
+% \delta \jm _{i+\hzi} = -2\delta D^- _{i+\hzi} \phi_{i+1}.
+% \end{equation}
+% %
+% Solving for the partial current correction factors gives
+% \begin{equation}
+%   \label{eq:ccfsss1}
+%   \delta D^+ _{i+\hzi} = \frac{\frac{1}{4}\phi_{i+\hzi}
+%   	+ \frac{1}{2}\jD _{i+\hzi} - \jp _{i+\hzi}}{\phi_i}
+%   \quad \text{and} \quad
+%   \delta D^- _{i+\hzi} = \frac{-\frac{1}{4}\phi_{i+\hzi}
+%   	+ \frac{1}{2}\jD _{i+\hzi} + \jm _{i+\hzi}}{\phi_{i+1}},
+%   \end{equation}
+% where the flux at the interface can be simply volume-averaged too, see~\eq{eq:Ds} for instance.
+% -----------------------------------------------------------------------------
 
-In a weakly absorbing medium and several mean free paths away from the boundary or a strong absorber, all correction factors $\delta D^\pm$ are expected to vanish and the net current must be fully reproduced by the diffusion current.% and~\eq{eq:ccfsss1} reduces to~\eq{eq:partial-current}, as expected, which implies for the net (accurate) current
-% \begin{equation}
-% J _{i+\hzi} = \jp _{i+\hzi} - \jm _{i+\hzi} = \jD _{i+\hzi}.
-% \end{equation}
+In a weakly absorbing medium and several mean free paths away from the boundary or a strong absorber, all correction factors $\delta D^\pm$ are expected to vanish and the net current must be fully reproduced by the diffusion current. Of course, this must be verified by the classic CMFD scheme too.
 
 
 % ------------------------------------------
