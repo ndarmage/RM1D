@@ -70,6 +70,8 @@
 }}
 \lfoot{}
 %\rfoot{\thepage/\totalpages{}}%
+% Daniele Tomatis: add nb of pages in the head to inform readers
+\rhead{\thepage/\totalpages{}}%
 \pagestyle{fancy}
 %
 % subsequent pages header and footer (must be placed after \begin{document})
@@ -114,7 +116,7 @@
 \setlength{\skip\footins}{1.0cm}
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% borrowed from pagecounting.sty 
+% borrowed from pagecounting.sty
 % http://www-users.york.ac.uk/~zrs1/Software/pagecounting.sty)
 %
 % History:
@@ -258,9 +260,9 @@
 %% The original source files were:
 %%
 %% caption.dtx  (with options: `package')
-%% 
+%%
 %% Copyright (C) 1994-95 Harald Axel Sommerfeldt
-%% 
+%%
 %\NeedsTeXFormat{LaTeX2e}[1994/06/01]
 %\ProvidesPackage{caption}[1995/04/05 v1.4b caption package (HS)]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
