@@ -4,7 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 sys.path.append('..')
-from data2Ghomog import *
+from data.homog2GMC2011 import *
 
 from cycler import cycler
 default_cycler = (cycler(color=['r', 'g', 'b', 'y']) *

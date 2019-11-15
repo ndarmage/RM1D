@@ -19,6 +19,33 @@ The Cartesian (slab) is the default geometry option. Curvilinears can be
 chosen by selecting 'cylindrical' or 'spherical' for the global variable
 geometry_type.
 
+Cross sections data of different materials must be entered according to
+the following dictionary. Please, use zeroed arrays for chi and nsf for
+non-fissile media.
+
+xs_media = {
+    'name_of_media_1':{
+         'st': np.array with G elements
+         'ss': np.array with G*G*(anisotropy_order + 1) elements
+        'chi': np.array with G elements
+        'nsf': np.array with G elements
+    }
+    'name_of_media_2':{ ... }
+    ...
+}
+
+A list of lists is used to assign the materials to the geometry cells
+of the mesh, like for example:
+
+media = [
+    ['name_of_media_1', x_right_medium_1],
+    ['name_of_media_2', x_right_medium_2],
+    ...
+    ['name_of_media_N', x_right_medium_N]
+]
+where by definition it is always x_left_medium_1 = 0, and
+x_right_medium_(i) = x_left_medium_(i+1) for all i < N.
+
 .. todo:: the current version assumes a homogeneous problem. To be
           extended to heterogeneous problems.
 """
@@ -30,23 +57,34 @@ from scipy.special import expn as En
 
 __title__ = "Multigroup diffusion in 1D slab by finite differences"
 __author__ = "D. Tomatis"
-__date__ = "02/04/2019"
-__version__ = "1.2.0"
+__date__ = "15/11/2019"
+__version__ = "1.3.0"
 
 max_float = np.finfo(float).max  # float is float64!
 min_float = np.finfo(float).min
 np.set_printoptions(precision=5)
 
+# log file settings
+logfile = os.path.splitext(os.path.basename(__file__))[0] + '.log'
+# verbose output only with lg.DEBUG mode
+lg.basicConfig(level=lg.INFO)  # filename = logfile
+
 # default options
 # possible options of geometry_type are slab, cylindrical, spherical
 geometry_type = "slab"
+# boundary conditions (0-vacuum, 1-zero flux, 2-reflection)
+LBC, RBC = 0, 0
+pCMFD = False  # classic CMFD is False
 # tolerance on the fission rates during outer iterations
 toll = 1.e-6
+ritmax = 100  # set to 1 to skip Ronen iterations
 oitmax = 100  # max nb of outer iterations
 iitmax = 100  # max nb of inner iterations
-itsmax = oitmax, iitmax
+otoll = toll  # tolerance on fiss. rates at outer its.
+itoll = toll  # tolerance on flx at inner its.
+rtoll = toll  # tolerance on flx at RM its.
+
 fix_reflection_by_flx2 = True
-pCMFD = True
 
 
 # get the mid-points of cells defined in the input spatial mesh x
@@ -95,12 +133,17 @@ def solveTDMA(a, b, c, d):
 
 def compute_fission_source(chi, nsf, flx):
     # the input flux must be volume-integrated
-    return np.outer(chi, np.dot(nsf, flx)).flatten()
+    return (chi * np.sum(nsf * flx, axis=0)).flatten()
+
+
+def compute_scattering_source(ss0, flx):
+    # the input flux must be volume-integrated
+    return np.sum(ss0 * flx, axis=1).flatten()
 
 
 def compute_source(ss0, chi, nsf, flx, k=1.):
-    # the input flux must be volume-integrated
-    qs = np.dot(ss0, flx).flatten()
+    "Return (flattened) scattering plus fission sources."
+    qs = compute_scattering_source(ss0, flx)
     return (qs + compute_fission_source(chi, nsf, flx) / k)
 
 
@@ -201,7 +244,7 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
         # volume-integrated flux
         idx = np.append(idx, ida)
         b[idx] /= Vi
-        b[idx] += np.full(I, st[g])
+        b[idx] += np.full(I, st[g,:])
 
     return a, b, c
 
@@ -273,7 +316,7 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
         raise RuntimeError('This function has not been ported to curv. geoms.')
     LBC, RBC = BC
     st, ss0, chi, nsf, D = xs
-    G, I = st.size, Di.size
+    G, I = st.shape
     # J = np.zeros((G,I+1),)  # currents at the cell bounds
     Jp = np.zeros((G,I+1),)  # plus partial currents at the cell bounds
     Jm = np.zeros_like(Jp)  # minus partial currents at the cell bounds
@@ -287,8 +330,7 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
     q = np.expand_dims(q, axis=0)
 
     # compute the total removal probability per cell
-    stx = np.tile(st, (I, 1)).T
-    Pt = np.tile(Di, G).reshape(G, I) * stx
+    Pt = np.tile(Di, G).reshape(G, I) * st
 
     for g in range(G):
         for l in range(L):
@@ -296,7 +338,7 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
             # only the elements on one colums should be stored by the recipro-
             # city theorem.
             # (2 * l + 1.) / 2. = l + 0.5
-            qgoStg = (l + 0.5) * q[l,g,:] / stx[g,:]
+            qgoStg = (l + 0.5) * q[l,g,:] / st[g,:]
             # # Net current
             # Ajig = np.zeros((I,I+1),)
             # for i in range(I+1):
@@ -429,14 +471,12 @@ def solve_inners(flx, ss0, diags, sok, toll=1.e-5, iitmax=10):
     while (irr > toll) and (iti < iitmax):
         # backup local unknowns
         flxold = np.array(flx, copy=True)
-        src = sok + np.dot(ss0, flx).flatten()
+        src = sok + compute_scattering_source(ss0, flx)
         flx = solveTDMA(a, b, c, src).reshape(G, I)
         ferr = np.where(flx > 0., 1. - flxold / flx, flx - flxold)
         irr = abs(ferr).max()
         iti += 1
-        lg.debug(" +-> it={:^4d}, k={:<13.6g}, err={:<+13.6e}".format(
-           iti, k, irr
-        ))
+        lg.debug(" +-> it={:^4d}, err={:<+13.6e}".format(iti, irr))
     return flx
 
 
@@ -486,7 +526,8 @@ def solve_outers(flx, k, xv, xs, BC=(0, 0), itsmax=(50, 50),
     G, I = flx.shape
     LBC, RBC = BC
     oitmax, iitmax = itsmax # max nb of outer/inner iterations
-    otoll, itoll = toll # rel. tolerance for the solution in outers/inners
+    # tolerance on residual errors for the solution in outers/inners
+    otoll, itoll = toll
 
     # setup the tri-diagonal matrix and the source s
     diags = set_diagonals(st, D, xv, BC, dD)
@@ -592,59 +633,29 @@ def plot_fluxes(xm,flx,L):
     plt.show()
 
 
-if __name__ == "__main__":
+def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
+                pCMFD=False, filename=None):
+    """Solve the Ronen Method by non-linear iterations based on CMFD and
+    diffusion."""
+    if ritmax == 0:
+        lg.warning('You called RM iterations, but they were disabled at input.')
 
-    logfile = os.path.splitext(os.path.basename(__file__))[0] + '.log'
-    lg.basicConfig(level=lg.INFO)  # filename = logfile
-    lg.info("* verbose output only in DEBUG logging mode *")
+    # unpack data
+    st, ss0, chi, nsf, D = xs  # D is used hereafter
+    xi, Di, Vi, geometry_type = xv
+    G, I = D.shape
 
-    lg.info("Verify the implementation with the following test case")
-    from data2Ghomog import *
-    lg.info("*** Homogeneous Test Case in " + geometry_type +
-            " 1D geometry ***")
-
-    if (geometry_type != 'slab') and (LBC != 2):
-        raise ValueError('Curvilinear geometries need LBC = 2.')
-
-    # get the cell width (where are volumes in cm in the 1D geometry)
-    Di = xi[1:] - xi[:-1]
-    Vi = compute_cell_volumes(xi, geo=geometry_type)
-    xv = xi, Di, Vi, geometry_type  # pack mesh data
-
-    # initialize the unknowns
-    flx, k = np.ones((G, I),), 1.
-    # pack the b.c. identifiers
-    BC = LBC, RBC
-
-    # the diffusion coefficient is here request as space-dependent even when
-    # the problem is homogeneus
-    D = np.tile(D, (I, 1)).T  # cell-averaged diff. coef.
-
-    # pack the xs data in a single object
-    xs = st, ss0, chi, nsf, D
-
-    # Call the diffusion solver without CMFD corrections
-    lg.info("-o"*22)
-    lg.info("Initial call to the diffusion solver without CMFD corrections")
-    lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
-    flx, k = solve_outers(flx, k, xv, xs, BC, itsmax, (toll, toll))
-    kinit = k
-    lg.info("-o"*22)
-
-    # start Ronen iterations
-    ritmax = 200  # set to 1 to skip the Ronen iterations
-    lg.info("Implement the Ronen Method by CMFD iterations")
-    err, itr = 1.e+20, 0
-    Dflxm1 = np.zeros_like(flx)
-
-    # load reference currents
-    ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
-    k_SN, flxm_SN = load_refSN_solutions(ref_flx_file, G, Di, Dbnd=D[:,-1])
+    # # load reference currents
+    # ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
+    # k_SN, flxm_SN = load_refSN_solutions(ref_flx_file, G, Di, Dbnd=D[:,-1])
 
     # keep track of partial solutions on external files
-    flx_save = np.empty(list(flx.shape) + [ritmax + 1])
+    flx_save = np.empty([G, I, ritmax + 1])
     k_save = np.full(ritmax + 1, -1.)
-    while (err > toll) and (itr < ritmax):
+
+    err, itr, kinit = 1.e+20, 0, k
+    Dflxm1 = np.zeros_like(flx)
+    while (err > rtoll) and (itr < ritmax):
         k_save[itr], flx_save[:,:,itr] = k, flx
 
         # revert to flux density
@@ -665,15 +676,15 @@ if __name__ == "__main__":
 
         flxold, kold = np.array(flx, copy=True), k
         lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
-        flx, k = solve_outers(flx, k, xv, xs, BC, itsmax, (toll, toll), dD)
+        flx, k = solve_outers(flx, k, xv, xs, BC, itsmax, tolls, dD)
         # check_current_solutions()
 
         # try Aitken delta squared extrapolation
-        # if (itr > 10) and (err < toll * 100):
+        # if (itr > 10) and (err < rtoll * 100):
         #     lg.info("<-- Apply Aitken extrapolation on the flux -->")
         #     flx -=  (Dflxm1**2 / (Dflxm1 - Dflxm2))
 
-        # evaluate the flux difference through the iterations
+        # evaluate the flux differences through successive iterations
         Dflxm2 = np.array(Dflxm1, copy=True)
         Dflxm1 = flx - flxold
         ferr = np.where(flx > 0., 1. - flxold / flx, Dflxm1)
@@ -703,9 +714,99 @@ if __name__ == "__main__":
 
     k_save[itr], flx_save[:,:,itr] = k, flx  # store final values
     lg.info("Initial value of k was %13.6g." % kinit)
-    ofile = "tests/kflx_LBC%dRBC%d_I%d" % (*BC,I)
-    np.save(ofile + ".npy", [k_save, flx_save], allow_pickle=True)
-    with open(ofile + ".dat", 'w') as f:
-        for i, ki in enumerate(k_save):
-            if ki < 0: break
-            f.write(to_str(np.append(ki, flx_save[:,:,i].flatten())))
+    if filename is not None:
+        # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
+        np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
+        with open(filename + ".dat", 'w') as f:
+            for i, ki in enumerate(k_save):
+                if ki < 0: break
+                f.write(to_str(np.append(ki, flx_save[:,:,i].flatten())))
+
+    return flx, k
+
+
+def unfold_xs(xm, xs_media, media):
+    I = xm.size
+    G = xs_media[next(iter(xs_media))]['st'].size
+    ss0 = np.zeros((G,G,I),)
+    # ss1 = np.zeros_like(ss0)
+    st = np.zeros((G,I),)
+    nsf = np.zeros_like(st)
+    chi = np.zeros_like(st)
+    D = np.zeros_like(st)
+
+    lbnd = 0.
+    for m in media:
+        media_name, rbnd = m
+        idx = (lbnd < xm) & (xm < rbnd)
+        st[:,idx] = np.tile(xs_media[media_name]['st'], (I, 1)).T
+        nsf[:,idx] = np.tile(xs_media[media_name]['nsf'], (I, 1)).T
+        chi[:,idx] = np.tile(xs_media[media_name]['chi'], (I, 1)).T
+        D[:,idx] = np.tile(xs_media[media_name]['D'], (I, 1)).T
+        tmp = np.tile(xs_media[media_name]['ss'][:,:,0].flatten(), (I, 1)).T
+        ss0[:,:,idx] = tmp.reshape(G, G, I)
+
+    return st, ss0, chi, nsf, D
+
+
+def init_data():
+    "Prepare and check input data, which must exist in outer scope."
+    lg.info("Geometry type is " + geometry_type)
+    if (geometry_type != 'slab') and (LBC != 2):
+        raise ValueError('Curvilinear geometries need LBC = 2.')
+
+    # get the cell width (volumes are in cm in the 1D geometry)
+    Di = xi[1:] - xi[:-1]
+    Vi = compute_cell_volumes(xi, geo=geometry_type)
+    xv = xi, Di, Vi, geometry_type  # pack mesh data
+
+    BC = LBC, RBC  # pack the b.c. identifiers
+    # pack nb. of outer and inner iterations
+    itsmax = oitmax, iitmax
+    # pack tolerances on residual errors in outer and inner iterations
+    tolls = otoll, itoll
+
+    if len(xs_media) != len(media):
+        raise ValueError('xs media dict and list must have the same nb. of ' +
+                         'elements.')
+    rbnd = [i[1] for i in media]
+    if sorted(rbnd) != rbnd:
+        raise ValueError('media list must be in order from left to right!')
+    if max(rbnd) > L:
+        raise ValueError('Please check the right bounds of media (>L?)')
+    xs = unfold_xs(xim(xi), xs_media, media)
+
+    return xv, xs, BC, itsmax, tolls
+
+
+def run_calc_with_RM_its(filename=None):
+    lg.info("Prepare input data")
+    xv, xs, BC, itsmax, tolls = init_data()
+    lg.info("-o"*22)
+
+    # Call the diffusion solver without CMFD corrections
+    lg.info("Initial call to the diffusion solver without CMFD corrections")
+    lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
+    flx, k = np.ones((G, I),), 1.  # initialize the unknowns
+    flx, k = solve_outers(flx, k, xv, xs, BC, itsmax, tolls)
+    lg.info("-o"*22)
+
+    # start Ronen iterations
+    lg.info("Start the Ronen Method by CMFD iterations")
+    flx, k = solve_RMits(xv, xs, BC,  # input data
+                         flx, k,  # initial values
+                         itsmax, tolls, ritmax, rtoll,  # its opts
+                         pCMFD, filename)
+    lg.info("-o"*22)
+    lg.info("*** NORMAL END OF CALCULATION ***")
+    pass
+
+
+if __name__ == "__main__":
+
+    lg.info("Verify the implementation with the test case from the M&C article")
+    from data.homog2GMC2011 import *
+    from tests.homogSlab2GMC2011 import *
+
+    filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
+    run_calc_with_RM_its(filename)
