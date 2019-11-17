@@ -11,7 +11,11 @@ This test case runs the 2G homogeneous slab problem from [Tomatis2011]_.
 import sys
 sys.path.append('..')
 from data.homog2GMC2011 import *
+from FDsDiff1D import input_data
 import numpy as np
+
+def MyWho():
+     print([v for v in globals().keys() if not v.startswith('_')])
 
 # definition of the spatial mesh
 L = 21.5 / 2.  # slab width, equal to half pitch of a fuel assembly
@@ -30,13 +34,14 @@ media = [['HM', L]]  # i.e. homogeneously filled
 # set b.c.
 LBC, RBC = 2, 0
 
-# solver options (to override options in the main module)
-ritmax = 10 # set to 1 to skip Ronen iterations
+Homo2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 
 if __name__ == "__main__":
 
     import logging as lg
     lg.info("*** Solve the M&C 2011 problem ***")
-    from FDsDiff1D import run_calc_with_RM_its as run_calc
-    filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
-    run_calc(filename)
+    from FDsDiff1D import run_calc_with_RM_its, solver_options
+
+    slvr_opts = solver_options(ritmax=10)
+    # filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
+    flx, k = run_calc_with_RM_its(Homo2GSlab_data, slvr_opts, filename=None)

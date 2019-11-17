@@ -12,8 +12,10 @@ If it is zero, we have the zero flux b.c., while reflection is reproduced
 by $\zeta \rightarrow \infty$. The b.c. code is in order 0, 1 and 2,
 respectively.
 
-The Ronen Method is implemented on top of the diffusion solver through
-the standard CMFD or the pCMFD version.
+Input data are set in two main objects. The first stores geometry and
+material input data, whereas the second contains the solver options. The
+Ronen Method is implemented on top of the diffusion solver through the
+standard CMFD or its pCMFD version.
 
 The Cartesian (slab) is the default geometry option. Curvilinears can be
 chosen by selecting 'cylindrical' or 'spherical' for the global variable
@@ -45,9 +47,6 @@ media = [
 ]
 where by definition it is always x_left_medium_1 = 0, and
 x_right_medium_(i) = x_left_medium_(i+1) for all i < N.
-
-.. todo:: the current version assumes a homogeneous problem. To be
-          extended to heterogeneous problems.
 """
 import os
 import sys
@@ -69,21 +68,6 @@ logfile = os.path.splitext(os.path.basename(__file__))[0] + '.log'
 # verbose output only with lg.DEBUG mode
 lg.basicConfig(level=lg.INFO)  # filename = logfile
 
-# default options
-# possible options of geometry_type are slab, cylindrical, spherical
-geometry_type = "slab"
-# boundary conditions (0-vacuum, 1-zero flux, 2-reflection)
-LBC, RBC = 0, 0
-pCMFD = False  # classic CMFD is False
-# tolerance on the fission rates during outer iterations
-toll = 1.e-6
-ritmax = 100  # set to 1 to skip Ronen iterations
-oitmax = 100  # max nb of outer iterations
-iitmax = 100  # max nb of inner iterations
-otoll = toll  # tolerance on fiss. rates at outer its.
-itoll = toll  # tolerance on flx at inner its.
-rtoll = toll  # tolerance on flx at RM its.
-
 fix_reflection_by_flx2 = True
 
 
@@ -91,8 +75,95 @@ fix_reflection_by_flx2 = True
 xim = lambda x: (x[1:] + x[:-1]) / 2.
 
 
+class input_data:
+    """Geometry and material input data of the 1D problem. Possible options
+    of geometry_type are slab, cylindrical and spherical. Allowed boundary
+    conditions: 0-vacuum, 1-zero flux and 2-reflection."""
+
+    def __init__(self, xs_media, media, xi, geometry_type='slab', LBC=0, RBC=0):
+        self.geometry_type, self.xi = geometry_type, xi
+        self.LBC, self.RBC = LBC, RBC
+        self.xs_media, self.media = xs_media, media
+        self.check_input()
+
+    @property
+    def I(self):
+        return self.xi.size - 1
+
+    @property
+    def L(self):
+        return self.xi[-1]
+
+    @property
+    def G(self):
+        return self.xs_media[next(iter(self.xs_media))]['st'].size
+
+    def check_input(self):
+        if (self.geometry_type != 'slab') and \
+            (self.geometry_type != 'cylindrical') and \
+            (self.geometry_type != 'spherical'):
+            raise ValueError('Unknown geometry_type ' + self.geometry_type)
+        if not isinstance(self.LBC, int):
+            raise TypeError('LBC must be integer.')
+        if (self.LBC < 0) and (self.LBC > 2):
+            raise ValueError('Check LBC, allowed options ')
+        if not isinstance(self.RBC, int):
+            raise TypeError('RBC must be integer.')
+        if (self.RBC < 0) and (self.RBC > 2):
+            raise ValueError('Check RBC, allowed options ')
+        if (self.geometry_type != 'slab') and (self.LBC != 2):
+            raise ValueError('Curvilinear geometries need LBC = 2.')
+        if not isinstance(self.xs_media, dict):
+            raise TypeError('The input xs_media is not a dictionary.')
+        if not isinstance(self.media, list):
+            raise TypeError('The input media is not a list.')
+        if len(self.xs_media) != len(self.media):
+            raise ValueError('xs media dict and list must have the same ' +
+                             'nb. of elements.')
+        rbnd = [m[1] for m in self.media]
+        if sorted(rbnd) != rbnd:
+            raise ValueError('media list must be in order from left to right!')
+        if max(rbnd) > self.L:
+            raise ValueError('Please check the right bounds of media (>L?)')
+
+    def __str__(self):
+        print("Geometry type is " + self.geometry_type)
+        print("Boundary conditions: (left) LBC=%d and (right) RBC=%d." % \
+            (self.LBC, self.RBC))
+        print("B.C. legend: 0-vacuum, 1-zero flux and 2-reflection.")
+        print("Number of energy groups: %d" % self.G)
+        print("Number of spatial cells: %d" % self.I)
+        print("Spatial mesh xi\n" + str(self.xi))
+        print("Media list:\n" + str(self.media))
+        print(" with xs:\n" + str(self.xs_media))
+
+
+class solver_options:
+    """Object collecting (input) solver options. INFO: set ritmax to 0 to
+    skip Ronen iterations."""
+    toll = 1.e-6  # default tolerance
+    itsmax = 100  # default nb. of max iterations (its)
+
+
+    def __init__(self, iitmax=itsmax, oitmax=itsmax, ritmax=itsmax,
+                 pCMFD=False, otoll=toll, itoll=toll, rtoll=toll):
+        self.ritmax = ritmax  # set to 1 to skip Ronen iterations
+        self.oitmax = oitmax  # max nb of outer iterations
+        self.iitmax = iitmax  # max nb of inner iterations
+        self.otoll = otoll  # tolerance on fiss. rates at outer its.
+        self.itoll = itoll  # tolerance on flx at inner its.
+        self.rtoll = rtoll  # tolerance on flx at RM its.
+        self.pCMFD = pCMFD  # classic CMFD is False
+        self.check_input()
+
+
+    def check_input(self):
+        if (self.ritmax < 0) or (self.oitmax < 0) or (self.iitmax < 0):
+            raise InputError('Negative max nb. of its is not possible.')
+
+
 def get_zeta(bc=0, D=None):
-    "Yield the zeta boundary condition according to the input bc code"
+    "Return the zeta boundary condition according to the input bc code."
     G = D.size
     if bc == 0:
         # vacuum
@@ -147,7 +218,7 @@ def compute_source(ss0, chi, nsf, flx, k=1.):
     return (qs + compute_fission_source(chi, nsf, flx) / k)
 
 
-def compute_cell_volumes(xi, geo=geometry_type):
+def compute_cell_volumes(xi, geo=None):
     # These volumes are per unit of transversal surface of the slab or
     # per unit of angle in the other frame (azimuthal angle in the cylinder
     # or per cone unit in the sphere). The real volumes in the cylinder
@@ -312,8 +383,6 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
     """Compute the partial currents given by the integral transport equation
     with the input flux flx. An artificial second moment is used to match
     vanishing current at the boundary in case of reflection."""
-    if geometry_type != 'slab':
-        raise RuntimeError('This function has not been ported to curv. geoms.')
     LBC, RBC = BC
     st, ss0, chi, nsf, D = xs
     G, I = st.shape
@@ -637,13 +706,14 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
                 pCMFD=False, filename=None):
     """Solve the Ronen Method by non-linear iterations based on CMFD and
     diffusion."""
-    if ritmax == 0:
-        lg.warning('You called RM iterations, but they were disabled at input.')
-
     # unpack data
     st, ss0, chi, nsf, D = xs  # D is used hereafter
     xi, Di, Vi, geometry_type = xv
     G, I = D.shape
+    if ritmax == 0:
+        lg.warning('You called RM iterations, but they were disabled at input.')
+    elif geometry_type != 'slab':
+        raise RuntimeError('RM has not been ported to curv. geoms.')
 
     # # load reference currents
     # ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
@@ -725,15 +795,13 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
     return flx, k
 
 
-def unfold_xs(xm, xs_media, media):
-    I = xm.size
-    G = xs_media[next(iter(xs_media))]['st'].size
+def unfold_xs(input_data):
+    xm, I, G = xim(input_data.xi), input_data.I, input_data.G
+    xs_media, media = input_data.xs_media, input_data.media
     ss0 = np.zeros((G,G,I),)
     # ss1 = np.zeros_like(ss0)
     st = np.zeros((G,I),)
-    nsf = np.zeros_like(st)
-    chi = np.zeros_like(st)
-    D = np.zeros_like(st)
+    nsf, chi, D = np.zeros_like(st), np.zeros_like(st), np.zeros_like(st)
 
     lbnd = 0.
     for m in media:
@@ -749,64 +817,58 @@ def unfold_xs(xm, xs_media, media):
     return st, ss0, chi, nsf, D
 
 
-def init_data():
+def init_data(idata, slvr_opts):
     "Prepare and check input data, which must exist in outer scope."
-    lg.info("Geometry type is " + geometry_type)
-    if (geometry_type != 'slab') and (LBC != 2):
-        raise ValueError('Curvilinear geometries need LBC = 2.')
+    lg.info("Geometry type is " + idata.geometry_type)
 
     # get the cell width (volumes are in cm in the 1D geometry)
-    Di = xi[1:] - xi[:-1]
-    Vi = compute_cell_volumes(xi, geo=geometry_type)
-    xv = xi, Di, Vi, geometry_type  # pack mesh data
+    Di = idata.xi[1:] - idata.xi[:-1]
+    Vi = compute_cell_volumes(idata.xi, geo=idata.geometry_type)
+    xv = idata.xi, Di, Vi, idata.geometry_type  # pack mesh data
 
-    BC = LBC, RBC  # pack the b.c. identifiers
+    BC = idata.LBC, idata.RBC  # pack the b.c. identifiers
+
     # pack nb. of outer and inner iterations
-    itsmax = oitmax, iitmax
+    itsmax = slvr_opts.oitmax, slvr_opts.iitmax
     # pack tolerances on residual errors in outer and inner iterations
-    tolls = otoll, itoll
+    tolls = slvr_opts.otoll, slvr_opts.itoll
 
-    if len(xs_media) != len(media):
-        raise ValueError('xs media dict and list must have the same nb. of ' +
-                         'elements.')
-    rbnd = [i[1] for i in media]
-    if sorted(rbnd) != rbnd:
-        raise ValueError('media list must be in order from left to right!')
-    if max(rbnd) > L:
-        raise ValueError('Please check the right bounds of media (>L?)')
-    xs = unfold_xs(xim(xi), xs_media, media)
+    xs = unfold_xs(idata)
 
     return xv, xs, BC, itsmax, tolls
 
 
-def run_calc_with_RM_its(filename=None):
+def run_calc_with_RM_its(idata, slvr_opts, filename=None):
     lg.info("Prepare input data")
-    xv, xs, BC, itsmax, tolls = init_data()
+    xv, xs, BC, itsmax, tolls = init_data(idata, slvr_opts)
     lg.info("-o"*22)
 
     # Call the diffusion solver without CMFD corrections
     lg.info("Initial call to the diffusion solver without CMFD corrections")
     lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
-    flx, k = np.ones((G, I),), 1.  # initialize the unknowns
+    flx, k = np.ones((idata.G, idata.I),), 1.  # initialize the unknowns
     flx, k = solve_outers(flx, k, xv, xs, BC, itsmax, tolls)
     lg.info("-o"*22)
 
     # start Ronen iterations
     lg.info("Start the Ronen Method by CMFD iterations")
+    ritmax, rtoll, pCMFD = slvr_opts.ritmax, slvr_opts.rtoll, slvr_opts.pCMFD
     flx, k = solve_RMits(xv, xs, BC,  # input data
                          flx, k,  # initial values
                          itsmax, tolls, ritmax, rtoll,  # its opts
                          pCMFD, filename)
     lg.info("-o"*22)
     lg.info("*** NORMAL END OF CALCULATION ***")
-    pass
+    return flx, k
 
 
 if __name__ == "__main__":
 
     lg.info("Verify the implementation with the test case from the M&C article")
-    from data.homog2GMC2011 import *
-    from tests.homogSlab2GMC2011 import *
+    from tests.homogSlab2GMC2011 import Homo2GSlab_data
 
-    filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
-    run_calc_with_RM_its(filename)
+    slvr_opts = solver_options()
+    filename = "output/kflx_LBC%dRBC%d_I%d" % (Homo2GSlab_data.LBC,
+                                               Homo2GSlab_data.RBC,
+                                               Homo2GSlab_data.I)
+    flx, k = run_calc_with_RM_its(Homo2GSlab_data, slvr_opts, filename)
