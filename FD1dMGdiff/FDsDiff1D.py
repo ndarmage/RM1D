@@ -72,7 +72,8 @@ fix_reflection_by_flx2 = True
 
 
 # get the mid-points of cells defined in the input spatial mesh x
-xim = lambda x: (x[1:] + x[:-1]) / 2.
+def xim(x):
+    return (x[1:] + x[:-1]) / 2.
 
 
 class input_data:
@@ -80,7 +81,8 @@ class input_data:
     of geometry_type are slab, cylindrical and spherical. Allowed boundary
     conditions: 0-vacuum, 1-zero flux and 2-reflection."""
 
-    def __init__(self, xs_media, media, xi, geometry_type='slab', LBC=0, RBC=0):
+    def __init__(self, xs_media, media, xi, geometry_type='slab',
+                 LBC=0, RBC=0):
         self.geometry_type, self.xi = geometry_type, xi
         self.LBC, self.RBC = LBC, RBC
         self.xs_media, self.media = xs_media, media
@@ -100,8 +102,8 @@ class input_data:
 
     def check_input(self):
         if (self.geometry_type != 'slab') and \
-            (self.geometry_type != 'cylindrical') and \
-            (self.geometry_type != 'spherical'):
+           (self.geometry_type != 'cylindrical') and \
+           (self.geometry_type != 'spherical'):
             raise ValueError('Unknown geometry_type ' + self.geometry_type)
         if not isinstance(self.LBC, int):
             raise TypeError('LBC must be integer.')
@@ -128,8 +130,8 @@ class input_data:
 
     def __str__(self):
         print("Geometry type is " + self.geometry_type)
-        print("Boundary conditions: (left) LBC=%d and (right) RBC=%d." % \
-            (self.LBC, self.RBC))
+        print("Boundary conditions: (left) LBC=%d and (right) RBC=%d." %
+              (self.LBC, self.RBC))
         print("B.C. legend: 0-vacuum, 1-zero flux and 2-reflection.")
         print("Number of energy groups: %d" % self.G)
         print("Number of spatial cells: %d" % self.I)
@@ -144,7 +146,6 @@ class solver_options:
     toll = 1.e-6  # default tolerance
     itsmax = 100  # default nb. of max iterations (its)
 
-
     def __init__(self, iitmax=itsmax, oitmax=itsmax, ritmax=itsmax,
                  pCMFD=False, otoll=toll, itoll=toll, rtoll=toll):
         self.ritmax = ritmax  # set to 1 to skip Ronen iterations
@@ -155,7 +156,6 @@ class solver_options:
         self.rtoll = rtoll  # tolerance on flx at RM its.
         self.pCMFD = pCMFD  # classic CMFD is False
         self.check_input()
-
 
     def check_input(self):
         if (self.ritmax < 0) or (self.oitmax < 0) or (self.iitmax < 0):
@@ -180,26 +180,26 @@ def get_zeta(bc=0, D=None):
 
 
 def solveTDMA(a, b, c, d):
-  """Solve the tridiagonal matrix system equations by the
-  Thomas algorithm. a, b and c are the lower, central and upper
-  diagonal of the matrix to invert, while d is the source term."""
-  n = len(d)
-  cp, dp = np.ones(n - 1), np.ones(n)
-  x = np.ones_like(dp) # the solution
+    """Solve the tridiagonal matrix system equations by the
+    Thomas algorithm. a, b and c are the lower, central and upper
+    diagonal of the matrix to invert, while d is the source term."""
+    n = len(d)
+    cp, dp = np.ones(n - 1), np.ones(n)
+    x = np.ones_like(dp)  # the solution
 
-  cp[0] = c[0] / b[0]
-  for i in range(1,n-1):
-      cp[i] = c[i] / (b[i] - a[i-1] * cp[i-1])
+    cp[0] = c[0] / b[0]
+    for i in range(1, n-1):
+        cp[i] = c[i] / (b[i] - a[i-1] * cp[i-1])
 
-  dp[0] = d[0] / b[0]
-  dp[1:] = b[1:] - a * cp
-  for i in range(1,n):
-      dp[i] = (d[i] - a[i-1] * dp[i-1]) / dp[i]
+    dp[0] = d[0] / b[0]
+    dp[1:] = b[1:] - a * cp
+    for i in range(1, n):
+        dp[i] = (d[i] - a[i-1] * dp[i-1]) / dp[i]
 
-  x[-1] = dp[-1]
-  for i in range(n-2, -1, -1):
-      x[i] = dp[i] - cp[i] * x[i+1]
-  return x
+    x[-1] = dp[-1]
+    for i in range(n-2, -1, -1):
+        x[i] = dp[i] - cp[i] * x[i+1]
+    return x
 
 
 def compute_fission_source(chi, nsf, flx):
@@ -241,8 +241,8 @@ def vol_averaged_at_interface(f, Vi):
     Im1 = I - 1
 
     # fb, volume-average quantity on cell borders
-    fb = (f[:,1: ] * np.tile(Vi[1: ], G).reshape(G, Im1) +
-          f[:,:-1] * np.tile(Vi[:-1], G).reshape(G, Im1))
+    fb = (f[:, 1: ] * np.tile(Vi[1: ], G).reshape(G, Im1) +
+          f[:, :-1] * np.tile(Vi[:-1], G).reshape(G, Im1))
     return fb / np.tile(Vi[1:] + Vi[:-1], G).reshape(G, Im1)
 
 
@@ -275,7 +275,7 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
     Db = vol_averaged_at_interface(D, Vi)
 
     # compute the coupling coefficients by finite differences
-    iDm = 2. / (Di[1:] + Di[:-1]) # 1/(\Delta_i + \Delta_{i+1})/2
+    iDm = 2. / (Di[1:] + Di[:-1])  # 1 / (\Delta_i + \Delta_{i+1}) / 2
     xb0, xba = 1., 1.
     if geo == 'cylindrical':
         iDm *= xi[1:-1]
@@ -298,8 +298,8 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
         id0, ida = g*I, (g+1)*I-1
         idx = np.arange(id0, ida)  # use only the first I-1 indices
 
-        coefp = d[idd] + dDm[g,1:-1]  # \phi_{i+1}
-        coefm = d[idd] - dDp[g,1:-1]  # \phi_{i-1}
+        coefp = d[idd] + dDm[g, 1:-1]  # \phi_{i+1}
+        coefm = d[idd] - dDp[g, 1:-1]  # \phi_{i-1}
         a[idx] = -coefm / Vi[:-1]
         b[idx] = coefm
         b[idx+1] += coefp
@@ -309,13 +309,13 @@ def set_diagonals(st, D, xv, BC=(0, 0), dD=None):
         zetal, zetar = get_zeta(LBC, D[g, 0]), get_zeta(RBC, D[g, -1])
         # # force the extrap. lengths estimated by the reference solution
         # zetar = np.array([0.67291, 0.33227])[g]
-        b[id0] += D[g, 0] * xb0 / (0.5 * Di[ 0] + zetal) + dDm[g, 0]
-        b[ida] += D[g,-1] * xba / (0.5 * Di[-1] + zetar) - dDp[g,-1]
+        b[id0] += D[g,  0] * xb0 / (0.5 * Di[ 0] + zetal) + dDm[g,  0]
+        b[ida] += D[g, -1] * xba / (0.5 * Di[-1] + zetar) - dDp[g, -1]
         # N.B.: the division by Vi are needed because we solve for the
         # volume-integrated flux
         idx = np.append(idx, ida)
         b[idx] /= Vi
-        b[idx] += np.full(I, st[g,:])
+        b[idx] += np.full(I, st[g, :])
 
     return a, b, c
 
@@ -387,7 +387,7 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
     st, ss0, chi, nsf, D = xs
     G, I = st.shape
     # J = np.zeros((G,I+1),)  # currents at the cell bounds
-    Jp = np.zeros((G,I+1),)  # plus partial currents at the cell bounds
+    Jp = np.zeros((G, I+1),)  # plus partial currents at the cell bounds
     Jm = np.zeros_like(Jp)  # minus partial currents at the cell bounds
 
     q = compute_source(ss0, chi, nsf, flx, k).reshape(G, I)
@@ -403,34 +403,36 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
 
     for g in range(G):
         for l in range(L):
-            # We use here a matrix to store the transfer probabilities, although
+            # We use here a matrix to store the transfer probabilities, though
             # only the elements on one colums should be stored by the recipro-
             # city theorem.
             # (2 * l + 1.) / 2. = l + 0.5
-            qgoStg = (l + 0.5) * q[l,g,:] / st[g,:]
+            qgoStg = (l + 0.5) * q[l, g, :] / st[g, :]
             # # Net current
-            # Ajig = np.zeros((I,I+1),)
+            # Ajig = np.zeros((I, I+1),)
             # for i in range(I+1):
             #     for j in range(I):
-            #         Ajig[j,i] = (En(l+3, opl(j+1, i-1, Pt[g,:])) \
-            #                    - En(l+3, opl( j , i-1, Pt[g,:]))) \
+            #         Ajig[j,i] = (En(l+3, opl(j+1, i-1, Pt[g, :]))
+            #                    - En(l+3, opl( j , i-1, Pt[g, :])))
             #                     if j < i else \
-            #                     (En(l+3, opl(i,  j , Pt[g,:])) \
-            #                    - En(l+3, opl(i, j-1, Pt[g,:]))) * (-1)**l
-            # J[g,:] += np.dot(qgoStg, Ajig)
+            #                     (En(l+3, opl(i,  j , Pt[g, :]))
+            #                    - En(l+3, opl(i, j-1, Pt[g, :]))) * (-1)**l
+            # J[g, :] += np.dot(qgoStg, Ajig)
 
             # Partial currents
-            Ajigp = np.zeros((I,I+1))
+            Ajigp = np.zeros((I, I+1))
             Ajigm = np.zeros_like(Ajigp)
             for i in range(I+1):
                 for j in range(i):
-                    Ajigp[j,i] = (En(l+3, opl(j+1, i-1, Pt[g,:])) \
-                                - En(l+3, opl( j , i-1, Pt[g,:])))
-                for j in range(i,I):
-                    Ajigm[j,i] = (En(l+3, opl(i,  j , Pt[g,:])) \
-                                - En(l+3, opl(i, j-1, Pt[g,:]))) * (-1)**l
-            Jp[g,:] += np.dot(qgoStg, Ajigp)
-            Jm[g,:] -= np.dot(qgoStg, Ajigm)
+                    Ajigp[j, i] = (En(l+3, opl(j+1, i-1, Pt[g, :]))
+                                 - En(l+3, opl( j , i-1, Pt[g, :])))
+                for j in range(i, I):
+                    Ajigm[j, i] = (En(l+3, opl(i,  j , Pt[g, :]))
+                                 - En(l+3, opl(i, j-1, Pt[g, :])))
+                    # Ajigm[j, i] *= (-1)**l
+                    if l % 2 != 0: Ajigm[j, i] *= -1
+            Jp[g, :] += np.dot(qgoStg, Ajigp)
+            Jm[g, :] -= np.dot(qgoStg, Ajigm)
 
         # add bnd. cnds.
         # Zero flux and vacuum have zero incoming current; a boundary term is
@@ -446,25 +448,25 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
         # Note: the version quadratic_extrapolation_0 is not used because
         # overshoots the flux estimates
         if LBC == 2:
-            bflx = quadratic_extrapolation(flx[g,:3], Di[:3])
+            bflx = quadratic_extrapolation(flx[g, :3], Di[:3])
             # bflx = flx[g,0]  # accurate only to 1st order
             # print ('L',g,bflx, flx[g,:3])
             # get the 'corrective' 2-nd moment
             # bflx2_5o8 = -J[g, 0] - 0.25 * bflx  ## it may be negative!
             # ...commented for considering also the contributions from the
             #    right below
-            trL = np.array([En(3, opl(0, i-1, Pt[g,:])) for i in range(I+1)])
-            ## J[g,:] += 0.5 * np.tile(flx[g,0] / Di[0], I+1) * trL
-            # J[g,:] += 0.5 * bflx * trL
-            Jp[g,:] += 0.5 * bflx * trL
+            trL = np.array([En(3, opl(0, i-1, Pt[g, :])) for i in range(I+1)])
+            # # J[g, :] += 0.5 * np.tile(flx[g,0] / Di[0], I+1) * trL
+            # J[g, :] += 0.5 * bflx * trL
+            Jp[g, :] += 0.5 * bflx * trL
         if RBC == 2:
-            bflx = quadratic_extrapolation(flx[g,-3:][::-1], Di[-3:][::-1])
+            bflx = quadratic_extrapolation(flx[g, -3:][::-1], Di[-3:][::-1])
             # bflx = flx[g,-1]  # accurate only to 1st order
             # print ('R',g, bflx, flx[g,-3:], flx[g,-1])
-            trR = np.array([En(3, opl(i, I-1, Pt[g,:])) for i in range(I+1)])
-            ## J[g,:] -= 0.5 * np.tile(flx[g,-1] / Di[-1], I+1) * trR
-            # J[g,:] -= 0.5 * bflx * trR
-            Jm[g,:] += 0.5 * bflx * trR
+            trR = np.array([En(3, opl(i, I-1, Pt[g, :])) for i in range(I+1)])
+            # # J[g, :] -= 0.5 * np.tile(flx[g,-1] / Di[-1], I+1) * trR
+            # J[g, :] -= 0.5 * bflx * trR
+            Jm[g, :] += 0.5 * bflx * trR
 
         # Fix the non-vanishing current at the boundary by propagating the
         # error through the second moments. This is done after transmitting
@@ -477,19 +479,21 @@ def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
         if LBC == 2 and fix_reflection_by_flx2:
             # bflx2_5o16 = -J[g, 0]  # for total curr
             bflx2_5o16 = Jm[g, 0] - Jp[g, 0]  # for partial curr
-            trL = np.array([En(5, opl(0, i-1, Pt[g,:])) for i in range(I+1)])*3
-            trL -= np.array([En(3, opl(0, i-1, Pt[g,:])) for i in range(I+1)])
+            opli = opl(0, i-1, Pt[g, :])
+            trL = np.array([En(5, opli) for i in range(I+1)]) * 3
+            trL -= np.array([En(3, opli) for i in range(I+1)])
             # J[g,:] += 4. * bflx2_5o16 * trL
-            Jp[g,:] += 4. * bflx2_5o16 * trL
+            Jp[g, :] += 4. * bflx2_5o16 * trL
         if RBC == 2 and fix_reflection_by_flx2:
             # bflx2_5o16 = J[g, -1]  # for total curr
             bflx2_5o16 = (Jp[g, -1] - Jm[g, -1])  # for partial curr
-            trR = np.array([En(5, opl(i, I-1, Pt[g,:])) for i in range(I+1)])*3
-            trR -= np.array([En(3, opl(i, I-1, Pt[g,:])) for i in range(I+1)])
-            # J[g,:] -= 4. * bflx2_5o16 * trR
-            Jm[g,:] += 4. * bflx2_5o16 * trR
+            opli = opl(i, I-1, Pt[g, :])
+            trR = np.array([En(5, opli) for i in range(I+1)]) * 3
+            trR -= np.array([En(3, opli) for i in range(I+1)])
+            # J[g, :] -= 4. * bflx2_5o16 * trR
+            Jm[g, :] += 4. * bflx2_5o16 * trR
 
-        # and here one can check that J[g,:] = Jp[g,:] - Jm[g,:]
+        # and here one can check that J[g, :] = Jp[g, :] - Jm[g, :]
     return Jp, Jm
 
 
@@ -501,12 +505,12 @@ def compute_diff_currents(flx, D, xv, BC=(0, 0)):
     G, I = D.shape
     # Db, diff. coeff. on cell borders
     Db = vol_averaged_at_interface(D, Vi)
-    J = -2. * Db * (flx[:,1:] - flx[:,:-1])
+    J = -2. * Db * (flx[:, 1:] - flx[:, :-1])
     J /= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1)
     # add b.c.
     zetal, zetar = get_zeta(LBC, D[:, 0]), get_zeta(RBC, D[:, -1])
-    JL = -D[:, 0] * flx[:, 0] / (0.5 * Di[ 0] + zetal)
-    JR =  D[:,-1] * flx[:,-1] / (0.5 * Di[-1] + zetar)
+    JL = -D[:,  0] * flx[:,  0] / (0.5 * Di[ 0] + zetal)
+    JR =  D[:, -1] * flx[:, -1] / (0.5 * Di[-1] + zetar)
     # avoid possible numerical issues
     if LBC == 2: JL.fill(0)
     if RBC == 2: JR.fill(0)
@@ -522,13 +526,13 @@ def compute_delta_diff_currents(flx, dD, Di, BC=(0, 0), pCMFD=False):
     I -= 1
     if pCMFD:
         dDp, dDm = dD
-        dJp, dJm = -dDp[:,1:] * flx, -dDm[:,:-1] * flx
+        dJp, dJm = -dDp[:, 1:] * flx, -dDm[:, :-1] * flx
         dJ = dJp, dJm
     else:
-        dJ = -dD[:, 1:-1] * (flx[:,1:] + flx[:,:-1])
+        dJ = -dD[:, 1:-1] * (flx[:, 1:] + flx[:, :-1])
         # add b.c.
-        dJ = np.insert(dJ, 0, -dD[:, 0] * flx[:, 0], axis=1)
-        dJ = np.insert(dJ, I, -dD[:,-1] * flx[:,-1], axis=1)
+        dJ = np.insert(dJ, 0, -dD[:,  0] * flx[:,  0], axis=1)
+        dJ = np.insert(dJ, I, -dD[:, -1] * flx[:, -1], axis=1)
     return dJ
 
 
@@ -564,18 +568,18 @@ def compute_delta_D(flx, J_diff, pJ_tran, pCMFD=False, vrbs=False):
     if pCMFD:
         half_Jdiff = 0.5 * J_diff
         dDp, dDm = half_Jdiff - Jp, Jm + half_Jdiff
-        dDp[:,1:-1] /= flx[:,:-1]
-        dDm[:,1:-1] /= flx[:,1:]
-        if np.all(flx[:, 0] > 0.): dDm[:, 0] = dD[:, 0] / flx[:, 0]
-        if np.all(flx[:,-1] > 0.): dDp[:,-1] = dD[:,-1] / flx[:,-1]
-        dDm[:,-1].fill(np.nan)  # N.B.: these values must not be used!
-        dDp[:, 0].fill(np.nan)
+        dDp[:, 1:-1] /= flx[:, :-1]
+        dDm[:, 1:-1] /= flx[:, 1:]
+        if np.all(flx[:,  0] > 0.): dDm[:,  0] /= flx[:,  0]
+        if np.all(flx[:, -1] > 0.): dDp[:, -1] /= flx[:, -1]
+        dDm[:, -1].fill(np.nan)  # N.B.: these values must not be used!
+        dDp[:,  0].fill(np.nan)
         dD = dDp, dDm
     else:
         # use the classic CMFD scheme
-        dD[:, 1:-1] /= (flx[:,1:] + flx[:,:-1])
-        if np.all(flx[:, 0] > 0.): dD[:, 0] /= flx[:, 0]
-        if np.all(flx[:,-1] > 0.): dD[:,-1] /= flx[:,-1]
+        dD[:, 1:-1] /= (flx[:, 1:] + flx[:, :-1])
+        if np.all(flx[:,  0] > 0.): dD[:,  0] /= flx[:,  0]
+        if np.all(flx[:, -1] > 0.): dD[:, -1] /= flx[:, -1]
     return dD
 
 
@@ -594,7 +598,7 @@ def solve_outers(flx, k, xv, xs, BC=(0, 0), itsmax=(50, 50),
     st, ss0, chi, nsf, D = xs
     G, I = flx.shape
     LBC, RBC = BC
-    oitmax, iitmax = itsmax # max nb of outer/inner iterations
+    oitmax, iitmax = itsmax  # max nb of outer/inner iterations
     # tolerance on residual errors for the solution in outers/inners
     otoll, itoll = toll
 
@@ -608,7 +612,7 @@ def solve_outers(flx, k, xv, xs, BC=(0, 0), itsmax=(50, 50),
     while (err > otoll) and (ito < oitmax):
         # backup local unknowns
         serr, kold = np.array(s, copy=True), k
-        sold = serr # ...just a reference
+        sold = serr  # ...just a reference
 
         # solve the diffusion problem with inner iterations on scattering
         flx = solve_inners(flx, ss0, diags, s / k, itoll, iitmax)
@@ -649,13 +653,13 @@ def load_refSN_solutions(ref_flx_file, G, Di, Dbnd=0.):
             raise ValueError('Reference flux has different nb. of cells')
 
         # normalize the reference flux
-        flxm_SN *= (I * G) / np.sum(flxm_SN[:,0,:])
-        d_flxm0R = np.array([
-            - (estimate_derivative(flxm_SN[g,0,-3:][::-1], Di[-3:][::-1])
-            / flxm_SN[g,0,-1]) for g in range(G)
+        flxm_SN *= (I * G) / np.sum(flxm_SN[:, 0, :])
+        d_flxm0R = - np.array([
+            estimate_derivative(flxm_SN[g, 0, -3:][::-1], Di[-3:][::-1]) /
+            flxm_SN[g, 0, -1] for g in range(G)
         ])
         print('Estimates of the extrapolated lengths ' + str(-1. / d_flxm0R))
-        print('Values used in the diffusion solver ' + str(2.13*Dbnd))
+        print('Values used in the diffusion solver ' + str(2.13 * Dbnd))
     else:
         lg.debug('Missing file ' + ref_flx_file)
 
@@ -663,23 +667,23 @@ def load_refSN_solutions(ref_flx_file, G, Di, Dbnd=0.):
 
 
 def to_str(v, fmt='%.13g'):
-    return ', '.join([fmt%i for i in v]) + '\n'
+    return ', '.join([fmt % i for i in v]) + '\n'
 
 
 def check_current_solutions():
     # compute the corrective currents (determined only for debug)
     J_corr = compute_delta_diff_currents(flxd, dD, Di, BC, pCMFD)
-    print("F_ref ", flxm_SN[0,0,-6:] / Di[-6:])
-    print("F_diff", flx_save[:,:,itr][0,-6:] / Di[-6:])
-    print("F_dif*", flx[0,-6:] / Di[-6:])
-    print("J_ref ", flxm_SN[0,1,-6:] / Di[-6:])  # cell-averaged!
-    print("J_diff", J_diff[0,-6:])
-    print("J_tran", J_tran[0,-6:])
-    print("J_corr", J_corr[0,-6:])
-    print("    dD", dD[0,-6:])
+    print("F_ref ", flxm_SN[0, 0, -6:] / Di[-6:])
+    print("F_diff", flx_save[:, :, itr][0, -6:] / Di[-6:])
+    print("F_dif*", flx[0, -6:] / Di[-6:])
+    print("J_ref ", flxm_SN[0, 1, -6:] / Di[-6:])  # cell-averaged!
+    print("J_diff", J_diff[0, -6:])
+    print("J_tran", J_tran[0, -6:])
+    print("J_corr", J_corr[0, -6:])
+    print("    dD", dD[0, -6:])
 
 
-def plot_fluxes(xm,flx,L):
+def plot_fluxes(xm, flx, L):
     # prepare the plot
     fig = plt.figure(0)
     # define a fake subplot that is in fact only the plot.
@@ -689,16 +693,16 @@ def plot_fluxes(xm,flx,L):
     ax.tick_params(axis='both', which='major', labelsize=12)
     ax.tick_params(axis='both', which='minor', labelsize=10)
 
-    ax.plot(xm, flx[0,:],label='fast')
-    ax.plot(xm, flx[1,:],label='thermal')
-    plt.xlabel(r'$x$ $[cm]$',fontsize=16)
-    plt.ylabel(r'$\phi$ $[n/cm^2\cdot s]$',fontsize=16)
-    plt.title(r'Diffusion fluxes - DT',fontsize=16)
+    ax.plot(xm, flx[0, :], label='fast')
+    ax.plot(xm, flx[1, :], label='thermal')
+    plt.xlabel(r'$x$ $[cm]$', fontsize=16)
+    plt.ylabel(r'$\phi$ $[n/cm^2\cdot s]$', fontsize=16)
+    plt.title(r'Diffusion fluxes - DT', fontsize=16)
     plt.xlim(0, L)
-    plt.ylim(0, max(flx.flatten())+0.2)
-    plt.grid(True,'both','both')
-    ax.legend(loc='best',fontsize=12)
-    #fig.savefig('diffusion_fluxes_DT.png',dpi=150,bbox_inches='tight')
+    plt.ylim(0, max(flx.flatten()) + 0.2)
+    plt.grid(True, 'both', 'both')
+    ax.legend(loc='best', fontsize=12)
+    # fig.savefig('diffusion_fluxes_DT.png',dpi=150,bbox_inches='tight')
     plt.show()
 
 
@@ -711,7 +715,7 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
     xi, Di, Vi, geometry_type = xv
     G, I = D.shape
     if ritmax == 0:
-        lg.warning('You called RM iterations, but they were disabled at input.')
+        lg.warning('You called RM its, but they were disabled at input.')
     elif geometry_type != 'slab':
         raise RuntimeError('RM has not been ported to curv. geoms.')
 
@@ -726,7 +730,7 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
     err, itr, kinit = 1.e+20, 0, k
     Dflxm1 = np.zeros_like(flx)
     while (err > rtoll) and (itr < ritmax):
-        k_save[itr], flx_save[:,:,itr] = k, flx
+        k_save[itr], flx_save[:, :, itr] = k, flx
 
         # revert to flux density
         # (this division does not seem to affect the final result though)
@@ -736,8 +740,9 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
         J_diff = compute_diff_currents(flxd, D, xv, BC)
 
         # compute the currents by integral transport (Ronen Method)
-        # #lg.warning("CALCULATE THE TR CURRENT WITH THE REFERENCE S16 SOLUTION!")
-        ## J_tran = compute_tran_currents(flxm_SN[:,0,:] / Vi, k_SN, Di, xs, BC)
+        # #lg.warning("USE THE REFERENCE SN FLUX IN THE TRANSPORT OPERATOR")
+        # # rflx = flxm_SN[:, 0, :] / Vi
+        # # J_tran = compute_tran_currents(rflx, k_SN, Di, xs, BC)
         pJ_tran = compute_tran_currents(flxd, k, Di, xs, BC)
         # Remind that Jp, Jm = *pJ_tran, J = Jp - Jm
 
@@ -759,7 +764,7 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
         Dflxm1 = flx - flxold
         ferr = np.where(flx > 0., 1. - flxold / flx, Dflxm1)
 
-        err = abs(ferr[ np.unravel_index(abs(ferr).argmax(), (G, I)) ])
+        err = abs(ferr[np.unravel_index(abs(ferr).argmax(), (G, I))])
         itr += 1
         lg.info("+RM+ it={:^4d}, k={:<13.6g}, err={:<+13.6e}".format(
             itr, k, err
@@ -768,29 +773,29 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
             "G", "max(err)", "at i", "std(err)"
         ))
         for g in range(G):
-            ierr, estd = abs(ferr[g,:]).argmax(), abs(ferr[g,:]).std()
+            ierr, estd = abs(ferr[g, :]).argmax(), abs(ferr[g, :]).std()
             lg.info(
                 "{:^4d}{:<+13.6e}{:^6d}{:<+13.6e}".format(
-                g, ferr[g,ierr], ierr+1, estd
-            ))
+                         g, ferr[g, ierr], ierr + 1, estd)
+            )
         # input('press a key to continue...')
-
-
-    ## plot fluxes
+    #
+    # plot fluxes
     # plot_fluxes(xim(xi),flx,L)
-
-    ## save fluces
+    # save fluces
     # save_fluxes('diffusion_fluxes_DT.dat',xm,flx)
 
-    k_save[itr], flx_save[:,:,itr] = k, flx  # store final values
+    k_save[itr], flx_save[:, :, itr] = k, flx  # store final values
     lg.info("Initial value of k was %13.6g." % kinit)
     if filename is not None:
         # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
         np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
-            for i, ki in enumerate(k_save):
-                if ki < 0: break
-                f.write(to_str(np.append(ki, flx_save[:,:,i].flatten())))
+            i = 0
+            while k_save[i] >= 0:
+                flxsv = flx_save[:, :, i].flatten()
+                f.write(to_str(np.append(k_save[i], flxsv)))
+                i += 1
 
     return flx, k
 
@@ -798,21 +803,21 @@ def solve_RMits(xv, xs, BC, flx, k, itsmax, tolls, ritmax=10, rtoll=1.e-6,
 def unfold_xs(input_data):
     xm, I, G = xim(input_data.xi), input_data.I, input_data.G
     xs_media, media = input_data.xs_media, input_data.media
-    ss0 = np.zeros((G,G,I),)
+    ss0 = np.zeros((G, G, I),)
     # ss1 = np.zeros_like(ss0)
-    st = np.zeros((G,I),)
+    st = np.zeros((G, I),)
     nsf, chi, D = np.zeros_like(st), np.zeros_like(st), np.zeros_like(st)
 
     lbnd = 0.
     for m in media:
         media_name, rbnd = m
         idx = (lbnd < xm) & (xm < rbnd)
-        st[:,idx] = np.tile(xs_media[media_name]['st'], (I, 1)).T
-        nsf[:,idx] = np.tile(xs_media[media_name]['nsf'], (I, 1)).T
-        chi[:,idx] = np.tile(xs_media[media_name]['chi'], (I, 1)).T
-        D[:,idx] = np.tile(xs_media[media_name]['D'], (I, 1)).T
-        tmp = np.tile(xs_media[media_name]['ss'][:,:,0].flatten(), (I, 1)).T
-        ss0[:,:,idx] = tmp.reshape(G, G, I)
+        st[:, idx] = np.tile(xs_media[media_name]['st'], (I, 1)).T
+        nsf[:, idx] = np.tile(xs_media[media_name]['nsf'], (I, 1)).T
+        chi[:, idx] = np.tile(xs_media[media_name]['chi'], (I, 1)).T
+        D[:, idx] = np.tile(xs_media[media_name]['D'], (I, 1)).T
+        tmp = np.tile(xs_media[media_name]['ss'][:, :, 0].flatten(), (I, 1)).T
+        ss0[:, :, idx] = tmp.reshape(G, G, I)
 
     return st, ss0, chi, nsf, D
 
@@ -864,7 +869,7 @@ def run_calc_with_RM_its(idata, slvr_opts, filename=None):
 
 if __name__ == "__main__":
 
-    lg.info("Verify the implementation with the test case from the M&C article")
+    lg.info("Verify the code with the test case from the M&C article")
     from tests.homogSlab2GMC2011 import Homo2GSlab_data
 
     slvr_opts = solver_options()
