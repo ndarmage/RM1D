@@ -119,13 +119,13 @@ class input_data:
             raise TypeError('The input xs_media is not a dictionary.')
         if not isinstance(self.media, list):
             raise TypeError('The input media is not a list.')
-        if len(self.xs_media) != len(self.media):
-            raise ValueError('xs media dict and list must have the same ' +
-                             'nb. of elements.')
+#        if len(self.xs_media) != len(self.media):
+#            raise ValueError('xs media dict and list must have the same ' +
+#                             'nb. of elements.')
         rbnd = [m[1] for m in self.media]
         if sorted(rbnd) != rbnd:
             raise ValueError('media list must be in order from left to right!')
-        if max(rbnd) > self.L:
+        if max(rbnd) > self.L and abs(max(rbnd) - self.L)>1e-6:
             raise ValueError('Please check the right bounds of media (>L?)')
 
     def __str__(self):
@@ -812,12 +812,13 @@ def unfold_xs(input_data):
     for m in media:
         media_name, rbnd = m
         idx = (lbnd < xm) & (xm < rbnd)
-        st[:, idx] = np.tile(xs_media[media_name]['st'], (I, 1)).T
-        nsf[:, idx] = np.tile(xs_media[media_name]['nsf'], (I, 1)).T
-        chi[:, idx] = np.tile(xs_media[media_name]['chi'], (I, 1)).T
-        D[:, idx] = np.tile(xs_media[media_name]['D'], (I, 1)).T
+        st[:, idx] = np.tile(xs_media[media_name]['st'], (I, 1))[idx].T
+        nsf[:, idx] = np.tile(xs_media[media_name]['nsf'], (I, 1))[idx].T
+        chi[:, idx] = np.tile(xs_media[media_name]['chi'], (I, 1))[idx].T
+        D[:, idx] = np.tile(xs_media[media_name]['D'], (I, 1))[idx].T
         tmp = np.tile(xs_media[media_name]['ss'][:, :, 0].flatten(), (I, 1)).T
-        ss0[:, :, idx] = tmp.reshape(G, G, I)
+        ss0[:, :, idx] = tmp.reshape(G, G, I)[:,:,idx]        
+        lbnd = rbnd
 
     return st, ss0, chi, nsf, D
 
@@ -870,7 +871,8 @@ def run_calc_with_RM_its(idata, slvr_opts, filename=None):
 if __name__ == "__main__":
 
     lg.info("Verify the code with the test case from the M&C article")
-    from tests.homogSlab2GMC2011 import Homo2GSlab_data
+    #from tests.homogSlab2GMC2011 import Homo2GSlab_data
+    from tests.homogSlab2GIlas2003 import Homo2GSlab_data
 
     slvr_opts = solver_options()
     filename = "output/kflx_LBC%dRBC%d_I%d" % (Homo2GSlab_data.LBC,
