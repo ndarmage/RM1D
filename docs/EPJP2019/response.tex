@@ -1,0 +1,220 @@
+
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND OTHER DOCUMENT CONFIGURATIONS
+%----------------------------------------------------------------------------------------
+
+\documentclass[11pt]{letter} % Default font size of the document, change to 10pt to fit more text
+
+\usepackage{graphicx}% Include figure files
+%\usepackage{dcolumn}% Align table columns on decimal point
+%\usepackage{bm}% bold math
+%\usepackage[sectionbib]{natbib}% bold math
+\usepackage{letterbib}
+\usepackage[sort&compress]{natbib}% bold math
+%\bibliographystyle{abbrv}
+\bibliographystyle{unsrt}
+%\bibliographystyle{sort}
+%\usepackage[english,hebrew]{babel}
+\usepackage{hyperref}
+
+\usepackage{newcent} % Default font is the New Century Schoolbook PostScript font 
+%\usepackage{helvet} % Uncomment this (while commenting the above line) to use the Helvetica font
+
+\usepackage[usenames, dvipsnames]{color}
+% for quotes
+\usepackage [english]{babel}
+\usepackage [autostyle, english = american]{csquotes}
+\MakeOuterQuote{"}
+
+% Margins
+\topmargin=-1.in % Moves the top of the document 1 inch above the default
+\textheight=9.in % Total height of the text on the page before text goes on to the next page, this can be increased in a longer letter
+\oddsidemargin=0.2in % Position of the left margin, can be negative or positive if you want more or less room
+\textwidth=6in % Total width of the text, increase this if the left margin was decreased and vice-versa
+
+%\let\raggedleft\raggedright % Pushes the date (at the top) to the left, comment this line to have the date on the right
+
+\newcommand{\tsup}[1]{\textsuperscript{#1}}
+\newcommand{\tsub}[1]{\textsubscript{#1}}
+\newcommand{\revised}[1]{{\color{red}{#1}}}
+\newcommand{\revb}[1]{{\color{magenta}{#1}}}
+
+\newcommand{\keff}{\ensuremath{k_{\texttt{\scriptsize{eff}}}}}
+\newcommand{\ppf}{\textrm{PPF}}
+
+\newcommand{\eg}{e.g.,}
+\newcommand{\ie}{i.e.,}
+
+\begin{document}
+
+%----------------------------------------------------------------------------------------
+%	ADDRESSEE SECTION
+%----------------------------------------------------------------------------------------
+
+\begin{letter}{The European Physical Journal Plus \\
+Editorial board}
+
+\signature{
+	\vspace{-30pt}
+	Erez Gilad, PhD \\
+	\mbox{Ben-Gurion University of the Negev}\\
+	E-mail: gilade@bgu.ac.il
+} % Your name for the signature at the bottom
+
+%----------------------------------------------------------------------------------------
+%	LETTER CONTENT SECTION
+%----------------------------------------------------------------------------------------
+\opening{Dear Dr. Jozef Ongena, Managing editor\\} 
+
+Thank you for the response regarding the manuscript EPJP-D-19-01168 entitled "High-accuracy neutron diffusion calculations based on integral transport theory". We are also grateful for the insightful comments by the reviewer. 
+
+The manuscript underwent a revision in light of the reviewer's comments and is hereby resubmitted for publication in \textit{The European Physical Journal Plus}. 
+
+In the revised manuscript we address in full the comments by the reviewer, and the revised parts are marked \revised{in red}. Following are the comments by the reviewer in black followed by our responses (\revised{in red}).  
+
+We hope that the Editor and the reviewer find the revised manuscript satisfactory and recommend it for publication. 
+
+%--------------------------------------------------------------
+% LETTERS ENDS HERE ******************************************
+\closing{\mbox{Sincerely yours on behalf of all the co-authors,}}
+
+
+
+%---------------------------------------------------------------------------------------	-
+\newpage
+
+\textbf{Reviewer \#1}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Please re-read the whole paper to check the language and the punctuation. Some sentences are very concise and could be expanded a little for clarity.}
+\\ \\
+\revised{The manuscript underwent a thorough examination of the language and punctuation, and some sentences were elaborated for clarity. For example, ...}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{I have a concern on which the Authors may want to comment. Formula (3) becomes problematic where the gradient of the flux is small, which is usually the zone where diffusion works better.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{I do not think it would be too hard work to report more results. For instance, I think it would be nice to see the effect of the physical size of the domain, to better detect and evidence the effect of the boundary. This would add a lot to the value of the paper.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{I do not think it would be too hard work to report more results. For instance, I think it would be nice to see the effect of the physical size of the domain, to better detect and evidence the effect of the boundary. This would add a lot to the value of the paper.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{In the abstract: I suggest to avoid saying that the results match "extremely well" the reference... while this is true for the eigenvalue, it may be questionable for the flux near the boundary, where effects should be more deeply investigated. Maybe "well" is already enough.}
+\\ \\
+\revised{T}
+\\ \\
+
+\newpage
+
+% --------------------------------------------------------------------------------------
+\textit{Page 22, At line 40: largest errors appear near the boundary. This is of course related to the failure of diffusion, however there might be also an additional contribution of the type of boundary conditions adopted (see below). Any comments? In any case, this aspect needs to be investigated.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Line 55: for clarity I would change it to "uncollided neutrons originated from an incoming angular flux at the boundary".}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Page 3, In the title of subsection 2.3 change "\&" with "and".}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{In formula (8) it should be specified that it is assumed x'<x, otherwise it is not consistent with Eqs. (7).}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{There is no definition of the moments of the cross sections, Eq. (10).}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Page 5, At line 42 I suggest to change "terms to get" with "terms, one gets".}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{At line 58: the fission operator is not given by q, but, rather, it can be obtained by the observation of the form of the q term, Eq. (25). Since it is crucial to see the effect of the diffusion coefficient update, the operators could be reported explicitly.}
+\\ \\
+\revised{T}
+\\ \\
+
+\newpage
+
+% --------------------------------------------------------------------------------------
+\textit{Page 6, To me the title of subsection 3.2 is not correct (there is no such a thing as "integral currents". Should it rather be something like "evaluation of the currents by the integral form of the transport equation"? I suggest also to change the caption of Fig. 2 accordingly.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Since the whole section consider the multigroup formulation, at line 6 to be consistent I suggest to change $J(x,E)$ to $J_g(x)$. }
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Page 7, About boundary conditions: how is the extrapolated distance chosen with vacuum? For instance, with a Mark or a Marshak approach or according to other recipes? And, in any case, what is the value assumed for the calculations? Furthermore, the Authors should also comment on the problem of the need to update the extrapolated distance since it is in general related to the diffusion coefficient (e.g. 2D in Marshak BC). In this respect, the meaning of the sentence in line 53 and 54 is not clear to me.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{page 8, The statement about boundary conditions should be clarified at line 40. What does "they are constant for each energy group" mean? If it means that the same extrapolated distance is assumed for both groups, the Authors should consider to make a more consistent assumption of group-dependent extrapolated distances. The effect of the choice of the BC is not insignificant, especially for optically thin systems. It could be interesting to see the effect of the different choices.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{In Table 1 units must be indicated.}
+\\ \\
+\revised{T}
+\\ \\
+
+\newpage
+
+% --------------------------------------------------------------------------------------
+\textit{At line 50, please change "w/" with "with". At line 55, please change "w/o" with "without". The use of such contractions (such as "\&" above) is not advisable in a scientific paper. I suggest to make these changes throughout the whole paper.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{At line 60, it is advisable to expand on "the corrected diffusion current exhibit(s)non-trivial behaviour near the boundary". Can it be related to BC?}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{General comment on the Figures: it would be nice to explicitly identify the quantities in the graphs rather than letting the reader struggle to interpret them from the legend.}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{In Fig. 8: is there any explanation for the sign change in some curves?}
+\\ \\
+\revised{T}
+\\ \\
+% --------------------------------------------------------------------------------------
+\textit{Suggestion for further work: it should not be too difficult to study a heterogeneous configuration, since the Ronen method naturally leads to a non-homogeneous system, to see how the Ronen method adapts to interfaces, where strong gradients of the flux might appear.}
+\\ \\
+\revised{T}
+\\ \\
+
+
+
+
+
+
+%\bibliography{severe_accident}
+
+\end{letter}
+
+
+\end{document}
+
