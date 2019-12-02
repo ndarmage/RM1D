@@ -150,8 +150,8 @@ text centered, text width=3em, minimum height=2em, line width=1pt]
 % The correct dates will be entered by Springer
 %
 \abstract{
-In this paper, the Ronen method is developed, implemented and applied to resolve the neutron flux and the criticality eigenvalue in a simple homogeneous problem. The Ronen method is based on iterative calculations of the multigroup diffusion coefficients using a multigroup diffusion model and driven by the solutions of the integral transport equation. The local diffusion constants are modified in order to reproduce new estimates of the surface currents by a transport operator. The diffusion solver employed in this study uses finite differences and the transport-corrected currents are introduced into the numerical scheme by means of drift terms. The corrected solutions are compared against reference results obtained  by a discrete ordinate code. Boundary conditions are discussed and proper approximations are introduced in order to conserve the particle balance. The results match extremely well the reference solutions, especially in the limit of fine meshes, but slow convergence of the scalar flux is reported.
-%
+In this paper, the Ronen method is developed, implemented, and applied to resolve the neutron flux and the criticality eigenvalue \revised{in one-dimensional simple homogeneous problem and in more complex heterogeneous benchmarks}. The Ronen method is based on iterative calculations of the multigroup diffusion coefficients using a multigroup diffusion model and \revised{is} driven by the solutions of the integral transport equation. The \revised{spatially-dependent} diffusion constants are modified \revised{locally} in order to produce new estimates of the surface currents \revised{using an integral transport expression}. The diffusion solver employed in this study uses finite differences and the transport-corrected currents are introduced into the numerical scheme \revised{using} drift terms. The corrected solutions are compared against reference results obtained by a discrete ordinate code. Boundary conditions are discussed and proper approximations are introduced to conserve the particle balance. The results match well with the reference solutions, especially in the limit of fine meshes, but slow convergence of the scalar flux is reported.
+% 
 \PACS{
 	{28.00.00}{Nuclear engineering and nuclear power studies} \and
 	{28.20.Gd}{Neutron transport: diffusion and moderation} \and
@@ -169,19 +169,17 @@ In this paper, the Ronen method is developed, implemented and applied to resolve
 \section{Introduction}
 \label{sec:intro}
 
-Neutron transport calculations on a full core scale can be a highly intensive computational task. High-fidelity core design optimization or transient analyses can quickly become computationally impractical when using transport methods~\cite{Kim-2019}. For example, in order to achieve a 1\% accuracy in the local flux/power estimation, an order of 10\tsup{11} histories is needed in a full-core Monte Carlo calculation~\cite{Martin-2012}. Another problem is the huge number of variables and parameters to be stored and used during computation, e.g., tallies, geometry, cross sections, and depletion data. A conservative estimation of the memory needed for reasonably accurate full-core Monte Carlo neutronic calculation is in the range of terabytes (TBs)~\cite{Martin-2012}. 
+Neutron transport calculations on a full core scale can be a highly intensive computational task. High-fidelity core design optimization or transient analyses can quickly become computationally impractical when using transport methods~\cite{Kim-2019}. For example, to achieve a 1\% accuracy in the local flux/power estimation, an order of 10\tsup{11} histories is needed in a full-core Monte Carlo calculation~\cite{Martin-2012}. Another problem is the huge number of variables and parameters to be stored and used during computation, e.g., tallies, geometry, cross sections, and depletion data. A conservative estimation of the memory needed for reasonably accurate full-core Monte Carlo neutronic calculation is in the range of terabytes (TBs)~\cite{Martin-2012}. \revised{The growing demand for high-accuracy and high-precision full-core computations challenges not only today’s high-end computing systems but will also challenge the near future (e.g., Exascale) computers~\cite{Martin-2012,Smith-2011,Kim-2019}.}  
 
-%The growing demand for high-accuracy and high-precision full-core computations challenges not only today’s high-end computing systems but will also challenge the near future (e.g., Exascale) computers~\cite{Martin-2012,Smith-2011,Kim-2019}.  
-
-To overcome this difficulty, faster (and less accurate) multigroup neutron diffusion solvers are frequently  used~\cite{Lawrence-1986,Smith-1986}. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core, e.g., axial and radial seed-blanket structures, as in the French ASTRID SFR CVF design~\cite{Bertrand-2016}, challenging the accuracy of diffusion calculations. Moreover, modern calculation schemes evolve towards so-called "best-estimate" codes, aiming at high accuracy~\cite{IAEA-BE-2008}. 
+To overcome this difficulty, faster (and less accurate) multigroup neutron diffusion solvers are frequently used~\cite{Lawrence-1986,Smith-1986}. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core, e.g., axial and radial seed-blanket structures, as in the French ASTRID SFR CVF design~\cite{Bertrand-2016}, challenging the accuracy of diffusion calculations. Moreover, modern calculation schemes evolve towards so-called "best-estimate" codes, aiming at high accuracy~\cite{IAEA-BE-2008}. 
 
 A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient~\cite{Bell-1970,Pounders-2009}. The calculation of this parameter should be based on physical insights from the transport equation such that the resulting improved ("transport corrected") diffusion approximation can capture the transport phenomena of interest. Such transport corrections can be divided into two main classes. The first class is based on extending the $P_1$ model equations (and the associated boundary conditions) along with some closure scheme, such as the well-known $SP_3$ approximation~\cite{Brantley-2000}. The second class, to which this study belongs, is based on the re-calculation of the diffusion coefficients within the multigroup diffusion framework~\cite{Tomatis-2011}. 
 
-In this paper, the development, implementation, and qualification of the Ronen Method~\cite{Ronen-2004} in one-dimensional homogeneous plane geometry is reported. This method is implemented as a highly accurate multigroup neutron diffusion solver based on novel transport corrections. The main hypothesis underlying the Ronen method is based on iterative calculations of the multigroup diffusion coefficients driven by the solutions of the integral transport equation~\cite{Ronen-2004,Tomatis-2011}. 
+In this paper, the development, implementation, and qualification of the Ronen Method~\cite{Ronen-2004} in one-dimensional homogeneous \revised{and heterogeneous} plane geometry is reported. This method is implemented as a highly accurate multigroup neutron diffusion solver based on novel transport corrections. The main hypothesis underlying the Ronen method is based on iterative calculations of the multigroup diffusion coefficients driven by the solutions of the integral transport equation~\cite{Ronen-2004,Tomatis-2011}. 
 
 %This study addresses a critical issue in contemporary nuclear reactor calculations, which constitutes an inherent difficulty that will not be solved in the near future merely by increased computational capabilities. As modern and advanced nuclear systems become more complex and heterogeneous, the requirements for more precise and accurate calculations increase as well~\cite{Smith-2011,Martin-2012,Smith-2013,Tomatis-2011,Kim-2019}. This trend is not likely to fade away. In light of this trend, the development of highly accurate neutron diffusion calculations is of great importance for nuclear reactor's operation, safety, research, and design purposes.
 
-The theoretical background is detailed in~\sxn{sec:theory}, the numerical implementation is described in~\sxn{sec:imp}, the results are presented in~\sxn{sec:res} and conclusions are brought in~\sxn{sec:conc}.
+The theoretical background is detailed in~\sxn{sec:theory}, the numerical implementation is described in~\sxn{sec:imp}, the results are presented in~\sxn{sec:res}, and conclusions are brought in~\sxn{sec:conc}.
 
 %
 % ---------------------------------------------------
@@ -200,12 +198,12 @@ In 2004, Ronen~\cite{Ronen-2004} suggested to derive corrected diffusion coeffic
 
 Since these accurate estimates of the currents are based on a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficients in the global calculation. 
 \begin{equation}\label{eq:RM-it}
-D^{(k+1)}\rE = -\frac{\jtr^{(k)}\rE}{\bnabla\phi^{(k)}\rE} \,\, ,
+D^{(k+1)}\rE = -\frac{\lvert\jtr^{(k)}\rE\rvert}{\lvert\bnabla\phi^{(k)}\rE\rvert} \,\, ,
 \end{equation}
-where $k$ is the iteration index.
+where $k$ is the iteration index. \revised{The use of a tensor notation is needed for the diffusion coefficient in general multidimensional problems.}
 
 The motivation for this method was to overcome the inherent limitation of Fick's law requiring smooth flux gradients and thus small neutron absorption rate with respect to scattering in general. Nevertheless, isotropic scattering remained as a basic postulate.
-For example, in a one-dimensional homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004} 
+For example, in a homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004} 
 \begin{equation}\label{eq:RM-it-1D-slab}
 D^{(k+1)}(x,E) = -\frac{\frac{1}{2}\int_0^a dx' E_2[\sigma(E)\lvert
 	x-x'\rvert]\text{sign}(x-x')q^{(k)}(x',E)}
@@ -237,7 +235,8 @@ There are several ways to drive the integral expression for the flux in slab geo
 	\right] 
 } \,\, ,
 \end{eqnarray}
-where $E_1(x)$ is a first order exponential integral~\cite{Abramowitz-1964}. Note that this expression does not include the contribution of uncollided neutrons originate from the flux at the boundaries.
+
+where $E_1(x)$ is a first order exponential integral~\cite{Abramowitz-1964}. Note that this expression does not include the contribution of uncollided neutrons \revised{originated from an incoming angular} flux at the boundaries.
 
 Another starting point for the derivation of the integral expression for the flux in slab geometry is to directly integrate along a line the transport equation~\cite{Davison-1957,Pomraning-1973,Duderstadt-1979,Lewis-1984}
 \begin{eqnarray}\label{eq:full-ITE-w-bndry-terms}
@@ -259,10 +258,10 @@ Assuming isotropic scattering and homogeneous medium in one-dimension for~\eq{eq
 In what follows, a generalization of~\eq{eq:flux-slab-l-0-no-bndry-terms} is derived for heterogeneous medium with anisotropic scattering.  
 %
 % ---------------------------------------------------
-\subsection{Integral expressions for the neutron flux \& current}
+\subsection{Integral expressions for the neutron flux \revised{and} current}
 \label{sec:int-flux-J}
 
-Consider an infinite one-dimensional slab of width $a$. The angular flux in the slab is given by~\cite{Lewis-1984}
+Consider an infinite slab of width $a$. The angular flux in the slab is given by~\cite{Lewis-1984}
 \begin{subequations}\label{eq:int-ang-flx}
 	\begin{eqnarray}
 	\psi(x,E,\mu) &=& \psi(0,E,\mu) e^{-\mcL(0,x,E)/\mu}
@@ -280,7 +279,7 @@ Consider an infinite one-dimensional slab of width $a$. The angular flux in the 
 where
 \begin{equation}\label{eq:opl2}
 \mcL(x',x,E) \equiv 
-\int_{x'}^x {\sigma(x'',E) dx''} \,\, 
+\int_{x'}^x {\sigma(x'',E) dx''} \,\,, \quad \text{assuming }(x'<x)
 \end{equation}
 and $Q(x,E,\mu)$ denotes all sources.
 
@@ -297,9 +296,13 @@ The source cross sections are written explicitly as~\cite{Tomatis-2011}
 \begin{equation}\label{eq:src-mmnts}
 \sigma_l(x,E\leftarrow E')dE' = 
 \sigma_{s,l}(x,E\leftarrow E')dE'
-+ \delta_{l0}\frac{\chi(E)}{\keff}\nu\sigma_f(x,E')dE' \,\, 
++ \delta_{l0}\frac{\chi(E)}{\keff}\nu\sigma_f(x,E')dE' \,\, ,
 \end{equation}
-and the source term is expanded 
+\revised{where
+\begin{equation}\label{eq:src-mmnts-explicit}
+\sigma_{s,l}(x,E\leftarrow E') = \int_{-1}^1 d\mu' P_l(\mu')\sigma_s(x,E\leftarrow E',\mu_0)
+\end{equation}
+with $\mu_0=\OO'\cdot\OO$} and the source term is expanded 
 \begin{eqnarray}\label{eq:src}
 Q(x,E,\mu)&=& \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} \int_0^\infty { dE'
@@ -538,7 +541,7 @@ Using the definitions in~\eqsand{eq:JD-dJ}{eq:Ds} and~\fig{fig:mesh1D}, the disc
  \nu\sigma_{f,i}^{g'}\phi_{i,g'} 
 \,\,.
 \end{eqnarray}
-Rearranging terms to get
+Rearranging \revised{terms, one gets}
 \begin{eqnarray}\label{eq:FD_diff_org}
 \left(
 \frac{-D_{i-1/2}^g + \delta D_{i-1/2}^g }{\dx_{i-1}+\dx_{i}}
@@ -563,15 +566,15 @@ These equations can be formulated in operators notation according to
 \begin{equation}\label{eq:op-not}
 \mathcal{M}\Phi=\frac{1}{\keff}\mathcal{F}\Phi \,\, ,
 \end{equation}
-where $\mathcal{M}$ is the migration operator, whose entries are given by~\eq{eq:FD_diff_org} making it a three-diagonal banded matrix, and $\mathcal{F}$ is the neutron generation operator given by $q_{i,g}$. Note that $\mathcal{M}$ can be written as $\mathcal{M}=\mathcal{M}_0+\delta\mathcal{M}$ distinguishing the diffusion corrections from the constant diffusion coefficients derived from the transport problem. In the homogeneous case, $\mathcal{M}(x)=\mathcal{M}_0+\delta\mathcal{M}(x)$.
+where $\mathcal{M}$ is the migration operator, whose entries are given by~\eq{eq:FD_diff_org} making it a three-diagonal banded matrix, and $\mathcal{F}$ is the neutron generation operator given by \revised{the second term in} $q_{i,g}$ \revised{(see Eqs.~\ref{eq:FD_diff_full}-\ref{eq:FD_diff_org})}. Note that $\mathcal{M}$ can be written as $\mathcal{M}=\mathcal{M}_0+\delta\mathcal{M}$ distinguishing the diffusion corrections from the constant diffusion coefficients derived from the transport problem. In the homogeneous case, $\mathcal{M}(x)=\mathcal{M}_0+\delta\mathcal{M}(x)$.
 %
 %Eq.~\eqref{eq:op-not} is solved using the power iteration algorithm, where the within-group equation is noted as $\mathcal{A}_g(x)\Phi_g(x)=\frac{1}{\keff}Q_g(x)$, where $\mathcal{A}_g(x)=\mathcal{A}_{g,0}+\delta\mathcal{A}_g(x)$.
 %
 % ---------------------------------------------------
-\subsection{Calculation of the integral currents}
+\subsection{\revised{Evaluation of the currents by the integral form of the transport equation}}
 \label{sec:calc-int-curr}
 
-The numerical evaluation of the neutron current $J(x,E)$ at cell interfaces requires spatial integration of~\eq{eq:tot-J}. The neutron current at any interface can be calculated by considering separately contributions from all cells who are to the left or to the right of the interface. The current at a cell interface is discretized as follows
+The numerical evaluation of the neutron current $J_g(x)$ at cell interfaces requires spatial integration of~\eq{eq:tot-J}. The neutron current at any interface can be calculated by considering separately contributions from all cells who are to the left or to the right of the interface. The current at a cell interface is discretized as follows
 \begin{eqnarray}\label{eq:tot-J-disc}
 J_g(x_{i+1/2}) &=& \sum\limits_{l=0}^\infty  \frac{2l+1}{2}
 \sum\limits_{m=0}^{[l/2]}  h_m
@@ -680,7 +683,7 @@ where $n_{l,m}\equiv l+2-2m$. The source $q_{l,g,j}$ is the $l$\tsup{th} angular
 	\node[anchor=south] at (10cm,-2.1cm) {$\Xi_{i,j}^g + \sigma_{g,j}\left(x'-x_{j-1/2}\right)$};
 	\end{tikzpicture}
 	\bigbreak
-	\caption{Notation for numerical evaluation of integral interface currents.}
+	\caption{\revised{Notation for numerical evaluation of interface currents by the integral form of the transport equation.}}
 	\label{fig:Xi}
 \end{figure}
 
@@ -803,11 +806,12 @@ These transfer probabilities $E_{n_{l,m}}[\tau_g(x_i,x_j)]$ are pre-calculated o
 \label{sec:BC}
 A generalized form for the boundary condition (at the left) follows as
 \begin{equation}\label{eq:BC}
-J_D(x=0) = \frac{\phi_{i=0}}{\Delta x_0/2 + \zeta} \,\, ,
+J_D(x=0) = \revised{-D_0}\frac{\phi_0}{\Delta x_0/2 + \zeta} \,\, ,
 \end{equation} 
-where $\zeta$ is the extrapolation length in case of vacuum. Reflection can be reproduced by $\zeta\rightarrow\infty$, whereas the condition of zero-flux is realized by $\zeta=0$. 
+where $\zeta$ is the extrapolation length in case of vacuum. \revised{The Marshak boundary conditions are reproduced by $\zeta=2D$, but the more accurate value $\zeta\approx 2.13D$ is
+taken to match transport with better agreement~\cite{Lamarsh-1966}}. Reflection can be reproduced by $\zeta\rightarrow\infty$, whereas the condition of zero-flux is realized by $\zeta=0$. 
 %
-The quantity $\delta J$ at the boundary takes the simpler form of $\delta J = -\delta D_{-1/2}\phi_0$, without dividing by the spatial width, since no particular extrapolation length is appropriate for the correction. The expression for the right boundary is straightforward, implying a non-negative current.
+The quantity $\delta J$ at the boundary takes the simpler form of $\delta J = -\delta D_{-1/2}\phi_0$, without dividing by the spatial width, since no particular extrapolation length is appropriate for the correction. The expression for the right boundary is straightforward, implying a non-negative current. \revised{One should recall that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated and the correction of the diffusion coefficient is implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.}
 
 %
 % ---------------------------------------------------
@@ -858,7 +862,12 @@ The Ronen algorithm is described as follows (see Fig.~\ref{fig:RM-algo}):
 \section{Results}
 \label{sec:res}
 
-The reference solution for the one-dimensional homogeneous slab is generated using a Python3 discrete ordinates ($S_n$) code with $N=16$~\cite{Lewis-1984}. The diffusion solutions and the Ronen iterations are produced using original codes developed in Pyhton3. All simulations utilize regular mesh in a slab of width $a=21.5$ cm. All thresholds are set to 1E-6 and no (over/under)-relaxation is done. The initial diffusion coefficient is set to $D=(3\sigma_{tr})^{-1}=(3\sigma)^{-1}$. Void boundary conditions are used (extrapolated distance) at the edges of the slab and they are constant for each energy group. The two-group dataset used in this study is taken from~\cite{Tomatis-2011} and is shown in Table~\ref{tab:xs}. 
+\revised{Two one-dimensional test cases are considered, homogeneous and heterogeneous. The reference solutions are calculated using a Python3 discrete ordinates ($S_N$) code with $N=16$~\cite{Lewis-1984}. The diffusion solutions and the Ronen iterations are produced using original codes developed in Pyhton3. All thresholds are set to 1E-6 and no (over/under)-relaxation is done. The initial diffusion coefficient is set to $D=(3\sigma_{tr})^{-1}=(3\sigma)^{-1}$. Void boundary conditions are used (extrapolated distance) at the edges of the slab and they are constant for each energy group.}
+
+\subsection{Homogeneous case}
+\label{sec:homog}
+
+A homogeneous slab of width $a=21.5$ cm is considered, with the two-group dataset shown in Table~\ref{tab:xs} (taken from~\cite{Tomatis-2011}). 
 %
 \begin{table}[!htbp]	
 	\centering
@@ -875,7 +884,7 @@ The reference solution for the one-dimensional homogeneous slab is generated usi
 	\end{tabular}
 \end{table}
 
-Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh refinement using standard diffusion (w/ extrapolated length) and the Ronen method. The reactivity difference is given by $(\Delta\rho = 1/k_\texttt{ref} - 1/k_\texttt{D/RM})\times 10^5$, where $k_D$ and $k_{RM}$ are the multiplication factors of standard diffusion and the Ronen method, respectively. The reference $k_\texttt{ref}$ value from S\tsub{16} is 0.744417 ($I = 400$).  
+Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh refinement using standard diffusion (with extrapolated length) and the Ronen method. The reactivity difference is given by $(\Delta\rho = 1/k_\texttt{ref} - 1/k_\texttt{D/RM})\times 10^5$, where $k_D$ and $k_{RM}$ are the multiplication factors of standard diffusion and the Ronen method, respectively. The reference $k_\texttt{ref}$ value from S\tsub{16} is 0.744417 ($I = 400$).  
 
 \begin{table}[!htbp]
 	\centering
@@ -911,7 +920,7 @@ Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh r
 %	\end{tabular}
 %\end{table}
 
-A comparison of the fast and thermal fluxes, as calculated by the reference $S_n$ code, the RM code, and a standard multigroup diffusion w/o RM correction ($D_0$), is shown in Fig.~\ref{fig:fluxes} for half-slab. The deviations (in [\%]) of the RM-corrected flux and the standard diffusion ($D_0$) flux from the reference $S_n$ flux is also shown in Fig.~\ref{fig:fluxes}. The deviation from the reference solution is decreased by the Ronen iterations from approximately 20\% near the boundary and 1\% at the slab center to 2\% and 0\%, respectively. 
+A comparison of the fast and thermal fluxes, as calculated by the reference $S_n$ code, the RM code, and a standard multigroup diffusion without RM correction ($D_0$), is shown in Fig.~\ref{fig:fluxes} for half-slab. The deviations (in [\%]) of the RM-corrected flux and the standard diffusion ($D_0$) flux from the reference $S_n$ flux is also shown in Fig.~\ref{fig:fluxes}. The deviation from the reference solution is decreased by the Ronen iterations from approximately 20\% near the boundary and 1\% at the slab center to 2\% and 0\%, respectively. 
 
 The diffusion and transport currents calculated using the converged Ronen solution are plotted in Fig.~\ref{fig:current}. The full slab solution exhibits anti-symmetry, as expected, whereas the corrected diffusion current exhibit non-trivial behavior near the boundary. Fig.~\ref{fig:Dcoef} show the original standard diffusion coefficients ($D=(3\sigma_{tr})^{-1}$), the RM correction terms ($\delta D$), and the corrected (spatially-dependent) diffusion $D$. It is clear that the diffusion correction assumes zero values at the slab center and exhibit non-trivial behavior near the boundary. The convergence of the flux (max deviation) and the criticality eigenvalue are shown in Fig.~\ref{fig:conv}. While the eigenvalue converges within a few iterations, the flux exhibit slow convergence near the boundaries. The spatial flux convergence between two successive Ronen iterations is shown in Fig.~\ref{fig:conv2} for the left half slab, according to $\Delta\phi = (\phi^{k-1}-\phi^k)/\phi^{k-1}$ [\%]. The spatial flux convergence of the Ronen iterations with respect to the reference $S_n$ solution for the left half slab is shown in Fig.~\ref{fig:conv3}.
 
@@ -920,7 +929,7 @@ The diffusion and transport currents calculated using the converged Ronen soluti
 	\centering
 	\includegraphics[width=0.45\linewidth]{flux0_half.pdf}
 	\includegraphics[width=0.45\linewidth]{flux_deviation_half.pdf}	
-	\caption{Comparison of the fluxes as calculated by the reference $S_n$ code, the RM code, and a standard multigroup diffusion w/o RM correction ($D_0$). Results shown here after 250 Ronen iterations.}
+	\caption{Comparison of the fluxes as calculated by the reference $S_n$ code, the RM code, and a standard multigroup diffusion without RM correction ($D_0$). Results shown here after 250 Ronen iterations.}
 	\label{fig:fluxes}
 \end{figure}
 
@@ -970,6 +979,129 @@ The diffusion and transport currents calculated using the converged Ronen soluti
 	\caption{The spatial flux convergence of the Ronen iterations with respect to the reference $S_n$ solution for the left half slab.}
 	\label{fig:conv3}
 \end{figure}
+
+
+%
+% ---------------------------------------------------
+\subsection{Heterogeneous case}
+\label{subsec:heterog}
+
+	\begin{figure}[htbp!] 
+	\centering
+	\begin{tikzpicture}
+	% -------------- Assembly 1 --------------
+	\node[above] at (-2,1.5) {Assembly 1};
+	\draw [fill=blue!60]   (-3,0) 	rectangle (-2.8,1.5);
+	\draw [fill=yellow!50] (-2.8,0) rectangle (-2.4,1.5);
+	\draw [fill=red!90]    (-2.4,0) rectangle (-2,1.5);
+	\draw [fill=red!90]    (-2,0) 	rectangle (-1.6,1.5);
+	\draw [fill=yellow!50] (-1.6,0) rectangle (-1.2,1.5);
+	\draw [fill=blue!60]   (-1.2,0) rectangle (-1,1.5);
+	% -------------- Assembly 2 --------------
+	\node[above] at (1,1.5) {Assembly 2};
+	\draw [fill=blue!60]   (0,0) 	rectangle (0.2,1.5);
+	\draw [fill=yellow!50] (0.2,0) rectangle (0.6,1.5);
+	\draw [fill=yellow!50] (0.6,0) rectangle (1,1.5);
+	\draw [fill=yellow!50] (1,0) 	rectangle (1.4,1.5);
+	\draw [fill=yellow!50] (1.4,0) rectangle (1.8,1.5);
+	\draw [fill=blue!60]   (1.8,0) rectangle (2,1.5);
+	% -------------- Assembly 3 --------------
+	\node[above] at (-2,-1) {Assembly 3};
+	\draw [fill=blue!60]   (-3,-2.5) 	 rectangle (-2.8,-1);
+	\draw [fill=yellow!50] (-2.8,-2.5)  rectangle (-2.4,-1);
+	\draw [fill=green!50]  (-2.4,-2.5)  rectangle (-2,-1);
+	\draw [fill=green!50]  (-2,-2.5) 	 rectangle (-1.6,-1);
+	\draw [fill=yellow!50] (-1.6,-2.5)  rectangle (-1.2,-1);
+	\draw [fill=blue!60]   (-1.2,-2.5)  rectangle (-1,-1);
+	\draw [<->] (-3,-2.7) -- node[below]{$15.24[cm]$}	(-1,-2.7);
+	% -------------- Assembly 4 --------------
+	\node[above] at (1,-1) {Assembly 4};
+	\draw [fill=blue!60]   (0,-2.5)   rectangle (0.2,-1);
+	\draw [fill=green!50] (0.2,-2.5)  rectangle (0.6,-1);
+	\draw [fill=green!50] (0.6,-2.5)  rectangle (1,-1);
+	\draw [fill=green!50] (1,-2.5)    rectangle (1.4,-1);
+	\draw [fill=green!50] (1.4,-2.5)  rectangle (1.8,-1);
+	\draw [fill=blue!60]  (1.8,-2.5)  rectangle (2,-1);
+	% -------------- Core 1 --------------
+	\node[] at (3.2,1) {Core 1};
+	\draw [fill=orange!80]   (4,0.5)   rectangle node{A1} 	(5,1.5);
+	\draw [fill=gray!90] 	 (5,0.5)   rectangle node{A2}	(6,1.5);
+	\draw [fill=orange!80]   (6,0.5)   rectangle node{A1}	(7,1.5);
+	\draw [fill=gray!90] 	 (7,0.5)   rectangle node{A2}	(8,1.5);
+	\draw [fill=orange!80]   (8,0.5)   rectangle node{A1}	(9,1.5);
+	\draw [fill=gray!90] 	 (9,0.5)   rectangle node{A2}	(10,1.5);
+	\draw [fill=orange!80]   (10,0.5)  rectangle node{A1}	(11,1.5);
+	% -------------- Core 2 --------------
+	\node[] at (3.2,-0.5) {Core 2};
+	\draw [fill=orange!80]   (4,-1)   rectangle node{A1}	(5,-0);
+	\draw [fill=gray!40] 	 (5,-1)   rectangle node{A3}	(6,-0);
+	\draw [fill=orange!80]   (6,-1)   rectangle node{A1}	(7,-0);
+	\draw [fill=gray!40] 	 (7,-1)   rectangle node{A3}	(8,-0);
+	\draw [fill=orange!80]   (8,-1)   rectangle node{A1}	(9,-0);
+	\draw [fill=gray!40] 	 (9,-1)   rectangle node{A3}	(10,-0);
+	\draw [fill=orange!80]   (10,-1)  rectangle node{A1}	(11,-0);
+	% -------------- Core 3 --------------
+	\node[] at (3.2,-2) {Core 3};
+	\draw [fill=orange!80]  (4,-2.5)  rectangle node{A1} 	(5,-1.5);
+	\draw [fill=white] 		(5,-2.5)  rectangle node{A4}	(6,-1.5);
+	\draw [fill=orange!80]  (6,-2.5)  rectangle node{A1}	(7,-1.5);
+	\draw [fill=white] 		(7,-2.5)  rectangle node{A4}	(8,-1.5);
+	\draw [fill=orange!80]  (8,-2.5)  rectangle node{A1}	(9,-1.5);
+	\draw [fill=white] 		(9,-2.5)  rectangle node{A4}	(10,-1.5);
+	\draw [fill=orange!80]  (10,-2.5) rectangle node{A1}	(11,-1.5);
+	\draw [<->] (4,-2.8) -- node[below]{$106.68[cm]$}	(11,-2.8);
+	\end{tikzpicture}
+\end{figure}
+
+\begin{table}[!htbp]	
+	\centering
+	\caption{Two-group data-set of material properties for different type of materials used in this study.} %~\cite{Rahnema-1997}
+	\label{tab:xs}
+	\begin{tabular}{lcccccccr}
+		Material&$\sigma_1$&$\sigma_2$&$\nu\sigma_{f,1}$&$\nu\sigma_{f,2}$&$\sigma_{s,1\leftarrow 1}$&$\sigma_{s,2\leftarrow 1}$&$\sigma_{s,2\leftarrow 2}$&$x[cm]$\\
+		\midrule
+		Water  (Blue)	&0.1890	 &1.4633  &0.0000	 &0.0000	 &0.1507   &0.0380		&1.4536		 &1.158\\
+		Fuel 1 (Red)	&0.2263  &1.0119  &0.0067	 &0.1241	 &0.2006   &0.0161		&0.9355		 &3.231\\
+		Fuel 2 (Yellow)	&0.2252  &0.9915  &0.0078	 &0.1542 	 &0.1995   &0.0156		&0.9014		 &3.231\\
+		Fuel 3 (Green)	&0.2173  &1.0606  &0.0056	 &0.0187	 &0.1902   &0.0136		&0.5733 	 &3.231\\
+	\end{tabular}
+\end{table}
+
+
+\begin{figure}[htbp!]
+	\centering
+	\includegraphics[width=0.45\linewidth]{RM_100it_8_20_728.pdf}
+	\caption{Comparison of the fluxes as calculated by RM scheme. Results shown here after 100 Ronen iterations and 728 mesh points.}
+	\label{fig:Dcoef}
+\end{figure}
+
+\begin{figure}[htbp!]
+	\centering
+	\includegraphics[width=0.48\linewidth]{RM_dD1_100it_8_22_728.pdf}
+	\includegraphics[width=0.48\linewidth]{RM_dD2_100it_8_22_728.pdf}
+	\caption{Behavior of the correction $dD$ along the cores, of the fast and thermal energy groups. Results shown here after 100 Ronen iterations and 728 mesh points.}
+	\label{fig:Dcoef}
+\end{figure}
+
+
+\begin{table}[!htbp]
+	\centering
+	\caption{Reactivity differences as a function of number of iterations using the Ronen method. 728 nodes.}
+	\label{tab:dx_drho}
+	\begin{tabular}{lcccccr}
+		%\midrule
+		Benchmark & \multicolumn{2}{c}{Core 1} & \multicolumn{2}{c}{Core 2} & \multicolumn{2}{c}{Core 3}  \\ 
+		\midrule
+		{}				& $\keff$& $\Delta\rho [pcm]$& $\keff$	&$\Delta\rho [pcm]$& $\keff$	 & $\Delta\rho [pcm]$ \\
+		$S_{16}$			&1.25614	&-			 &1.00094   &-				  &0.79878		&-		\\
+		Diffusion		&1.25902	&182		 &0.99325	&-773			  &0.77805		&-3335	\\
+		RM-10			&1.25677	&40			 &1.00107	&13			 	  &0.79824		&-85	\\
+		RM-20			&1.25648	&22			 &1.00091	&-3			  	  &0.79837		&-64	\\
+		RM-50			&1.25625	&7			 &1.00076	&-18			  &0.79839		&-61	\\
+		RM-100			&1.25618	&3			 &1.00070	&-24			  &0.79838		&-62	\\
+		RM-150			&			&			 &			&				  &				&		\\
+	\end{tabular}
+\end{table}
 
 %
 % ---------------------------------------------------

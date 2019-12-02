@@ -89,83 +89,80 @@ We hope that the Editor and the reviewer find the revised manuscript satisfactor
 % --------------------------------------------------------------------------------------
 \textit{Please re-read the whole paper to check the language and the punctuation. Some sentences are very concise and could be expanded a little for clarity.}
 \\ \\
-\revised{The manuscript underwent a thorough examination of the language and punctuation, and some sentences were elaborated for clarity. For example, ...}
+\revised{The manuscript underwent a thorough examination of the language and punctuation, and some sentences were elaborated for clarity.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{I have a concern on which the Authors may want to comment. Formula (3) becomes problematic where the gradient of the flux is small, which is usually the zone where diffusion works better.}
 \\ \\
-\revised{T}
+\revised{This is correct. Ronen did not elaborate on this issue in his technical note from 2004. Theoretically, both the numerator and the denominator should vanish at the same location, since both are accurate expressions for the neutron current at this location (where the flux gradiaent is weak). We did not try to find the analytic limit of this expression for $D$, however we assume that this ratio between two expressions, which vanish at the same location, approaches some constant value.\\ \\ Numerically, Tomatis and Dall'Osso 2011 chose to deal with this potential singularity by using the well-known drift terms, which serve as a \emph{numerical feature}. The (more accuarte) surface current $J_{tr}$, calculated by intergal expression, is written as the sum of the surface current calculated by diffusion, $J_D$, plus a correction $\delta J$. Hence, when the current vanishes, the correction $\delta J$ valishes. Moreover, the correction is writtten as in Eq. (21), avoiding the potential divergence resulting from division by zero.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{I do not think it would be too hard work to report more results. For instance, I think it would be nice to see the effect of the physical size of the domain, to better detect and evidence the effect of the boundary. This would add a lot to the value of the paper.}
 \\ \\
-\revised{T}
-\\ \\
-% --------------------------------------------------------------------------------------
-\textit{I do not think it would be too hard work to report more results. For instance, I think it would be nice to see the effect of the physical size of the domain, to better detect and evidence the effect of the boundary. This would add a lot to the value of the paper.}
-\\ \\
-\revised{T}
+\revised{An entire benchark was added to the results section. The chosen benchmark is a one-dimensional highly heterogeneous core representing a BWR core. The sensitivity of the method to the slab width, especially at the boundaries, will be studied in future work, along with additional effects emanate from the boundaries conditions.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{In the abstract: I suggest to avoid saying that the results match "extremely well" the reference... while this is true for the eigenvalue, it may be questionable for the flux near the boundary, where effects should be more deeply investigated. Maybe "well" is already enough.}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 
 \newpage
 
 % --------------------------------------------------------------------------------------
-\textit{Page 22, At line 40: largest errors appear near the boundary. This is of course related to the failure of diffusion, however there might be also an additional contribution of the type of boundary conditions adopted (see below). Any comments? In any case, this aspect needs to be investigated.}
+\textit{Page 2, At line 40: largest errors appear near the boundary. This is of course related to the failure of diffusion, however there might be also an additional contribution of the type of boundary conditions adopted (see below). Any comments? In any case, this aspect needs to be investigated.}
 \\ \\
-\revised{T}
+\revised{We agree with the reviewer that the effect of the definition of boundary conditions on the performances of the Ronen method should be further studied. This study will be conducted in the near future. As for the specific boundary conditions used in this paper, please see below.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{Line 55: for clarity I would change it to "uncollided neutrons originated from an incoming angular flux at the boundary".}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{Page 3, In the title of subsection 2.3 change "\&" with "and".}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{In formula (8) it should be specified that it is assumed x'<x, otherwise it is not consistent with Eqs. (7).}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{There is no definition of the moments of the cross sections, Eq. (10).}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{Page 5, At line 42 I suggest to change "terms to get" with "terms, one gets".}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{At line 58: the fission operator is not given by q, but, rather, it can be obtained by the observation of the form of the q term, Eq. (25). Since it is crucial to see the effect of the diffusion coefficient update, the operators could be reported explicitly.}
 \\ \\
-\revised{T}
+\revised{The sentence was chnaged to "... $\mathcal{F}$ is the neutron generation operator given by \emph{the second term in} $q_{i,g}$ (see Eqs. 25-26)". The explicit form of the operators is given in Eqs. 25 and 26. }
+\\ \\
+
+% --------------------------------------------------------------------------------------
+\textit{Page 6, To me the title of subsection 3.2 is not correct (there is no such a thing as "integral currents". Should it rather be something like "evaluation of the currents by the integral form of the transport equation"? I suggest also to change the caption of Fig. 2 accordingly.}
+\\ \\
+\revised{Fixed.}
 \\ \\
 
 \newpage
 
 % --------------------------------------------------------------------------------------
-\textit{Page 6, To me the title of subsection 3.2 is not correct (there is no such a thing as "integral currents". Should it rather be something like "evaluation of the currents by the integral form of the transport equation"? I suggest also to change the caption of Fig. 2 accordingly.}
-\\ \\
-\revised{T}
-\\ \\
-% --------------------------------------------------------------------------------------
 \textit{Since the whole section consider the multigroup formulation, at line 6 to be consistent I suggest to change $J(x,E)$ to $J_g(x)$. }
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{Page 7, About boundary conditions: how is the extrapolated distance chosen with vacuum? For instance, with a Mark or a Marshak approach or according to other recipes? And, in any case, what is the value assumed for the calculations? Furthermore, the Authors should also comment on the problem of the need to update the extrapolated distance since it is in general related to the diffusion coefficient (e.g. 2D in Marshak BC). In this respect, the meaning of the sentence in line 53 and 54 is not clear to me.}
 \\ \\
-\revised{T}
+\revised{The extrapolated distance for vacuum is set to $\zeta=2.13D$ (according to Lamarsh 1966). The Marshak boundary conditions are reproduced by $\zeta=2D$). The values assumed for the calculations are 1.3367 and 0.5459 cm for the fast and thermal groups, respectively. \\ \\
+As for the need to update the extrapolated distance, it should be noted that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated. Note that the correction in our numerical scheme is not by $D = D_0 + \delta D$ nor by $D = \delta D$. The correction of the diffusion coefficient is actually implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.   }
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{page 8, The statement about boundary conditions should be clarified at line 40. What does "they are constant for each energy group" mean? If it means that the same extrapolated distance is assumed for both groups, the Authors should consider to make a more consistent assumption of group-dependent extrapolated distances. The effect of the choice of the BC is not insignificant, especially for optically thin systems. It could be interesting to see the effect of the different choices.}
