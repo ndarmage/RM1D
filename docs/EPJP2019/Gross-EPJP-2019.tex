@@ -812,10 +812,9 @@ A generalized form for the boundary condition (at the left) follows as
 \begin{equation}\label{eq:BC}
 J_D(x=0) = -D_0\frac{\phi_0}{\Delta x_0/2 + \zeta} \,\, ,
 \end{equation} 
-where $\zeta$ is the extrapolation length in case of vacuum. The Marshak boundary conditions are reproduced by $\zeta=2D$, but the more accurate value $\zeta\approx 2.13D$ is
-taken to match transport with better agreement~\cite{Lamarsh-1966}. Reflection can be reproduced by $\zeta\rightarrow\infty$, whereas the condition of zero-flux is realized by $\zeta=0$. 
+where $\zeta$ is the extrapolation length in case of vacuum. The Marshak boundary conditions are reproduced by $\zeta=2D$, but the more accurate value $\zeta\approx 2.13D$ is taken to match transport with better agreement~\cite{Lamarsh-1966}. Reflection can be reproduced by $\zeta\rightarrow\infty$, whereas the condition of zero-flux is realized by $\zeta=0$. 
 %
-The quantity $\delta J$ at the boundary takes the simpler form of $\delta J = -\delta D_{-1/2}\phi_0$, without dividing by the spatial width, since no particular extrapolation length is appropriate for the correction. The expression for the right boundary is straightforward, implying a non-negative current. One should recall that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated and the correction of the diffusion coefficient is implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.
+The quantity $\delta J$ at the boundary takes the simpler form of $\delta J = -\delta D_{-1/2}\phi_0$, without dividing by the spatial width, since no particular extrapolation length is appropriate for the correction. The expression for the right boundary is straightforward, implying a non-negative current. One should recall that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated and the correction is actually implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.
 
 %
 % ---------------------------------------------------
@@ -866,7 +865,7 @@ The Ronen algorithm is described as follows (see Fig.~\ref{fig:RM-algo}):
 \section{Results}
 \label{sec:res}
 
-Two one-dimensional test cases are considered, homogeneous and heterogeneous. The reference solutions are calculated using a Python3 discrete ordinates ($S_N$) code with $N=16$~\cite{Lewis-1984}. The diffusion solutions and the Ronen iterations are produced using original codes developed in Pyhton3. All thresholds are set to 1E-6 and no (over/under)-relaxation is done. The initial diffusion coefficient is set to $D=(3\sigma_{tr})^{-1}=(3\sigma)^{-1}$. Void boundary conditions are used (extrapolated distance) at the edges of the slab and they are constant for each energy group.
+Two one-dimensional test cases are considered, homogeneous and heterogeneous. The reference solutions are calculated using a Python3 discrete ordinates ($S_N$) code with $N=16$~\cite{Lewis-1984}. The diffusion solutions and the Ronen iterations are produced using original codes developed in Pyhton3. All thresholds are set to 1E-6 and no (over/under)-relaxation is done. The initial diffusion coefficient is set to $D=(3\sigma_{tr})^{-1}=(3\sigma)^{-1}$. Void boundary conditions are used at the edges of the slab, which are implemented for the diffusion solver in the form of a group-dependent extrapolated distance, i.e., $d_g = 2.13 D_g$.
 
 %
 % ---------------------------------------------------
@@ -913,30 +912,32 @@ Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh r
 	\end{tabular}
 \end{table}
 
-A comparison of the fast and thermal fluxes, as calculated by the reference $S_N$ code, the RM code, and a standard multigroup diffusion without RM correction ($D_0$), is shown in Fig.~\ref{fig:fluxes} (left panel) for half-slab. The deviations (in [\%]) of the RM-corrected flux and the standard diffusion ($D_0$) flux from the reference $S_N$ flux is also shown in Fig.~\ref{fig:fluxes} (upper right panel). The deviation from the reference solution is decreased by the Ronen iterations from approximately 20\% near the boundary and 1\% at the slab center to 2\% and 0\%, respectively. 
+A comparison of the fast and thermal fluxes, as calculated by the reference $S_N$ code, the RM code, and a standard multigroup diffusion without RM correction ($D_0$), is shown in Fig.~\ref{fig:slab-fluxes} for half-slab. The deviations (in [\%]) of the RM-corrected flux and the standard diffusion ($D_0$) flux from the reference $S_N$ flux is also shown in Fig.~\ref{fig:slab-fluxes-dev}. The corresponding Ronen method correction factors $\delta D$ are shown in Fig.~\ref{fig:slab-RM-corr-factor}. 
+
+The deviation from the reference solution is decreased by the Ronen iterations from approximately 20\% near the boundary and 1\% at the slab center to 2\% and 0\%, respectively. 
 
 %The diffusion and transport currents calculated using the converged Ronen solution are plotted in Fig.~\ref{fig:current}. The full slab solution exhibits anti-symmetry, as expected, whereas the corrected diffusion current exhibit non-trivial behavior near the boundary. 
 %Fig.~\ref{fig:Dcoef} show the original standard diffusion coefficients ($D=(3\sigma_{tr})^{-1}$), The RM correction terms ($\delta D$), and the corrected (spatially-dependent) diffusion $D$. 
 
 \begin{figure}[!htbp]
 	\centering
-	\begin{subfigure}[b]{.44\linewidth}
-		% First figure
-		\includegraphics[width=\linewidth]{Sn_Diff_RM_Tomatis2011.pdf}
-		%\caption{A tall figure}
-	\end{subfigure}
-	~
-	\begin{subfigure}[b]{.54\linewidth}
-		% Second figure
-		~\includegraphics[width=0.97\linewidth]{flx_err_Tomatis2011_400_250.pdf}
-		%\caption{A short figure}		
-		%\vspace{2ex}
-		% Third figure
-		\includegraphics[width=\linewidth]{dD_Tomatis2011_400_250it.pdf}
-		%\caption{A short figure}
-	\end{subfigure}
-	\caption{Left: Comparison of the fluxes as calculated by the reference $S_N$ code, the RM code, and a standard multigroup diffusion without RM correction ($D_0$). Right, up: Deviation of the fluxes with respect to the reference solution. Right, down: The RM correction terms ($\delta D$). Results shown here after 250 Ronen iterations.}
-	\label{fig:fluxes}
+	\includegraphics[width=0.65\linewidth]{Sn_Diff_RM_Tomatis2011.pdf}
+	\caption{Comparison of the fluxes as calculated by the reference $S_N$ code, the RM code, and a standard multigroup diffusion without RM correction ($D_0$). Results shown here after 250 Ronen iterations.}
+	\label{fig:slab-fluxes}		
+\end{figure}
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.65\linewidth]{flx_err_Tomatis2011_400_250.pdf}
+	\caption{Deviation of the fluxes with respect to the reference solution after 250 Ronen iterations.}
+	\label{fig:slab-fluxes-dev}
+\end{figure}
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.65\linewidth]{dD_Tomatis2011_400_250it.pdf}
+	\caption{The Ronen method correction factors ($\delta D$). Results shown here after 250 Ronen iterations.}
+	\label{fig:slab-RM-corr-factor}
 \end{figure}
 
 
@@ -955,33 +956,34 @@ A comparison of the fast and thermal fluxes, as calculated by the reference $S_N
 		eigenvalue.}
 	\label{fig:conv}
 \end{figure}
-The RM correction terms ($\delta D$) along the plane are shown in Fig.~\ref{fig:fluxes} (lower right panel). It is clear that the diffusion correction assumes zero values at the slab center and exhibit non-trivial behavior near the boundary. The convergence of the flux (max deviation) and the criticality eigenvalue are shown in Fig.~\ref{fig:conv}. While the eigenvalue converges within a few iterations, the flux exhibit slow convergence near the boundaries. The spatial flux convergence between two successive Ronen iterations is shown in Fig.~\ref{fig:conv2} for the left half slab, according to $\Delta\phi = (\phi^{k-1}-\phi^k)/\phi^{k-1}$ [\%]. The spatial flux convergence of the Ronen iterations with respect to the reference $S_N$ solution for the left half slab is shown in Fig.~\ref{fig:conv3}.
+
+The RM correction terms ($\delta D$) along the plane are shown in Fig.~\ref{fig:slab-RM-corr-factor}. It is clear that the diffusion correction assumes zero values at the slab center and exhibit non-trivial behavior near the boundary. The convergence of the flux (max deviation) and the criticality eigenvalue are shown in Fig.~\ref{fig:conv}. While the eigenvalue converges within a few iterations, the flux exhibit slow convergence near the boundaries. The spatial flux convergence between two successive Ronen iterations is shown in Fig.~\ref{fig:conv2} for the left half slab, according to $\Delta\phi = (\phi^{k-1}-\phi^k)/\phi^{k-1}$ [\%]. The spatial flux convergence of the Ronen iterations with respect to the reference $S_N$ solution for the left half slab is shown in Fig.~\ref{fig:conv3}.
 
 % convergence
 \begin{figure}[h!]
 	\centering
-	\includegraphics[width=0.45\linewidth]{flux_deviation_half_it_1.pdf}
-	\includegraphics[width=0.45\linewidth]{flux_deviation_half_it_2.pdf}
-	\caption{The spatial flux convergence between two successive Ronen iterations for the left half slab, according to $\Delta\phi = (\phi^{k-1}-\phi^k)/\phi^{k-1}$ [\%].}
+	\includegraphics[width=0.48\linewidth]{flux_deviation_half_it_1.pdf}
+	\includegraphics[width=0.48\linewidth]{flux_deviation_half_it_2.pdf}
+	\caption{The spatial flux convergence between two successive Ronen iterations for the left half slab, according to $\Delta\phi = (\phi^{(k-1)}-\phi^{(k)})/\phi^{(k-1)}$ [\%].}
 	\label{fig:conv2}
 \end{figure}
 
 % convergence
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.45\linewidth]{flux_deviation_half_it_1_sn.pdf}
-	\includegraphics[width=0.45\linewidth]{flux_deviation_half_it_2_sn.pdf}
+	\includegraphics[width=0.48\linewidth]{flux_deviation_half_it_1_sn.pdf}
+	\includegraphics[width=0.48\linewidth]{flux_deviation_half_it_2_sn.pdf}
 	\caption{The spatial flux convergence of the Ronen iterations with respect to the reference $S_N$ solution for the left half slab.}
 	\label{fig:conv3}
 \end{figure}
 
-
+Notice the change of sign in the flux convergence $\Delta \phi$ in Fig.~\ref{fig:conv2} between the center (negative) and the boundary (positive) of the slab. The initial diffusion solution is smoother than the transport one. Hence, as can be seen in Fig.~\ref{fig:slab-fluxes}, the diffusion solution underestimates the peak flux at the center of the slab and overestimates the flux near the boundary. The Ronen iterations "push" the diffusion solution towards the transport one by increasing the flux level at the center of the slab and decreasing the flux level at the boundary. Hence, $\phi^{(k-1)}$ is smaller in the center and larger at the boundary comparing to $\phi^{(k)}$. This effect of the Ronen iterations produces less smooth flux shape with steeper gradients comparing to the diffusion solution.
 %
 % ---------------------------------------------------
 \subsection{Heterogeneous case}
 \label{subsec:heterog}
 
-The heterogeneous benchmark defines three heterogeneous cores, each is 7 fuel assemblies long and comprised of four different fuel assemblies made of four different materials~\cite{Rahnema-1997}, as shown in Fig.~\ref{fig:hetro-core}. Material properties for each region of the assemblies are given inTable~\ref{tab:xs2}. Configuration 1 represents the least heterogeneous core with rather smooth flux gradients. On the contrary, configuration 3 represents the most heterogeneous core with the steepest flux gradients and can serve as a limiting case. Void boundary conditions are imposed on both ends of the core. 
+The heterogeneous benchmark defines three heterogeneous cores, each is 7 fuel assemblies long and comprised of four different fuel assemblies made of four different materials~\cite{Rahnema-1997}, as shown in Fig.~\ref{fig:hetro-core}. Material properties for each region of the assemblies are given in Table~\ref{tab:xs2}. Configuration 1 represents the least heterogeneous core with rather smooth flux gradients. On the contrary, configuration 3 represents the most heterogeneous core with the steepest flux gradients and can serve as a limiting case. Void boundary conditions are imposed on both ends of the core. 
 
 \begin{figure}[htbp!] 
 	\centering
@@ -1091,9 +1093,9 @@ The two-group flux distribution across each core is shown in Fig.~\ref{fig:heter
 
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.32\linewidth]{Sn_Diff_RM_core_1.pdf}
-	\includegraphics[width=0.32\linewidth]{Sn_Diff_RM_core_2.pdf}
-	\includegraphics[width=0.32\linewidth]{Sn_Diff_RM_core_3.pdf}
+	\includegraphics[width=0.46\linewidth]{Sn_Diff_RM_core_1.pdf}
+	\includegraphics[width=0.46\linewidth]{Sn_Diff_RM_core_2.pdf}
+	\includegraphics[width=0.46\linewidth]{Sn_Diff_RM_core_3.pdf}
 	\caption{Fast and thermal flux for each core using standard diffusion ($D_0$), Ronen method (RM) and S16 reference solution. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:hetero-flux}
 \end{figure}
@@ -1102,9 +1104,9 @@ The fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen meth
 
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.6\linewidth]{flx_err_diff_C1.pdf}
-	\includegraphics[width=0.6\linewidth]{flx_err_diff_C2.pdf}
-	\includegraphics[width=0.6\linewidth]{flx_err_diff_C3.pdf}
+	\includegraphics[width=0.65\linewidth]{flx_err_diff_C1.pdf}
+	\includegraphics[width=0.65\linewidth]{flx_err_diff_C2.pdf}
+	\includegraphics[width=0.65\linewidth]{flx_err_diff_C3.pdf}
 	\caption{Fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S16 reference solutions for each core. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:hetero-flux-dev}
 \end{figure}
@@ -1130,8 +1132,8 @@ It is illustrative to examine the spatial distribution of the Ronen method corre
 
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.6\linewidth]{RM_dD1_100it_8_22_728.pdf}
-	\includegraphics[width=0.6\linewidth]{RM_dD2_100it_8_22_728.pdf}
+	\includegraphics[width=0.65\linewidth]{RM_dD1_100it_8_22_728.pdf}
+	\includegraphics[width=0.65\linewidth]{RM_dD2_100it_8_22_728.pdf}
 	\caption{Behavior of the Ronen method correction factor $dD$ along the core, for the fast and thermal fluxes. Vertical grid lines are located at assemblies interfaces, results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:Dcoef}
 \end{figure}
@@ -1146,7 +1148,13 @@ It is illustrative to examine the spatial distribution of the Ronen method corre
 \section{Conclusions}
 \label{sec:conc}
 
-The Ronen Method was first proposed for better estimates of the diffusion coefficient by calculating the current with a higher-order transport operator and a known best-estimate neutron flux. This yielded an iterative scheme leading to new flux distributions solved by a diffusion solver but with additional (spatially) corrected diffusion terms, driving the diffusion solution to that of the integral transport equation. The direct resolution of the integral equation would imply the inversion of large matrices, with poor control of their conditioning. The solution of the diffusion equation, on the other hand, offers many numerical advantages, e.g., speed and robustness. Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.  
+The Ronen Method was first proposed for better estimates of the diffusion coefficient by calculating the current with a higher-order transport operator and a known best-estimate neutron flux. This yielded an iterative scheme leading to new flux distributions solved by a diffusion solver but with additional (spatially) corrected diffusion terms, driving the diffusion solution to that of the integral transport equation. The direct resolution of the integral equation would imply the inversion of large matrices, with poor control of their conditioning. The solution of the diffusion equation, on the other hand, offers many numerical advantages, e.g., speed and robustness. 
+
+The relation in Eq.~\eqref{eq:RM-it-1D-slab} becomes problematic where the gradient of the flux is small, which is usually the zone where diffusion works better. Ronen did not elaborate on this issue in his technical note from 2004. Theoretically, both the numerator and the denominator should vanish at the same location, since both are accurate expressions for the neutron current where the flux gradient is weak. We hypothesize that this ratio, between two expressions which tend to zero at the same location, approaches some constant value since there exist a diffusion coefficient at that location. 
+
+Numerically, Tomatis and Dall'Osso 2011 chose to deal with this potential singularity by using the well-known drift terms, which serve as a \emph{numerical feature}. The (more accurate) surface current $J_{\texttt{tr}}$, calculated by integral expression, is written as the sum of the surface current calculated by diffusion, $J_\texttt{D}$, plus a correction $\delta J$. Hence, when the current vanishes, the correction $\delta J$ vanishes as well. Moreover, the correction is written as in Eq.~\eqref{eq:JD-dJ}, avoiding the potential divergence resulting from division by zero.
+
+%Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.  
 
 More accurate results are obtained for the two-group benchmark problem reported in \cite{Tomatis-2011} and new results are reported for a heterogeneous benchmark. In general, slow convergence is observed for the scalar flux with the larger discrepancies, comparing to the reference, located on the vacuum boundary and on the material interfaces. Although the method is converging to the reference results provided by a discrete ordinate transport code, the improvement of the convergence rate and the use of coarser meshes are crucial for the advancement of the methodology in practical applications. These topics will be addressed as future developments, as well as higher-order anisotropy.
 

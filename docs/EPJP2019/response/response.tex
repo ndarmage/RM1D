@@ -94,7 +94,7 @@ We hope that the Editor and the reviewer find the revised manuscript satisfactor
 % --------------------------------------------------------------------------------------
 \textit{I have a concern on which the Authors may want to comment. Formula (3) becomes problematic where the gradient of the flux is small, which is usually the zone where diffusion works better.}
 \\ \\
-\revised{This is correct. Ronen did not elaborate on this issue in his technical note from 2004. Theoretically, both the numerator and the denominator should vanish at the same location, since both are accurate expressions for the neutron current at this location (where the flux gradient is weak). We did not try to find the analytic limit of this expression for $D$, however we assume that this ratio between two expressions, which vanish at the same location, approaches some constant value.\\ \\ Numerically, Tomatis and Dall'Osso 2011 chose to deal with this potential singularity by using the well-known drift terms, which serve as a \emph{numerical feature}. The (more accurate) surface current $J_{tr}$, calculated by integral expression, is written as the sum of the surface current calculated by diffusion, $J_D$, plus a correction $\delta J$. Hence, when the current vanishes, the correction $\delta J$ vanishes. Moreover, the correction is written as in Eq. (21), avoiding the potential divergence resulting from division by zero.}
+\revised{This is correct. Ronen did not elaborate on this issue in his technical note from 2004. Theoretically, both the numerator and the denominator should vanish at the same location, since both are accurate expressions for the neutron current at this location (where the flux gradient is weak). We did not try to find the analytic limit of this expression for $D$, however we assume that this ratio between two expressions, which vanish at the same location, approaches some constant value.\\ \\ Numerically, Tomatis and Dall'Osso 2011 chose to deal with this potential singularity by using the well-known drift terms, which serve as a \emph{numerical feature}. The (more accurate) surface current $J_{tr}$, calculated by integral expression, is written as the sum of the surface current calculated by diffusion, $J_D$, plus a correction $\delta J$. Hence, when the current vanishes, the correction $\delta J$ vanishes. Moreover, the correction is written as in Eq. (21), avoiding the potential divergence resulting from division by zero. This comment was added to the text.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{I do not think it would be too hard work to report more results. For instance, I think it would be nice to see the effect of the physical size of the domain, to better detect and evidence the effect of the boundary. This would add a lot to the value of the paper.}
@@ -161,18 +161,18 @@ We hope that the Editor and the reviewer find the revised manuscript satisfactor
 % --------------------------------------------------------------------------------------
 \textit{Page 7, About boundary conditions: how is the extrapolated distance chosen with vacuum? For instance, with a Mark or a Marshak approach or according to other recipes? And, in any case, what is the value assumed for the calculations? Furthermore, the Authors should also comment on the problem of the need to update the extrapolated distance since it is in general related to the diffusion coefficient (e.g. 2D in Marshak BC). In this respect, the meaning of the sentence in line 53 and 54 is not clear to me.}
 \\ \\
-\revised{The extrapolated distance for vacuum is set to $\zeta=2.13D$ (according to Lamarsh 1966). The Marshak boundary conditions are reproduced by $\zeta=2D$). The values assumed for the calculations are 1.3367 and 0.5459 cm for the fast and thermal groups, respectively. \\ \\
-As for the need to update the extrapolated distance, it should be noted that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated. Note that the correction in our numerical scheme is not by $D = D_0 + \delta D$ nor by $D = \delta D$. The correction of the diffusion coefficient is actually implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.   }
+\revised{The extrapolated distance for vacuum is set to $\zeta=2.13D$ (according to Lamarsh 1966). The Marshak boundary conditions are reproduced by $\zeta=2D$). The values assumed for the homogeneous slab calculations are 1.3367 and 0.5459 cm for the fast and thermal groups, respectively. \\ \\
+As for the need to update the extrapolated distance, it should be noted that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated. Note that the correction in our numerical scheme is not by $D = D_0 + \delta D$ nor by $D = \delta D$. The correction is actually implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.   }
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{page 8, The statement about boundary conditions should be clarified at line 40. What does "they are constant for each energy group" mean? If it means that the same extrapolated distance is assumed for both groups, the Authors should consider to make a more consistent assumption of group-dependent extrapolated distances. The effect of the choice of the BC is not insignificant, especially for optically thin systems. It could be interesting to see the effect of the different choices.}
 \\ \\
-\revised{T}
+\revised{The above statement was changed to: "Void boundary conditions are used at the edges of the slab, which are implemented for the diffusion solver in the form of a group-dependent extrapolated distance, i.e., $d_g = 2.13 D_g$.".\\ \\We completely agree that the choice of BC matters and it affects the numerical solutions, since BC should adequately describe the physical problem. We also speculate that the slow convergence rate of the flux (by RM iterations) near the boundaries is linked to the choice of proper BC. We intend to study this issue in the near future. }
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{In Table 1 units must be indicated.}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 
 \newpage
@@ -180,22 +180,22 @@ As for the need to update the extrapolated distance, it should be noted that the
 % --------------------------------------------------------------------------------------
 \textit{At line 50, please change "w/" with "with". At line 55, please change "w/o" with "without". The use of such contractions (such as "\&" above) is not advisable in a scientific paper. I suggest to make these changes throughout the whole paper.}
 \\ \\
-\revised{T}
+\revised{Fixed.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{At line 60, it is advisable to expand on "the corrected diffusion current exhibit(s)non-trivial behaviour near the boundary". Can it be related to BC?}
 \\ \\
-\revised{T}
+\revised{Fig. 5 and any reference to it are omitted from the revised manuscript.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{General comment on the Figures: it would be nice to explicitly identify the quantities in the graphs rather than letting the reader struggle to interpret them from the legend.}
 \\ \\
-\revised{T}
+\revised{We have added (where possible) explicit text indications on the figure itself to distinguish between the different quantities.}
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{In Fig. 8: is there any explanation for the sign change in some curves?}
 \\ \\
-\revised{T}
+\revised{The following text was added to the manuscript:\\ The initial diffusion solution is smoother than the transport one. Hence, as can be seen in Fig. 4 (in the original and revised ms), the diffusion solution underestimates the peak flux at the center of the slab and overestimates the flux near the boundary. The Ronen iterations "push" the diffusion solution towards the transport one by increasing the flux level at the center of the slab and decreasing the flux level at the boundary. Hence, $\phi^{k-1}$ is smaller in the center and larger at the boundary comparing to $\phi^(k)$.	This effect of the Ronen iterations produces less smooth flux shape with steeper gradients comparing to the diffusion solution. }
 \\ \\
 % --------------------------------------------------------------------------------------
 \textit{Suggestion for further work: it should not be too difficult to study a heterogeneous configuration, since the Ronen method naturally leads to a non-homogeneous system, to see how the Ronen method adapts to interfaces, where strong gradients of the flux might appear.}
