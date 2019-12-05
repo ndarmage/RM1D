@@ -1093,47 +1093,27 @@ The two-group flux distribution across each core is shown in Fig.~\ref{fig:heter
 
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.46\linewidth]{Sn_Diff_RM_core_1.pdf}
-	\includegraphics[width=0.46\linewidth]{Sn_Diff_RM_core_2.pdf}
-	\includegraphics[width=0.46\linewidth]{Sn_Diff_RM_core_3.pdf}
+	\includegraphics[width=0.49\linewidth]{Sn_Diff_RM_core_1.pdf}
+	\includegraphics[width=0.49\linewidth]{Sn_Diff_RM_core_2.pdf}
+	\includegraphics[width=0.49\linewidth]{Sn_Diff_RM_core_3.pdf}
 	\caption{Fast and thermal flux for each core using standard diffusion ($D_0$), Ronen method (RM) and S16 reference solution. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:hetero-flux}
 \end{figure}
 
-The fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S16 reference solutions are shown in Fig.~\ref{fig:hetero-flux-dev} for each core. For all cores, the fast flux is poorly reproduced by standard diffusion, with up to $\sim$10\% deviations at the inner interfaces and $\sim$20\% at the outer boundaries (in agreement with the homogeneous case). Deviations of the thermal flux calculated by diffusion increase from $\sim$4\% to $\sim$10\% as the heterogeneity of the core increases. The deviations of the fast and thermal flux calculated by Ronen method are much smaller (practically negligible), and are smaller than $\sim$2\%. 
+The fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S16 reference solutions are shown for each core, in Fig.~\ref{fig:hetero-flux-dev}. The fast flux is poorly reproduced by standard diffusion, with up to $\sim$10\% deviations at the inner interfaces and $\sim$20\% at the outer boundaries (in agreement with the homogeneous case). Deviations of the thermal flux calculated by diffusion increase from $\sim$4\% to $\sim$10\% as the heterogeneity of the core increases. The deviations of the fast and thermal flux calculated by Ronen method are much smaller (practically negligible), and are smaller than $\sim$2\%. 
 
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.65\linewidth]{flx_err_diff_C1.pdf}
-	\includegraphics[width=0.65\linewidth]{flx_err_diff_C2.pdf}
-	\includegraphics[width=0.65\linewidth]{flx_err_diff_C3.pdf}
+	\includegraphics[width=0.75\linewidth]{flx_err_diff_C123.pdf}
 	\caption{Fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S16 reference solutions for each core. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:hetero-flux-dev}
 \end{figure}
 
-It is illustrative to examine the spatial distribution of the Ronen method correction factors for the heterogeneous case. The behavior of the correction factor may seem a bit erratic, but can be explained. In regions where the flux gradients are small, the correction factors tend to vanish and actually produce solutions similar to standard diffusion. However, in regions where the flux gradients are steep, the correction factors do not vanish and play an important role in reproducing the correct flux shape.
-
-
-% convergence
-%\begin{figure}[htbp!]
-%	\centering
-%	\includegraphics[width=0.55\linewidth]{k_over_i_C3_10RMit.pdf}
-%	\caption{Convergence of $\keff$ over number of grid points along core no. 3, for 100 RM iterations, and standard diffusion calculation.}
-%	\label{fig:k_vs_I}
-%\end{figure}
-
-
-%\begin{figure}[htbp!]
-%	\centering
-%	\includegraphics[width=0.45\linewidth]{RM_flx_100it_8_22_728.pdf}
-%	\caption{Fluxes as calculated by RM scheme. Results shown here after 100 Ronen iterations and 728 mesh points.}
-%	\label{fig:Cores_RMflx}
-%\end{figure}
+It is illustrative to examine the spatial distribution of the Ronen method correction factors for the heterogeneous case. The behavior of the correction factor (Fig.~\ref{fig:Dcoef}) may seem a bit erratic, but can be explained. In regions where the flux gradients are small, the correction factors tend to vanish and actually produce solutions similar to standard diffusion. However, in regions where the flux gradients are steep, the correction factors do not vanish and play an important role in reproducing the correct flux shape.
 
 \begin{figure}[htbp!]
 	\centering
-	\includegraphics[width=0.65\linewidth]{RM_dD1_100it_8_22_728.pdf}
-	\includegraphics[width=0.65\linewidth]{RM_dD2_100it_8_22_728.pdf}
+	\includegraphics[width=0.75\linewidth]{RM_dD_100it_8_22_728_C123.pdf}
 	\caption{Behavior of the Ronen method correction factor $dD$ along the core, for the fast and thermal fluxes. Vertical grid lines are located at assemblies interfaces, results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:Dcoef}
 \end{figure}
