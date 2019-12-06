@@ -58,9 +58,9 @@
 \usetikzlibrary{arrows}
 
 % for quotes
-\usepackage [english]{babel}
-\usepackage [autostyle, english = american]{csquotes}
-\MakeOuterQuote{"}
+% \usepackage [english]{babel}
+% \usepackage [autostyle, english = american]{csquotes}
+% \MakeOuterQuote{"}
 
 % for flow charts
 % Define block styles
@@ -154,7 +154,8 @@ text centered, text width=3em, minimum height=2em, line width=1pt]
 % The correct dates will be entered by Springer
 %
 \abstract{
-In this paper, the Ronen method is developed, implemented, and applied to resolve the neutron flux and the criticality eigenvalue in one-dimensional simple homogeneous problem and in more complex heterogeneous benchmarks. The Ronen method is based on iterative calculations of the multigroup diffusion correction factors using a multigroup diffusion model and is driven by the solutions of the integral transport equation. The spatially-dependent diffusion constants are modified locally in order to produce new estimates of the surface currents using an integral transport expression. The diffusion solver employed in this study uses finite differences and the transport-corrected currents are introduced into the numerical scheme using drift terms. The corrected solutions are compared against reference results obtained by a discrete ordinate code. Boundary conditions are discussed and proper approximations are introduced to conserve the particle balance. The results match well with the reference solutions, especially in the limit of fine meshes, but slow convergence of the scalar flux is reported.
+In this paper, the Ronen method is developed, implemented, and applied to resolve the neutron flux and the criticality eigenvalue in simple one-dimensional homogeneous and heterogeneous problems. The Ronen method is based on iterative calculations of correction factors to use in a multigroup diffusion model, where the factors are actually given by the integral transport equation. In particular, spatially-dependent diffusion constants are modified locally in order to reproduce new estimates of the surface currents obtained by the integral transport operator. The diffusion solver employed in this study uses finite differences and the transport-corrected currents are introduced into the numerical scheme as drift terms. The corrected solutions are compared against reference results from a discrete ordinate code. %Boundary conditions are discussed and proper approximations are introduced to conserve the particle balance.  %% commented because this is treated in another article indeed.
+The results match well with the reference solutions, especially in the limit of fine meshes, but slow convergence of the scalar flux is reported.
 % 
 \PACS{
 	{28.00.00}{Nuclear engineering and nuclear power studies} \and
@@ -173,7 +174,7 @@ In this paper, the Ronen method is developed, implemented, and applied to resolv
 \section{Introduction}
 \label{sec:intro}
 
-Neutron transport calculations on a full core scale can be a highly intensive computational task. High-fidelity core design optimization or transient analyses can quickly become computationally impractical when using transport methods~\cite{Kim-2019}. For example, to achieve a 1\% accuracy in the local flux/power estimation, an order of 10\tsup{11} histories is needed in a full-core Monte Carlo calculation~\cite{Martin-2012}. Another problem is the huge number of variables and parameters to be stored and used during computation, e.g., tallies, geometry, cross sections, and depletion data. A conservative estimation of the memory needed for reasonably accurate full-core Monte Carlo neutronic calculation is in the range of terabytes (TBs)~\cite{Martin-2012}. The growing demand for high-accuracy and high-precision full-core computations challenges not only today’s high-end computing systems but will also challenge the near future (e.g., Exascale) computers~\cite{Martin-2012,Smith-2011,Kim-2019}.  
+Neutron transport calculations on a full core scale can be a highly intensive computational task. High-fidelity core design optimization or transient analyses can quickly become computationally impractical when using transport methods~\cite{Kim-2019}. For example, about 10\tsup{11} histories are needed in a full-core Monte Carlo calculation to achieve a 1\% accuracy on local flux/power estimation~\cite{Martin-2012}. Another problem is the huge number of variables and parameters to be stored and used during computation, e.g., tallies, geometry, cross sections, and depletion data. A conservative estimation of the memory needed for reasonably accurate full-core Monte Carlo neutronic calculation is in the range of terabytes (TBs)~\cite{Martin-2012}. The growing demand for high-accuracy and high-precision full-core computations challenges not only today’s high-end computing systems but will also challenge the near future (e.g., Exascale) computers~\cite{Martin-2012,Smith-2011,Kim-2019}.  
 
 To overcome this difficulty, faster (and less accurate) multigroup neutron diffusion solvers are frequently used~\cite{Lawrence-1986,Smith-1986}. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core, e.g., axial and radial seed-blanket structures, as in the French ASTRID SFR CVF design~\cite{Bertrand-2016}, challenging the accuracy of diffusion calculations. Moreover, modern calculation schemes evolve towards so-called "best-estimate" codes, aiming at high accuracy~\cite{IAEA-BE-2008}. 
 
@@ -475,7 +476,7 @@ E_{l+3-2m}[\mcL(0,x,E)]	\psi_l(0,E)
 
 The cross sections, as well as the diffusion coefficient, are usually available as volume-averaged data per cell in the mesh. Once the scalar flux is known from the finite differences solver using the original diffusion coefficients, the integral expressions derived in~\sxn{sec:int-flux-J} can be used to get new estimates of the currents $J$ at the cell interfaces. 
 
-Instead of computing new diffusion coefficients on the interfaces by Fick's law, $J_D(x,E) = -D(E) \partial_x \phi(x,E)$, new corrective currents $\delta J(x_s,E) = \jtrr(x_s,E) - J_D(x_s,E)$ are obtained on cell interfaces $x_s$. Here, $J_D(x,E)$ is called the "diffusion current" and is obtained using Fick's law, with the original values of the homogeneous diffusion coefficients and with the derivative approximated by finite differences. In one-dimensional 
+Instead of computing new diffusion coefficients on the interfaces by Fick's law, $J_D(x,E) = -D(E) \partial_x \phi(x,E)$, new corrective currents $\delta J(x_s,E) = \jtrr(x_s,E) - J_D(x_s,E)$ are obtained on cell interfaces $x_s$. Here, $J_D(x,E)$ is called the ``diffusion current'' and is obtained using Fick's law, with the original values of the homogeneous diffusion coefficients and with the derivative approximated by finite differences. In one-dimensional 
 geometry and using the notation in \fig{fig:mesh1D}, the diffusion current and the corrective current are evaluated according to
 \begin{eqnarray}\label{eq:JD-dJ}
 J_D(x_{i+1/2},E) &\cong& -D(x_{i+1/2},E) 
@@ -485,7 +486,7 @@ J_D(x_{i+1/2},E) &\cong& -D(x_{i+1/2},E)
 \frac{\phi(x_{i+1},E) + \phi(x_i,E)}
 {(\Delta x_{i+1} + \Delta x_i)/2} \,\, ,
 \end{eqnarray}
-where integer and rational subscripts indicate node-averaged and interface quantities, respectively. The discretized form of the current $\delta J$ must involve the neighboring flux as well, but its representation is changed into a drift-advection term to get rid of possible undefined division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}. The so-called "transport current" $\jtrr(x_s,E)$ is evaluated using the integral expression derived in~\sxn{sec:int-flux-J} as described in~\sxn{sec:calc-int-curr}.
+where integer and rational subscripts indicate node-averaged and interface quantities, respectively. The discretized form of the current $\delta J$ must involve the neighboring flux as well, but its representation is changed into a drift-advection term to get rid of possible undefined division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}. The so-called ``transport current'' $\jtrr(x_s,E)$ is evaluated using the integral expression derived in~\sxn{sec:int-flux-J} as described in~\sxn{sec:calc-int-curr}.
 
 \begin{figure}[htbp!] 
 	\centering
@@ -977,7 +978,7 @@ The RM correction terms ($\delta D$) along the plane are shown in Fig.~\ref{fig:
 	\label{fig:conv3}
 \end{figure}
 
-Notice the change of sign in the flux convergence $\Delta \phi$ in Fig.~\ref{fig:conv2} between the center (negative) and the boundary (positive) of the slab. The initial diffusion solution is smoother than the transport one. Hence, as can be seen in Fig.~\ref{fig:slab-fluxes}, the diffusion solution underestimates the peak flux at the center of the slab and overestimates the flux near the boundary. The Ronen iterations "push" the diffusion solution towards the transport one by increasing the flux level at the center of the slab and decreasing the flux level at the boundary. Hence, $\phi^{(k-1)}$ is smaller in the center and larger at the boundary comparing to $\phi^{(k)}$. This effect of the Ronen iterations produces less smooth flux shape with steeper gradients comparing to the diffusion solution.
+Notice the change of sign in the flux convergence $\Delta \phi$ in Fig.~\ref{fig:conv2} between the center (negative) and the boundary (positive) of the slab. The initial diffusion solution is smoother than the transport one. Hence, as can be seen in Fig.~\ref{fig:slab-fluxes}, the diffusion solution underestimates the peak flux at the center of the slab and overestimates the flux near the boundary. The Ronen iterations ``push'' the diffusion solution towards the transport one by increasing the flux level at the center of the slab and decreasing the flux level at the boundary. Hence, $\phi^{(k-1)}$ is smaller in the center and larger at the boundary comparing to $\phi^{(k)}$. This effect of the Ronen iterations produces less smooth flux shape with steeper gradients comparing to the diffusion solution.
 %
 % ---------------------------------------------------
 \subsection{Heterogeneous case}
