@@ -176,9 +176,9 @@ The results match well with the reference solutions, especially in the limit of 
 
 Neutron transport calculations on a full core scale can be a highly intensive computational task. High-fidelity core design optimization or transient analyses can quickly become computationally impractical when using transport methods~\cite{Kim-2019}. For example, about 10\tsup{11} histories are needed in a full-core Monte Carlo calculation to achieve a 1\% accuracy on local flux/power estimation~\cite{Martin-2012}. Another problem is the huge number of variables and parameters to be stored and used during computation, e.g., tallies, geometry, cross sections, and depletion data. A conservative estimation of the memory needed for reasonably accurate full-core Monte Carlo neutronic calculation is in the range of terabytes (TBs)~\cite{Martin-2012}. The growing demand for high-accuracy and high-precision full-core computations challenges not only today’s high-end computing systems but will also challenge the near future (e.g., Exascale) computers~\cite{Martin-2012,Smith-2011,Kim-2019}.  
 
-To overcome this difficulty, faster (and less accurate) multigroup neutron diffusion solvers are frequently used~\cite{Lawrence-1986,Smith-1986}. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core, e.g., axial and radial seed-blanket structures, as in the French ASTRID SFR CVF design~\cite{Bertrand-2016}, challenging the accuracy of diffusion calculations. Moreover, modern calculation schemes evolve towards so-called "best-estimate" codes, aiming at high accuracy~\cite{IAEA-BE-2008}. 
+To overcome this difficulty, faster (and less accurate) multigroup neutron diffusion solvers are frequently used~\cite{Lawrence-1986,Smith-1986}. However, future Gen-IV reactor designs are characterized by strong heterogeneity in the core, e.g., axial and radial seed-blanket structures, as in the French ASTRID SFR CVF design~\cite{Bertrand-2016}, challenging the accuracy of diffusion calculations. Moreover, modern calculation schemes evolve towards so-called ``best-estimate'' codes, aiming at high accuracy~\cite{IAEA-BE-2008}. 
 
-A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient~\cite{Bell-1970,Pounders-2009}. The calculation of this parameter should be based on physical insights from the transport equation such that the resulting improved ("transport corrected") diffusion approximation can capture the transport phenomena of interest. Such transport corrections can be divided into two main classes. The first class is based on extending the $P_1$ model equations (and the associated boundary conditions) along with some closure scheme, such as the well-known $SP_3$ approximation~\cite{Brantley-2000}. The second class, to which this study belongs, is based on the re-calculation of the diffusion correction factors within the multigroup diffusion framework~\cite{Tomatis-2011}. 
+A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient~\cite{Bell-1970,Pounders-2009}. The calculation of this parameter should be based on physical insights from the transport equation, such that the resulting diffusion approximation can really capture the transport phenomena of interest. Improved diffusion models obtained through transport corrections can be divided into two main classes. The first class is based on extending the $P_1$ model equations (and the associated boundary conditions) along with some closure scheme, such as the well-known $SP_3$ approximation~\cite{Brantley-2000}. The second class, to which this study belongs, is based on the re-calculation of correction factors within the multigroup diffusion framework~\cite{Tomatis-2011}. 
 
 In this paper, the development, implementation, and qualification of the Ronen Method~\cite{Ronen-2004} in one-dimensional homogeneous and heterogeneous plane geometry is reported. This method is implemented as a highly accurate multigroup neutron diffusion solver based on novel transport corrections. The main hypothesis underlying the Ronen method is based on iterative calculations of the multigroup diffusion coefficients driven by the solutions of the integral transport equation~\cite{Ronen-2004,Tomatis-2011}. 
 
@@ -198,65 +198,56 @@ The theoretical background is detailed in~\sxn{sec:theory}, the numerical implem
 
 In 2004, Ronen~\cite{Ronen-2004} suggested to derive corrected diffusion coefficients using Fick's law and more accurate estimations of the neutron currents by means of integral transport operators, whereas the neutron flux is resolved by diffusion theory. Denoting the integral transport and diffusion currents by $\jtr\rE$ and $\bm{J}_D\rE$, respectively, the Ronen idea is based on changing the diffusion coefficient such that
 \begin{equation}\label{eq:Fick}
-\bm{J}_D\rE = -D\rE\bnabla\phi\rE = \jtr\rE \,\, . 
+\bm{J}_D\rE = -D\rE\bnabla\phi\rE = \jtr\rE. 
 \end{equation}
 
 Since these accurate estimates of the currents are based on a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficients in the global calculation. 
 \begin{equation}\label{eq:RM-it}
-D^{(k+1)}\rE = -\frac{\lvert\jtr^{(k)}\rE\rvert}{\lvert\bnabla\phi^{(k)}\rE\rvert} \,\, ,
+D^{(k+1)}\rE = -\frac{\lvert\jtr^{(k)}\rE\rvert}{\lvert\bnabla\phi^{(k)}\rE\rvert} ,
 \end{equation}
 where $k$ is the iteration index. The use of a tensor notation is needed for the diffusion coefficient in general multidimensional problems.
 
 The motivation for this method was to overcome the inherent limitation of Fick's law requiring smooth flux gradients and thus small neutron absorption rate with respect to scattering in general. Nevertheless, isotropic scattering remained as a basic postulate.
 For example, in a homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004} 
 \begin{equation}\label{eq:RM-it-1D-slab}
-D^{(k+1)}(x,E) = -\frac{\frac{1}{2}\int_0^a dx' E_2[\sigma(E)\lvert
+D^{(k+1)}(x,E) = -\frac{\displaystyle \frac{1}{2}\int_0^a dx' E_2[\sigma(E)\lvert
 	x-x'\rvert]\text{sign}(x-x')q^{(k)}(x',E)}
-{\partial \phi^{(k)}(x,E)/\partial x} \,\, .
+{\partial \phi^{(k)}(x,E)/\partial x}.
 \end{equation}
 
-This idea was later used by Tomatis and Dall'Osso~\cite{Tomatis-2011}, who provided a numerical demonstration in a simple slab problem. Instead of updating the diffusion coefficient by the ratio of the current and the flux gradient, as in Fick's law, they adopted the Coarse Mesh Finite Differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver. 
+This idea was later used by Tomatis and Dall'Osso~\cite{Tomatis-2011}, who provided a numerical demonstration in a simple slab problem. Instead of updating the diffusion coefficient by the ratio of the current and the flux gradient, as in Fick's law, they adopted the Coarse Mesh Finite Differences method (CMFD) for taking into account in the diffusion solver the new currents estimated by the integral transport operator. 
 %
 %They proposed to update non-linearly the diffusion coefficients at the cell interfaces of the spatial mesh by the coarse mesh finite differences method (CMFD).
 %
-This technique, largely adopted in the literature of nodal methods~\cite{Smith-1983,Lawrence-1986}, can avoid indeterminate divisions in case of vanishing flux gradients. They tested this implementation in a homogeneous bare slab using two-group cross sections representative of a realistic PWR assembly. It was observed that the Ronen method (RM) could drive the flux distribution away from diffusion and closer to the reference solution of the integral Boltzmann transport equation, regardless of the initial formulation used for the diffusion coefficient. As expected, the largest errors were located near the boundary, where the transport effects are most pronounced, slowly decreasing even after many iterations.% Their work was limited to the homogeneous slab, and resolved neutron diffusion on the same discretized spatial mesh used for the reference from neutron transport.
+This technique, largely adopted in the literature of nodal methods~\cite{Smith-1983,Lawrence-1986}, can avoid indeterminate divisions in case of vanishing flux gradients. They tested this implementation in a homogeneous bare slab using two-group cross sections representative of a realistic PWR assembly. It was observed that the Ronen method (RM) could drive the flux distribution away from diffusion and closer to the reference solution of the integral Boltzmann transport equation, regardless of the initial formulation used for the diffusion coefficient. As expected, the largest errors were located near the boundary where the transport effects are more pronounced, but slowly decreasing even after many iterations.% Their work was limited to the homogeneous slab, and resolved neutron diffusion on the same discretized spatial mesh used for the reference from neutron transport.
 
 %
 % ---------------------------------------------------
 \subsection{The one-dimensional Peierls equation}
 \label{sec:Peierls}
 
-There are several ways to drive the integral expression for the flux in slab geometry. Most of them start with assuming homogeneous and isotropic scattering and sources, yielding the \emph{Peierls equation} \cite{Davison-1957,Case-1967,Bell-1970,Pomraning-1973,Duderstadt-1979,Lewis-1984}. The derivation of expression for slab geometry (of thickness $a$) is straightforward, yielding
-\begin{eqnarray}\label{eq:flux-slab-l-0-no-bndry-terms}
-\phi(x,E)&=&\frac{1}{2}\int_0^a { dx'
-	E_1\left[\sigma(E)\lvert x-x'\rvert\right] q(x',E) 
-}\nonumber \\
-&=& \frac{1}{2}\int_0^a { \!\!\! dx'
-	E_1\left[\sigma(E)\lvert x-x'\rvert\right]
-	\left[
-	\int_0^\infty { \!\!\! dE'
-		\sigma_s(E\leftarrow E')\phi(x',E') 
-	} + S(x',E)
-	\right] 
-} \,\, ,
-\end{eqnarray}
+There are several ways to derive the integral expression for the flux in slab geometry. Most of them start with assuming homogeneous and isotropic scattering and sources, yielding the \emph{Peierls equation} \cite{Davison-1957,Case-1967,Bell-1970,Pomraning-1973,Duderstadt-1979,Lewis-1984}. The derivation of expression for slab geometry (of thickness $a$) is straightforward, yielding
+\begin{equation}\label{eq:flux-slab-l-0-no-bndry-terms}
+\begin{split}
+\phi(x,E)=&\frac{1}{2}\int_0^a { dx'
+	E_1\left[\sigma(E)\lvert x-x'\rvert\right] Q(x',E)
+} \text{, with} \\
+Q(x,E) =& \int_0^\infty { dE'
+		\sigma_s(E \leftarrow E')\phi(x,E') + S(x,E)
+}
+\end{split}
+\end{equation}
+and $E_1(x)$ as first order exponential integral~\cite{Abramowitz-1964}. Note that this expression does not include the contribution of uncollided neutrons originated from an incoming angular flux at the boundaries.
 
-where $E_1(x)$ is a first order exponential integral~\cite{Abramowitz-1964}. Note that this expression does not include the contribution of uncollided neutrons originated from an incoming angular flux at the boundaries.
-
-Another starting point for the derivation of the integral expression for the flux in slab geometry is to directly integrate along a line the transport equation~\cite{Davison-1957,Pomraning-1973,Duderstadt-1979,Lewis-1984}
-\begin{eqnarray}\label{eq:full-ITE-w-bndry-terms}
-\psi(\rr,\OO) &=& \int_0^R { dR'
-	q(\rr-R'\OO,\OO) e^{-\mcL(\rr,\rr-R'\OO)}
-} 
-%\nonumber \\
-%&+& 
-+\psi(\rr-R\OO,\OO) e^{-\mcL(\rr,\rr-R\OO)}
-\,\, ,
-\end{eqnarray}
+The starting point for the derivation of the integral expression for the flux in slab geometry is to directly integrate along a line the transport equation~\cite{Davison-1957,Pomraning-1973,Duderstadt-1979,Lewis-1984}
+\begin{equation}\label{eq:full-ITE-w-bndry-terms}
+\psi(\rr,\OO) = \int_0^R { dR'
+	Q(\rr-R'\OO,\OO) e^{-\mcL(\rr,\rr-R'\OO)}
+} + \psi(\rr-R\OO,\OO) e^{-\mcL(\rr,\rr-R\OO)},
+\end{equation}
 where $\mcL(\rr,\rr-R'\OO)$ is the \emph{optical length}, defined as
 \begin{equation}\label{eq:opl}
-\mcL(\rr,\rr-R'\OO) \equiv 
-\int_0^{R'} {\sigma(\rr-R''\OO)dR'} \,\, .
+\mcL(\rr,\rr-R'\OO) \equiv \int_0^{R'} {\sigma(\rr-R''\OO)dR'} .
 \end{equation}
 Assuming isotropic scattering and homogeneous medium in one-dimension for~\eq{eq:full-ITE-w-bndry-terms} recovers~\eq{eq:flux-slab-l-0-no-bndry-terms}. 
 
@@ -268,75 +259,82 @@ In what follows, a generalization of~\eq{eq:flux-slab-l-0-no-bndry-terms} is der
 
 Consider an infinite slab of width $a$. The angular flux in the slab is given by~\cite{Lewis-1984}
 \begin{subequations}\label{eq:int-ang-flx}
-	\begin{eqnarray}
-	\psi(x,E,\mu) &=& \psi(0,E,\mu) e^{-\mcL(0,x,E)/\mu}
-	+ \int_0^x { dx' \,\,
-		\frac{Q(x',E,\mu)}{\mu} 
-		e^{-\mcL(x',x,E)/\mu} 
-	} \,\, , \qquad \mu>0 \,\, ,   \label{eq:int-ang-flx-a}\\
-	\psi(x,E,\mu) &=& \psi(a,E,\mu)e^{\mcL(x,a,E)/\mu} 
-	-\int_x^a { dx' \,\,
-		\frac{Q(x',E,\mu)}{\mu} 
-		e^{\mcL(x,x',E)/\mu} 
-	} \,\, , \qquad \mu<0 \,\, , \label{eq:int-ang-flx-b}
-	\end{eqnarray}
+  \begin{eqnarray}
+  \psi(x,E,\mu) &=& \psi(0,E,\mu) e^{-\mcL(0,x,E)/\mu}
+  + \int_0^x { dx'
+          \frac{Q(x',E,\mu)}{\mu} 
+          e^{-\mcL(x',x,E)/\mu} 
+  } , \qquad \mu>0 ,   \label{eq:int-ang-flx-a}\\
+  \psi(x,E,\mu) &=& \psi(a,E,\mu)e^{\mcL(x,a,E)/\mu} 
+  -\int_x^a { dx'
+          \frac{Q(x',E,\mu)}{\mu} 
+          e^{\mcL(x,x',E)/\mu} 
+  } , \qquad \mu<0 , \label{eq:int-ang-flx-b}
+  \end{eqnarray}
 \end{subequations}
 where
 \begin{equation}\label{eq:opl2}
-\mcL(x',x,E) \equiv 
-\int_{x'}^x {\sigma(x'',E) dx''} \,\,, \quad \text{assuming }(x'<x)
+\mcL(x',x,E) \equiv \operatorname{Sgn}(x-x') \int_{x'}^x {\sigma(x'',E) dx''}
 \end{equation}
-and $Q(x,E,\mu)$ denotes all sources.
+and $Q(x,E,\mu)$ denotes total emission.
 
-The angular dependence of the source and the uncollided boundary flux terms is expanded in a series of orthogonal Legendre polynomials
-\begin{eqnarray}\label{eq:Q-series}
-\psi(0,E,\mu) &=& \sum\limits_{l=0}^\infty {
-	\frac{2l+1}{2} \psi_l(0,E) \pl{\mu} 	
-} \nonumber \\
-\psi(a,E,\mu) &=& \sum\limits_{l=0}^\infty {
-	\frac{2l+1}{2} \psi_l(a,E) \pl{\mu} 	
-} \,\, .
-\end{eqnarray}
-The source cross sections are written explicitly as~\cite{Tomatis-2011}
+Only scattering in isotropic media is considered here: $\sigma_s(\ast, \OO' \rightarrow \OO) = \sigma_s(\ast, \mu_0)/2\pi$ with the angle cosine $\mu_0 = \OO' \cdot \OO$. The source terms are written by moments of Legendre polynomials after the usual expansion of the scattering cross sections in Legendre Polynomials of $\mu_0$, followed by the application of the addition theoreom and by integration on spherical harmonics using the symmetries and rotational invariance of the slab geometry~\cite{Bell-1970}. The cross sections of the source term are grouped for simplicity by introducing the $l$-th moments of the production cross section~\cite{Tomatis-2011}
 \begin{equation}\label{eq:src-mmnts}
-\sigma_l(x,E\leftarrow E')dE' = 
-\sigma_{s,l}(x,E\leftarrow E')dE'
-+ \delta_{l0}\frac{\chi(E)}{\keff}\nu\sigma_f(x,E')dE' \,\, ,
+\sigma_l(x,E\leftarrow E') = \sigma_{s,l}(x,E\leftarrow E')
++ \delta_{l0}\frac{\chi(E)}{\keff}\nu\sigma_f(x,E'),
 \end{equation}
-where
+with the Legendre moments of the scattering cross section
 \begin{equation}\label{eq:src-mmnts-explicit}
-\sigma_{s,l}(x,E\leftarrow E') = \int_{-1}^1 d\mu' P_l(\mu')\sigma_s(x,E\leftarrow E',\mu_0)
+\sigma_{s,l}(x,E\leftarrow E') = \int_{-1}^1 d\mu_0 P_l(\mu_0)\sigma_s(x,E\leftarrow E',\mu_0).
 \end{equation}
-with $\mu_0=\OO'\cdot\OO$ and the source term is expanded 
-\begin{eqnarray}\label{eq:src}
-Q(x,E,\mu)&=& \sum\limits_{l=0}^\infty {
+$\delta_{l0}$ in~\eq{eq:src-mmnts} is the Kronecker function equal to 1 only for $l=0$ and zero otherwise. The multiplication factor $\keff$ applies here on the fission production since external sources are missing. The source term is then rewritten as
+% Daniele: the following equation could be simplified with fewer lines thank to the previous eqs.
+\begin{equation}\label{eq:src}
+\begin{split}
+Q(x,E,\mu)=& \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} \int_0^\infty { dE'
 		\sigma_{s,l}(x,E\leftarrow E')\psi_l(x,E')\pl{\mu} 			
 	}
 } 
 + \frac{\chi(E)}{2\keff} \int_0^\infty { dE'
 	\nu\sigma_f(x,E') \psi_0(x,E')
-}  \nonumber \\
-&=&\sum\limits_{l=0}^\infty {
+} \\
+=&\sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} \int_0^\infty { dE'
 		\sigma_l(x,E\leftarrow E')\psi_l(x,E')\pl{\mu} 			
 	}
-} \nonumber \\
-&=&\sum\limits_{l=0}^\infty {
+} \\
+=&\sum\limits_{l=0}^\infty {
 \frac{2l+1}{2} \int_0^\infty { dE'
 	q_l(x,E\leftarrow E')\pl{\mu} 			
 	}
-} \nonumber \\
-&=&\sum\limits_{l=0}^\infty {
+} \\
+=&\sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} q_l(x,E)\pl{\mu} 			
-} 
-\,\, ,
-\end{eqnarray}
+},
+\end{split}
+\end{equation}
 where the source angular moments are defined as
 \begin{equation}\label{eq:q_l}
 q_l(x,E) \equiv \int_0^\infty dE' q_l(x,E\leftarrow E') \equiv 
-\int_0^\infty dE' \sigma_l(x,E\leftarrow E')\psi_l(x,E') dE' \,\, .
+\int_0^\infty dE' \sigma_l(x,E\leftarrow E')\psi_l(x,E') dE' .
 \end{equation}
+
+Finally, we also expand the angular dependence of the uncollided boundary flux in a series of orthogonal Legendre polynomials:
+%\begin{eqnarray}\label{eq:Q-series}
+%\psi(0,E,\mu) &=& \sum\limits_{l=0}^\infty {
+%	\frac{2l+1}{2} \psi_l(0,E) \pl{\mu} 	
+%} \nonumber \\
+%\psi(a,E,\mu) &=& \sum\limits_{l=0}^\infty {
+%	\frac{2l+1}{2} \psi_l(a,E) \pl{\mu} 	
+%}.
+%\end{eqnarray}
+\begin{equation}\label{eq:Q-series}
+\psi(x,E,\mu) = \sum\limits_{l=0}^\infty {
+	\frac{2l+1}{2} \pl{\mu} \psi_l(x,E)
+}.
+\end{equation}
+This allows dealing only with flux moments at the right hand side of~\eqs{eq:src-mmnts}.
 
 %with the corresponding coefficients
 %\begin{eqnarray}\label{eq:Q-series-coeffs}
@@ -348,14 +346,15 @@ q_l(x,E) \equiv \int_0^\infty dE' q_l(x,E\leftarrow E') \equiv
 %} \nonumber \\
 %\psi_l^a &=& \int_{-1}^1 { d\mu
 %	\psi(a,\mu)\pl{\mu} 
-%} \,\, .
+%} .
 %\end{eqnarray}
 
 %The independent energy parameter is omitted here for brevity and clarity but restoring it is straightforward.
 %
-In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons coming from the left, i.e., $x'<x$ ($\mu>0$), substitute Eqs.~\eqref{eq:Q-series} in Eq.~\eqref{eq:int-ang-flx-a} and integrate over the angle 
-\begin{eqnarray}\label{eq:phi+}
-\phi^+(x,E)&\equiv& \int_0^1 {d\mu \psi(x,E,\mu)} \nonumber \\
+The scalar flux $\phi^+$ at $x$ resulting from neutrons coming from the left, i.e., $x'<x$ $(\mu>0)$, is determined by substituting Eqs.~\eqref{eq:Q-series} in Eq.~\eqref{eq:int-ang-flx-a} and integrating over the angle 
+\begin{equation}\label{eq:phi+}
+\begin{split}
+\phi^+(x,E) \equiv& \int_0^1 {d\mu \psi(x,E,\mu)} \\
 %&=& \int_0^1 {d\mu \psi(0,\mu) e^{-\mcL(0,x)/\mu} } 
 %+ \int_0^1 {d\mu 
 %	\int_0^x { dx'
@@ -363,42 +362,42 @@ In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons co
 %	}
 %}
 %\nonumber \\
-&=& \sum\limits_{l=0}^\infty {
+=& \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} 
 		\left\{\psi_l(0,E) \int_0^1 { d\mu
 		\pl{\mu} e^{-\mcL(0,x,E)/\mu}	
 	}
-	+	\int_0^x {\!\!\! dx'
+	+	\int_0^x { dx'
 		q_l(x',E)
 		\int_0^1 { d\mu
 			\frac{\pl{\mu}}{\mu} e^{-\mcL(x',x,E)/\mu}	
 		}
 	}
 \right\}
-} \,\, .
-\end{eqnarray}
-
+}.
+\end{split}
+\end{equation}
 In order to solve the angular integrals we resort to the following result~\cite{Cengel-1984,Settle-1994}
 \begin{equation}\label{eq:Sni}
 \int_0^1 { 
 	\mu^i \pl{\mu} e^{-y/\mu} d\mu
-}
-= \sum\limits_{m=0}^{[l/2]} {
+} = \sum\limits_{m=0}^{[l/2]} {
 	h_m E_{l+2+i-2m}(y)
-} \,\, ,
+},
 \end{equation}
-where $h_m$ is defined according to 
+where the coefficients $h_m$ are used to rewrite the Legendre polynomials as simple sums of weighted monomials, like
 \begin{equation}\label{eq:h_i}
 \pl{x}=\sum\limits_{m=0}^{[l/2]} {
 	h_m x^{n-2m}
-}
-\end{equation}
-and given explicitly by
-\begin{equation}\label{eq:h_i-explicit}
+}, \quad
+% \end{equation}
+% and given explicitly by
+% \begin{equation}\label{eq:h_i-explicit}
 h_m = \frac{(-1)^m (2l-2m)!}{2^l m! (l-m)! (l-2m)!}
-\end{equation}
-where
-\begin{equation}\label{eq:l_2}
+%\end{equation}
+%where
+%\begin{equation}\label{eq:l_2}
+\quad \text{and} \quad
 [l/2] = 
 \begin{cases}
 l/2, & l \text{ even}, \\
@@ -410,62 +409,63 @@ Hence, the contribution to the flux from $x'<x$ can be written as
 \begin{equation}\label{eq:phi+2}
 \phi^+(x)= \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} \sum\limits_{m=0}^{[l/2]} { h_m
-		\left\{			
-			 E_{l+2-2m}[\mcL(0,x,E)]			 
-			 \psi_l(0,E) 
-			+ 	\int_0^x { dx'
-				E_{l+1-2m}[\mcL(x',x,E)]
-				q_l(x',E)				
+		\left\{                
+		        E_{l+2-2m}[\mcL(0,x,E)]                         
+		        \psi_l(0,E) 
+		       +       \int_0^x { dx'
+		        E_{l+1-2m}[\mcL(x',x,E)]
+		        q_l(x',E)                               
 		} 
 	\right\}
 	}
-} \,\, .
+}.
 \end{equation}
-The contribution to the flux from $x'>x$ ($\mu<0$) can be calculated in a similar manner, using the change of variables $\eta=-\mu$ for the angular integrals and the fact that $\pl{-\mu}=(-1)^l\pl{\mu}$, resulting in an expression for the scalar flux which accounts for anisotropic scattering and heterogeneous medium
-\begin{eqnarray}\label{eq:int-scalar-flux}
-\phi(x,E) &=& \phi^+(x,E)+\phi^-(x,E) \nonumber \\
-&=& 
-\sum\limits_{l=0}^\infty  \frac{2l+1}{2} 
-\sum\limits_{m=0}^{[l/2]}  h_m
+The contribution to the flux from $x'>x$ ($\mu<0$) can be calculated in a similar manner, using the change of variables $\eta=-\mu$ for the angular integrals and the fact that $\pl{-\mu}=(-1)^l\pl{\mu}$. Hence, the expression for the scalar flux which accounts for anisotropic scattering and heterogeneous medium is
+\begin{equation}\label{eq:int-scalar-flux}
+\begin{split}
+\phi(x,E) =& \phi^+(x,E)+\phi^-(x,E) \\
+=& \sum\limits_{l=0}^\infty  \frac{2l+1}{2} 
+\sum\limits_{m=0}^{[l/2]} h_m
 \bigg\{
 E_{l+2-2m}[\mcL(0,x,E)]	\psi_l(0,E) 
-+(-1)^l E_{l+2-2m}[\mcL(x,a,E)] \psi_l(a,E) 
-\nonumber \\
-&&+
-		\int_0^x dx' E_{l+1-2m}[\mcL(x',x,E)] q_l(x',E)
-		+(-1)^l \int_x^a dx' 
-		E_{l+1-2m}[\mcL(x,x',E)] q_l(x',E)
-\bigg\}	\,\, .		
-\end{eqnarray}
++(-1)^l E_{l+2-2m}[\mcL(x,a,E)] \psi_l(a,E) \\
+&+ \int_0^x dx' E_{l+1-2m}[\mcL(x',x,E)] q_l(x',E)
+      +(-1)^l \int_x^a dx' 
+      E_{l+1-2m}[\mcL(x,x',E)] q_l(x',E)
+\bigg\}.
+\end{split}
+\end{equation}
 
 %Defining $q_l(x,E)\equiv \int_0^\infty \!\!\!\! dE' \sigma_l(x,E\leftarrow E') \psi_l(x,E')$ 
 %
 The generalization of~\eq{eq:int-scalar-flux} to current is obtained in a similar procedure according to
-\begin{eqnarray}\label{eq:tot-J}
-J(x,E) &=& J^+(x,E) - J^-(x,E) = \int_0^1 {d\mu \mu \psi(x,E,\mu)} 
-- \int_0^{-1} {d\mu \mu \psi(x,E,\mu)} \nonumber \\
-&=&\sum\limits_{l=0}^\infty  \frac{2l+1}{2}
+\begin{equation}\label{eq:tot-J}
+\begin{split}
+J(x,E) =& J^+(x,E) - J^-(x,E) = \int_0^1 {d\mu \mu \psi(x,E,\mu)} 
+- \int_0^{-1} {d\mu \mu \psi(x,E,\mu)} \\
+=&\sum\limits_{l=0}^\infty  \frac{2l+1}{2}
 \sum\limits_{m=0}^{[l/2]}  h_m
 \bigg\{
 E_{l+3-2m}[\mcL(0,x,E)]	\psi_l(0,E) 
-+(-1)^{l+1} E_{l+3-2m}[\mcL(x,a,E)]\psi_l(a,E)  \nonumber \\
-&&+
++(-1)^{l+1} E_{l+3-2m}[\mcL(x,a,E)]\psi_l(a,E) \\
+&+
 \int_0^x dx' E_{l+2-2m}[\mcL(x',x,E)] q_l(x',E)
 +(-1)^{l+1} \int_x^a dx' E_{l+2-2m}[\mcL(x,x',E)] q_l(x',E)
-\bigg\}	\,\, . 
-\end{eqnarray}
+\bigg\}.
+\end{split}
+\end{equation}
 %
 %For isotropic scattering ($l=0$), \eqsand{eq:int-scalar-flux}{eq:tot-J} reduce to the known expressions derived from the Peierls equation
 %\begin{eqnarray}\label{eq:iso-flx-J}
 %\ftr(x,E) &=& \frac{1}{2}\left\{\psi_0^0(E) E_2[\mcL(0,x,E)] 
 %+ \psi_0^a E_2[\mcL(x,a,E)]\right\}
 %+ \frac{1}{2}\int_0^a { dx' q_0(x',E)
-%	 E_1\left[\lvert\mcL(x',x,E)\rvert\right]} \,\, , \nonumber \\
+%	 E_1\left[\lvert\mcL(x',x,E)\rvert\right]} , \nonumber \\
 %\jtr(x,E) &=& \frac{1}{2}\left\{\psi_0^0(E) E_3[\mcL(0,x,E)] 
 %- \psi_0^a E_3[\mcL(x,a,E)]\right\}
 %+ \frac{1}{2}\int_0^a { dx' q_0(x',E)
 %	 E_2\left[\lvert\mcL(x',x,E)\rvert\right]
-%	sign(x-x') } \,\, .
+%	sign(x-x') } .
 %\end{eqnarray} 
 %
 
@@ -484,7 +484,7 @@ J_D(x_{i+1/2},E) &\cong& -D(x_{i+1/2},E)
 {(\Delta x_{i+1} + \Delta x_i)/2} \nonumber \\
 \delta J(x_{i+1/2},E) &=& -\delta D(x_{i+1/2},E) 
 \frac{\phi(x_{i+1},E) + \phi(x_i,E)}
-{(\Delta x_{i+1} + \Delta x_i)/2} \,\, ,
+{(\Delta x_{i+1} + \Delta x_i)/2} ,
 \end{eqnarray}
 where integer and rational subscripts indicate node-averaged and interface quantities, respectively. The discretized form of the current $\delta J$ must involve the neighboring flux as well, but its representation is changed into a drift-advection term to get rid of possible undefined division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}. The so-called ``transport current'' $\jtrr(x_s,E)$ is evaluated using the integral expression derived in~\sxn{sec:int-flux-J} as described in~\sxn{sec:calc-int-curr}.
 
@@ -518,7 +518,7 @@ Since the input diffusion coefficients are provided as node averaged, and they a
 \begin{equation}\label{eq:Ds}
 D(x_{i+1/2},E) = \frac{\Delta x_i D(x_i,E) 
 	+ \Delta x_{i+1} D(x_{i+1},E)}
-{ \Delta x_i + \Delta x_{i+1}} \,\, .
+{ \Delta x_i + \Delta x_{i+1}} .
 \end{equation}
 
 %
@@ -529,7 +529,7 @@ D(x_{i+1/2},E) = \frac{\Delta x_i D(x_i,E)
 The new numerical corrections $\delta D$ are obtained on the interfaces using~\eq{eq:JD-dJ} to be used in the finite differences solver, together with the diffusive currents from~\eq{eq:JD-dJ}. Hence, the neutron balance resolved by the CMFD takes into account both types of currents $J_D$ and $\delta J$. %Non-linear iterations with new corrections given by $\delta J$ are needed because of their dependence on the unknown flux.
 Hence, the one-dimensional multigroup neutron balance CMFD diffusion equations actually solved are
 \begin{equation}\label{eq:diff1}
-J_{D,g}^+(x) + \delta J_{D,g}^+(x) -  J_{D,g}^-(x) - \delta J_{D,g}^-(x) + \sigma_{g}\phi_g(x) =  \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,g'}(x)\phi_{g'}(x) + \sum\limits_{g'=1}^G\sigma_{s,g\leftarrow g'}\phi_{g'}(x) \,\, ,
+J_{D,g}^+(x) + \delta J_{D,g}^+(x) -  J_{D,g}^-(x) - \delta J_{D,g}^-(x) + \sigma_{g}\phi_g(x) =  \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,g'}(x)\phi_{g'}(x) + \sum\limits_{g'=1}^G\sigma_{s,g\leftarrow g'}\phi_{g'}(x) ,
 \end{equation}
 where $J_{D,g}^\pm (x)\equiv J_{D,g}(x_{i\pm 1/2})$.
 
@@ -569,7 +569,7 @@ where $q_{i,g}$ is the RHS of~\eq{eq:FD_diff_full}.
 
 These equations can be formulated in operators notation according to
 \begin{equation}\label{eq:op-not}
-\mathcal{M}\Phi=\frac{1}{\keff}\mathcal{F}\Phi \,\, ,
+\mathcal{M}\Phi=\frac{1}{\keff}\mathcal{F}\Phi ,
 \end{equation}
 where $\mathcal{M}$ is the migration operator, whose entries are given by~\eq{eq:FD_diff_org} making it a three-diagonal banded matrix, and $\mathcal{F}$ is the neutron generation operator given by the second term in $q_{i,g}$ (see Eqs.~\ref{eq:FD_diff_full}-\ref{eq:FD_diff_org}). Note that $\mathcal{M}$ can be written as $\mathcal{M}=\mathcal{M}_0+\delta\mathcal{M}$ distinguishing the diffusion corrections from the constant diffusion coefficients derived from the transport problem. In the homogeneous case, $\mathcal{M}(x)=\mathcal{M}_0+\delta\mathcal{M}(x)$.
 %
@@ -811,7 +811,7 @@ These transfer probabilities $E_{n_{l,m}}[\tau_g(x_i,x_j)]$ are pre-calculated o
 \label{sec:BC}
 A generalized form for the boundary condition (at the left) follows as
 \begin{equation}\label{eq:BC}
-J_D(x=0) = -D_0\frac{\phi_0}{\Delta x_0/2 + \zeta} \,\, ,
+J_D(x=0) = -D_0\frac{\phi_0}{\Delta x_0/2 + \zeta} ,
 \end{equation} 
 where $\zeta$ is the extrapolation length in case of vacuum. The Marshak boundary conditions are reproduced by $\zeta=2D$, but the more accurate value $\zeta\approx 2.13D$ is taken to match transport with better agreement~\cite{Lamarsh-1966}. Reflection can be reproduced by $\zeta\rightarrow\infty$, whereas the condition of zero-flux is realized by $\zeta=0$. 
 %
