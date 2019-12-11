@@ -70,7 +70,7 @@
 \tikzstyle{discre} = [rectangle, draw, fill=white!20, 
 text width=6em, text centered, minimum height=3em, node distance=3.5cm, line width=1pt]
 \tikzstyle{decision} = [diamond, draw, fill=white!20, 
-text width=3em, text badly centered, node distance=2cm, inner sep=1pt, line width=1pt]
+text width=4em, text badly centered, node distance=2cm, inner sep=2pt, line width=1pt]
 \tikzstyle{block} = [rectangle, draw, fill=white!20, 
 text width=6em, text centered, minimum height=3em, node distance=3.5cm, line width=1pt]
 \tikzstyle{blockEq} = [rectangle, draw, fill=white!20, 
@@ -113,6 +113,9 @@ text centered, text width=3em, minimum height=2em, line width=1pt]
 \newcommand{\roy}[1]{{\color{blue}{\textsuperscript{ROY:}#1}}}
 
 \newcommand{\keff}{{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}}
+\newcommand{\kref}{{\ensuremath{k_{\textrm{\scriptsize{ref}}}}}}
+\newcommand{\krm}{{\ensuremath{k_{\textrm{\scriptsize{RM}}}}}}
+\newcommand{\kd}{{\ensuremath{k_{\textrm{\scriptsize{D}}}}}}
 \newcommand{\beff}{\ensuremath{\beta_{\textrm{eff}}}}
 \newcommand{\rr}{\ensuremath{\bm{r}}}
 \newcommand{\OO}{\ensuremath{\hat{\bm{\Omega}}}}
@@ -122,6 +125,8 @@ text centered, text width=3em, minimum height=2em, line width=1pt]
 \newcommand{\ftr}{\ensuremath{\phi_{\textrm{\scriptsize{tr}}}}}
 \newcommand{\jtr}{\ensuremath{\bm{J}_{\textrm{\scriptsize{tr}}}}}
 \newcommand{\jtrr}{\ensuremath{J_{\textrm{\scriptsize{tr}}}}}
+\newcommand{\jd}{\ensuremath{J_{\textrm{\scriptsize{D}}}}}
+\newcommand{\delj}{\ensuremath{\delta J}}
 %\newcommand{\mcL}{\mathcal{L}}
 \newcommand{\mcL}{\tau}
 \newcommand{\pl}[1]{\ensuremath{P_l(#1)}}
@@ -476,11 +481,11 @@ E_{l+3-2m}[\mcL(0,x,E)]	\psi_l(0,E)
 
 The cross sections, as well as the diffusion coefficient, are usually available as volume-averaged data per cell in the mesh. Once the scalar flux is known from the finite differences solver using the original diffusion coefficients, the integral expressions derived in~\sxn{sec:int-flux-J} can be used to get new estimates of the currents $J$ at the cell interfaces. 
 
-Instead of computing new diffusion coefficients at the interfaces by Fick's law, $J_D(x,E) = -D(E) \partial_x \phi(x,E)$, new corrective currents $\delta J(x_s,E) = \jtrr(x_s,E) - J_D(x_s,E)$ are obtained at cell interfaces $x_s$. Here, $J_D(x,E)$ is called the ``diffusion current'' and is obtained using Fick's law, with the original values of the diffusion coefficients and with the derivative approximated by finite differences. In one-dimensional 
+Instead of computing new diffusion coefficients at the interfaces by Fick's law, $\jd(x,E) = -D(E) \partial_x \phi(x,E)$, new corrective currents $\jd(x_s,E) = \jtrr(x_s,E) - \jd(x_s,E)$ are obtained at cell interfaces $x_s$. Here, $\jd(x,E)$ is called the ``diffusion current'' and is obtained using Fick's law, with the original values of the diffusion coefficients and with the derivative approximated by finite differences. In one-dimensional 
 geometry and using the notation in \fig{fig:mesh1D}, the diffusion current and the corrective current are evaluated according to
 \begin{subequations}\label{eq:JD-dJ}
 \begin{align}
-J_D(x_{i+1/2},E) \cong& -D(x_{i+1/2},E) 
+\jd(x_{i+1/2},E) \cong& -D(x_{i+1/2},E) 
 \frac{\phi(x_{i+1},E) - \phi(x_i,E)}
 {(\Delta x_{i+1} + \Delta x_i)/2}, \label{eq:JD} \\
 \delta J(x_{i+1/2},E) =& -\delta D(x_{i+1/2},E) 
@@ -488,7 +493,7 @@ J_D(x_{i+1/2},E) \cong& -D(x_{i+1/2},E)
 {(\Delta x_{i+1} + \Delta x_i)/2}, \label{eq:dJ}
 \end{align}
 \end{subequations}
-where integer and rational subscripts indicate node-averaged and interface quantities, respectively. The discretized form of the current $\delta J$ must involve the neighboring flux as well, but its representation is changed into a drift-advection term to get rid of possible undefined division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}. The so-called ``transport current'' $\jtrr(x_s,E)$ is evaluated using the integral expression derived in~\sxn{sec:int-flux-J} as described in~\sxn{sec:calc-int-curr}.
+where integer and rational subscripts indicate node-averaged and interface quantities, respectively. The discretized form of the current $\delj$ must involve the neighboring flux as well, but its representation is changed into a drift-advection term to get rid of possible undefined division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}. The so-called ``transport current'' $\jtrr(x_s,E)$ is evaluated using the integral expression derived in~\sxn{sec:int-flux-J} as described in~\sxn{sec:calc-int-curr}.
 
 \begin{figure}[htbp] 
 	\centering
@@ -528,10 +533,10 @@ D(x_{i+1/2},E) = \frac{\Delta x_i D(x_i,E)
 \subsection{The correction as a drift term}
 \label{sec:corr-drift}
 
-The new numerical corrections $\delta D$ are obtained at the interfaces using~\eqs{eq:dJ} to be used in the finite differences solver, together with the diffusive currents from~\eq{eq:JD}. Hence, the neutron balance resolved by the CMFD takes into account both types of currents $J_D$ and $\delta J$. %Non-linear iterations with new corrections given by $\delta J$ are needed because of their dependence on the unknown flux.
+The new numerical corrections $\delta D$ are obtained at the interfaces using~\eqs{eq:dJ} to be used in the finite differences solver, together with the diffusive currents from~\eq{eq:JD}. Hence, the neutron balance resolved by the CMFD takes into account both types of currents $\jd$ and $\delj$. %Non-linear iterations with new corrections given by $\delj$ are needed because of their dependence on the unknown flux.
 In particular, the one-dimensional multigroup neutron balance CMFD diffusion equations actually solved are
 \begin{equation}\label{eq:diff1}
-J_{D,g}^+(x) + \delta J_{D,g}^+(x) -  J_{D,g}^-(x) - \delta J_{D,g}^-(x) + \sigma_{g}\phi_g(x) =  \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,g'}(x)\phi_{g'}(x) + \sum\limits_{g'=1}^G\sigma_{s,g\leftarrow g'}\phi_{g'}(x),
+J_{D,g}^+(x) + \delj_g^+(x) -  J_{D,g}^-(x) - \delj_g^-(x) + \sigma_{g}\phi_g(x) =  \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,g'}(x)\phi_{g'}(x) + \sum\limits_{g'=1}^G\sigma_{s,g\leftarrow g'}\phi_{g'}(x),
 \end{equation}
 where $J_{D,g}^\pm (x)\equiv J_{D,g}(x_{i\pm 1/2})$.
 
@@ -817,11 +822,11 @@ It is possible to identify in these equations transfer probabilities of neutrons
 \label{sec:BC}
 A generalized form for the boundary condition (at the left) follows as
 \begin{equation}\label{eq:BC}
-J_D(x=0) = -D_0\frac{\phi_0}{\Delta x_0/2 + \zeta},
+\jd(x=0) = -D_0\frac{\phi_0}{\Delta x_0/2 + \zeta},
 \end{equation} 
 where $\zeta$ is the extrapolation length in case of vacuum. The Marshak boundary conditions are reproduced by $\zeta=2D$, but the more accurate value $\zeta\approx 2.13D$ is taken to match transport with better agreement~\cite{Lamarsh-1966}. Reflection can be reproduced by $\zeta\rightarrow\infty$, whereas the condition of zero-flux is realized by $\zeta=0$. 
 %
-The quantity $\delta J$ at the boundary takes the simpler form of $\delta J = -\delta D_{-1/2}\phi_0$, without dividing by the spatial width, since no particular extrapolation length is appropriate for the correction. The expression for the right boundary is straightforward, implying a non-negative current. One should recall that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated and the correction is actually implemented through the currents, i.e., $J_{tr} = J_D + \delta J$.
+The quantity $\delj$ at the boundary takes the simpler form of $\delj = -\delta D_{-1/2}\phi_0$, without dividing by the spatial width, since no particular extrapolation length is appropriate for the correction. The expression for the right boundary is straightforward, implying a non-negative current. One should recall that the diffusion coefficient remains constant throughout the calculation, and so is the extrapolated distance. Only $\delta D$ is recalculated and the correction is actually implemented through the currents, i.e., $\jtrr = \jd + \delj$.
 
 %
 % ---------------------------------------------------
@@ -830,36 +835,38 @@ The quantity $\delta J$ at the boundary takes the simpler form of $\delta J = -\
 
 The Ronen algorithm is described as follows (see Fig.~\ref{fig:RM-algo}):
 \begin{enumerate}
-	\item\label{it:init} Initialize - the algorithm receives the geometry and the cross sections (XS) of the problem as input. At this stage, the corrections to the diffusion coefficients $\delta D^{(0)}$ are set to zero and the initial pure-diffusion operator $\mathcal{A}_0$ is constructed. Initial guesses for the flux $\phi^{(0)}$ and multiplication factor $k^{(0)}_\texttt{eff}$ are set.
-	\item\label{it:DF-solve} Diffusion Solver - a one-dimensional multigroup diffusion solver is executed until convergence using the diffusion corrections from the previous iteration $\delta D^{(k)}$ through the diffusion operator $\mathcal{A}^{(k)}=\mathcal{A}_0+\delta A^{(k)}$. The results are an updated estimation of the diffusion flux $\phi^{(k)}$ and the multiplication factor $k^{(k)}_\texttt{eff}$.
-	\item\label{it:Js} Calculate Currents - using the updated diffusion flux $\phi^{(k)}$, both the diffusion current $J^{(k)}_D$ (Eq.~\ref{eq:JD-dJ}) and the transport current $J^{(k)}_\texttt{tr}$ (Eq.~\ref{eq:tot-J}) are calculated.
-	\item\label{it:dD} Calculate corrections - the diffusion correction $\delta D^{(k+1)}$ (Eq.~\ref{eq:JD-dJ}) is obtained using $\delta J^{(k)}$ and Eq.~\eqref{eq:JD-dJ}.
-	\item\label{it:dA} Update diffusion coefficients - reconstruct the diffusion operator $\mathcal{A}^{(k+1)} = \mathcal{A}_0+\delta \mathcal{A}^{(k+1)}$ (Eq.~\ref{eq:FD_diff_org}).
-	\item\label{it:conv} If flux and eigenvalue are not converged, go to step~\ref{it:DF-solve}.
+	\item\label{it:init} Initialize - the algorithm receives the geometry and the cross sections (XS) of the problem as input. At this stage, the correction factors $\delta D^{(0)}$ are set to zero and the initial pure-diffusion operator $\mathcal{A}_0$ is constructed. Initial guesses for the flux $\phi^{(0)}$ and multiplication factor $\keff^{(0)}$ are set.
+	\item\label{it:Js} Calculate currents - using the diffusion flux $\phi^{(k)}$, both the diffusion current $\jd^{(k)}$ (Eq.~\ref{eq:JD-dJ}) and the transport current $\jtrr^{(k)}$ (Eq.~\ref{eq:tot-J}) are calculated.
+	\item\label{it:dD} Calculate correction factors - the correction factors $\delta D^{(k+1)}$ (Eq.~\ref{eq:JD-dJ}) is obtained using $\delj^{(k)}$ and Eq.~\eqref{eq:JD-dJ}.
+	\item\label{it:dA} Update diffusion operator - reconstruct the diffusion operator $\mathcal{A}^{(k+1)} = \mathcal{A}_0+\delta \mathcal{A}^{(k+1)}$ (Eq.~\ref{eq:FD_diff_org}).
+	\item\label{it:DF-solve} Diffusion solver - a one-dimensional multigroup diffusion solver is executed until convergence. The results are an updated estimation of the diffusion flux $\phi^{(k+1)}$ and the multiplication factor $\keff^{(k+1)}$.
+	\item\label{it:cvg} Check convergence - check if the flux $\phi^{(k)}$ and the multiplication factor $\keff^{(k)}$ converged. If yes, stop, otherwise, step~\ref{it:Js}.
 \end{enumerate}
 
 \begin{figure}[htbp!] 
 	\centering
 \begin{tikzpicture}[font=\scriptsize]
 % Place nodes
-	\node [cloud] 					 			(start) {START};
-	\node [block, right of=start, xshift=0cm,yshift=0cm] (input) {Input\\parameters};
-	\node [block, right of=input, xshift=0cm,yshift=0cm] (geoXS) {Geometry and XS};
-	\node [block, below of=geoXS, xshift=0cm,yshift=1.5cm] (Diff)  {Diffusion\\solver};
-	\node [block, below of=Diff, xshift=0cm,yshift=1.5cm] (J)  {Calculate $J^{(k)}_{\texttt{tr}},J^{(k)}_D,\delta J^{(k)}$};
-	\node [block, left  of=J,    xshift=0cm,yshift=0cm] (dD) {Obtain\\$\delta D^{(k+1)}$};
-	\node [block, left  of=dD,   xshift=0cm,yshift=0cm](dA) {Calculate\\$\delta \mathcal{A}^{(k+1)}$};
-	\node [block, above of=dA,   xshift=0cm,yshift=-1.5cm] (Anew) {Construct\\$\mathcal{A}_0+\delta \mathcal{A}^{(k+1)}$};
+	\node [cloud] 					 						(start) {START};
+	\node [block, below of=start, xshift=0cm,yshift=1.5cm]  (input) {Input\\parameters};
+	\node [block, below of=input, xshift=0cm,yshift=1.5cm]  (geoXS) {Geometry, XS};
+	\node [block, below of=geoXS, xshift=0cm,yshift=1.5cm]  (J)     {Calculate $\jtrr^{(k)},\jd^{(k)},\delj^{(k)}$};
+	\node [block, below of=J,     xshift=0cm,yshift=1.5cm]  (dDA)   {Obtain $\delta D^{(k+1)}$, $\delta \mathcal{A}^{(k+1)}$};
+	\node [block, below of=dDA,  xshift=0cm,yshift=1.5cm]  	(Anew)  {Construct\\$\mathcal{A}_0+\delta \mathcal{A}^{(k+1)}$};
+	\node [block, below of=Anew, xshift=0cm,yshift=1.5cm]  	(Diff)  {Diffusion\\solver};
+	\node [decision, below of=Diff,xshift=0cm,yshift=-1cm]	(cvg)   {$\phi^{(k+1)}$, $k^{(k+1)}$ \\ converged?};
+	\node [cloud, below of=cvg,xshift=0cm,yshift=1.5cm] 	(stp)  {STOP};
 
 % Draw edges
 	\path [line] (start) -- (input);
 	\path [line] (input) -- (geoXS);
-	\path [line] (geoXS) -- node[anchor= south west,yshift=-0.2cm]{$\mathcal{A}_0$}(Diff);
-	\path [line] (Diff)  -- node[anchor= south west,yshift=-0.2cm]{$\phi^{(k)},k^{(k)}$}(J);
-	\path [line] (J)  -- node[anchor= north]{}(dD);
-	\path [line] (dD) -- node[anchor= north]{}(dA);
-	\path [line] (dA)  -- node[anchor= north]{}(Anew);
-	\path [line] (Anew)  -- node[near end,anchor= south west,xshift=-1.7cm]{$\mathcal{A}^{(k+1)}$}(Diff);
+	\path [line] (geoXS) -- node[anchor= south west,yshift=-0.2cm]{$\phi^{(0)}$, $k^{(0)}$, $\mathcal{A}_0$}(J);
+	\path [line] (J) 	 -- (dDA);
+	\path [line] (dDA) 	 -- (Anew);
+	\path [line] (Anew)  -- node[near end,anchor= south west,xshift=0cm]{$\mathcal{A}^{(k+1)}$}(Diff);
+	\path [line] (Diff)  -- node[anchor= south west,yshift=-0.2cm]{$\phi^{(k+1)},k^{(k+1)}$}(cvg);
+	\path [line] (cvg)   -- node[anchor= south west]{YES}(stp);
+	\path [line] (cvg)   -| node[near start,yshift=0.2cm]{NO}(-3,-6.0) -- node[near end]{}(J);
 
 \end{tikzpicture}
 	\caption{A flow chart of the Ronen algorithm.}
@@ -896,7 +903,7 @@ A homogeneous slab of width $a=21.5$ cm is considered, with the two-group macros
 	\end{tabular}
 \end{table}
 
-Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh refinement using standard diffusion (with extrapolated length) and the Ronen method. The reactivity difference is given by $(\Delta\rho = 1/k_\texttt{ref} - 1/k_\texttt{D/RM})\times 10^5$, where $k_D$ and $k_{RM}$ are the multiplication factors of standard diffusion and of the Ronen method, respectively. The reference $k_\texttt{ref}$ value from S\tsub{16} is 0.744417 ($I = 400$).  
+Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh refinement using standard diffusion (with extrapolated length) and the Ronen method. The reactivity difference is given by $(\Delta\rho = 1/\kref - 1/k_\texttt{D/RM})\times 10^5$, where $\kd$ and $\krm$ are the multiplication factors of standard diffusion and of the Ronen method, respectively. The reference $\kref$ value from S\tsub{16} is 0.744417 ($I = 400$).  
 
 \begin{table}[htbp]
 	\centering
@@ -904,7 +911,7 @@ Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh r
 	\label{tab:dx_drho}
 	\begin{tabular}{lcccccr}
 		%\midrule
-		$dx$[cm] & $I$ &  $k_{\texttt{ref}}$ & $k_{\texttt{D}}$ & $\Delta\rho_\texttt{D}$ [pcm] & $k_{\texttt{RM}}$ & $\Delta\rho_\texttt{RM}$ [pcm]\\ 
+		$dx$[cm] & $I$ &  $\kref$ & $\kd$ & $\Delta\rho_\texttt{D}$ [pcm] & $\krm$ & $\Delta\rho_\texttt{RM}$ [pcm]\\ 
 		\midrule
 		0.43 & ~50     & 0.744307 & 0.741417 & -524 & 0.740552  & -681\\
 		%\midrule
@@ -1139,7 +1146,7 @@ The Ronen Method was first proposed for better estimates of the diffusion coeffi
 
 The relation in Eq.~\eqref{eq:RM-it-1D-slab} becomes problematic where the gradient of the flux is small, which is usually the zone where diffusion works better. Ronen did not elaborate on this issue in his technical note from 2004. Theoretically, both the numerator and the denominator should vanish at the same location, since both are accurate expressions for the neutron current where the flux gradient is weak. We hypothesize that this ratio, between two expressions which tend to zero at the same location, approaches some constant value since there exist a diffusion coefficient at that location. 
 
-Numerically, Tomatis and Dall'Osso 2011 chose to deal with this potential singularity by using the well-known drift terms, which serve as a \emph{numerical feature}. The (more accurate) surface current $J_{\texttt{tr}}$, calculated by integral expression, is written as the sum of the surface current calculated by diffusion, $J_\texttt{D}$, plus a correction $\delta J$. Hence, when the current vanishes, the correction $\delta J$ vanishes as well. Moreover, the correction is written as in Eq.~\eqref{eq:JD-dJ}, avoiding the potential divergence resulting from division by zero.
+Numerically, Tomatis and Dall'Osso 2011 chose to deal with this potential singularity by using the well-known drift terms, which serve as a \emph{numerical feature}. The (more accurate) surface current $\jtrr$, calculated by integral expression, is written as the sum of the surface current calculated by diffusion, $\jd$, plus a correction $\delj$. Hence, when the current vanishes, the correction $\delj$ vanishes as well. Moreover, the correction is written as in Eq.~\eqref{eq:JD-dJ}, avoiding the potential divergence resulting from division by zero.
 
 %Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.  
 
