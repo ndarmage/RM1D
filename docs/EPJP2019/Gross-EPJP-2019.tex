@@ -904,7 +904,7 @@ A homogeneous slab of width $a=21.5$ cm is considered, with the two-group macros
 	\end{tabular}
 \end{table}
 
-Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh refinement using standard diffusion (with extrapolated length) and the Ronen method. The reactivity difference is given by $(\Delta\rho = 1/\kref - 1/k_\textrm{D/RM})\times 10^5$ pcm, where $\kd$ and $\krm$ are the multiplication factors of standard diffusion and of the Ronen method, respectively. The reference $\kref$ value from S\tsub{16} is 0.744417 ($I = 400$).  
+Table~\ref{tab:dx_drho} shows the reactivity differences as a function of mesh refinement using standard diffusion (with extrapolated length) and the Ronen method. The reactivity difference is given by $(\Delta\rho = 1/\kref - 1/k_\textrm{D/RM})\times 10^5$ pcm, where $\kd$ and $\krm$ are the multiplication factors of standard diffusion and of the Ronen method, respectively. The reference $\kref$ value from S$_{16}$ is 0.744417 ($I = 400$).  
 
 \begin{table}[htbp]
 	\centering
@@ -972,7 +972,7 @@ The deviation from the reference solution is decreased by the Ronen iterations f
 	\label{fig:conv}
 \end{figure}
 
-The RM correction terms ($\delta D$) along the slab are shown in Fig.~\ref{fig:slab-RM-corr-factor}. It is possible to observe that the diffusion correction almost vanishes at the slab center and exhibits non-trivial behavior near the boundary. The convergence of the flux (max deviation) and of the criticality eigenvalue are shown in Fig.~\ref{fig:conv}, where $\epsilon_\phi = \operatorname{max} [\phi^{(k)}-\phi^{(k-1)})/\phi^{(k-1)}]$ and $\epsilon_k = (k_\textrm{eff}^{(k)}-k_\textrm{eff}^{(k-1)})/k_\textrm{eff}^{(k-1)}$. While the eigenvalue converges within a few iterations, relatively slow convergence is noticed for the flux with higher differences against the reference S\tsub{16} solution near the boundaries. The spatial flux convergence between two successive Ronen iterations is shown in Fig.~\ref{fig:conv2} for the left half slab, according to $\Delta \phi = (\phi^{k-1}-\phi^k)/\phi^{k-1}$ [\%]. The spatial flux convergence of the Ronen iterations with respect to the reference solution for the left half slab is shown in Fig.~\ref{fig:conv3} instead.
+The RM correction terms ($\delta D$) along the slab are shown in Fig.~\ref{fig:slab-RM-corr-factor}. It is possible to observe that the diffusion correction almost vanishes at the slab center and exhibits non-trivial behavior near the boundary. The convergence of the flux (max deviation) and of the criticality eigenvalue are shown in Fig.~\ref{fig:conv}, where $\epsilon_\phi = \operatorname{max} [\phi^{(k)}-\phi^{(k-1)})/\phi^{(k-1)}]$ and $\epsilon_k = (k_\textrm{eff}^{(k)}-k_\textrm{eff}^{(k-1)})/k_\textrm{eff}^{(k-1)}$. While the eigenvalue converges within a few iterations, relatively slow convergence is noticed for the flux with higher differences against the reference S$_{16}$ solution near the boundaries. The spatial flux convergence between two successive Ronen iterations is shown in Fig.~\ref{fig:conv2} for the left half slab, according to $\Delta \phi = (\phi^{k-1}-\phi^k)/\phi^{k-1}$ [\%]. The spatial flux convergence of the Ronen iterations with respect to the reference solution for the left half slab is shown in Fig.~\ref{fig:conv3} instead.
 
 % convergence
 \begin{figure}[htbp]
@@ -989,7 +989,7 @@ The RM correction terms ($\delta D$) along the slab are shown in Fig.~\ref{fig:s
 	\centering
 	\includegraphics[width=0.65\linewidth]{RM_Sn_converg_FAST.pdf}
 	\includegraphics[width=0.65\linewidth]{RM_Sn_converg_THERMAL.pdf}
-	\caption{The spatial flux convergence of the Ronen iterations with respect to the reference S\tsub{16} solution for the left half slab.}
+	\caption{The spatial flux convergence of the Ronen iterations with respect to the reference S$_{16}$ solution for the left half slab.}
 	\label{fig:conv3}
 \end{figure}
 
@@ -1097,7 +1097,7 @@ Table~\ref{tab:dx_drho2} shows the reactivity differences between standard diffu
 		Method & \multicolumn{2}{c}{Core 1} & \multicolumn{2}{c}{Core 2} & \multicolumn{2}{c}{Core 3}  \\ 
 		\midrule
 		{}				& $\keff$& $\Delta\rho$ [pcm]& $\keff$	&$\Delta\rho$ [pcm]& $\keff$ &$\Delta\rho$ [pcm] \\
-		S\tsub{16}		&1.25614	&-			 &1.00094   &-				  &0.79878		&-		\\
+		S$_{16}$		&1.25614	&-			 &1.00094   &-				  &0.79878		&-		\\
 		Diffusion		&1.25902	&182		 &0.99325	&-773			  &0.77805		&-3335	\\
 		RM-10			&1.25677	&40			 &1.00107	&13			 	  &0.79824		&-85	\\
 		RM-20			&1.25648	&22			 &1.00091	&-3			  	  &0.79837		&-64	\\
@@ -1106,23 +1106,23 @@ Table~\ref{tab:dx_drho2} shows the reactivity differences between standard diffu
 	\end{tabular}
 \end{table}
 
-The two-group flux distribution across each core is shown in Fig.~\ref{fig:hetero-flux} for standard diffusion ($D_0$), Ronen method (RM) and the S\tsub{16} reference solution. RM results are shown for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element. On a first glance, it is easy to see that standard diffusion fails to produce the steep flux gradients across material interfaces, especially between fuel and water. This is more pronounced for the fast flux, where even in core 1 it is not described correctly. 
+The two-group flux distribution across each core is shown in Fig.~\ref{fig:hetero-flux} for standard diffusion ($D_0$), Ronen method (RM) and the S$_{16}$ reference solution. RM results are shown for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element. On a first glance, it is easy to see that standard diffusion fails to produce the steep flux gradients across material interfaces, especially between fuel and water. This is more pronounced for the fast flux, where even in core 1 it is not described correctly. 
 %
 \begin{figure}[htbp!]
 	\centering
 	\includegraphics[width=0.49\linewidth]{Sn_Diff_RM_core_1.pdf}
 	\includegraphics[width=0.49\linewidth]{Sn_Diff_RM_core_2.pdf}
 	\includegraphics[width=0.49\linewidth]{Sn_Diff_RM_core_3.pdf}
-	\caption{Fast and thermal flux for each core using standard diffusion ($D_0$), Ronen method (RM) and S\tsub{16} reference solution. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
+	\caption{Fast and thermal flux for each core using standard diffusion ($D_0$), Ronen method (RM) and S$_{16}$ reference solution. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:hetero-flux}
 \end{figure}
 
-The fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S\tsub{16} reference solutions are shown for each core, in Fig.~\ref{fig:hetero-flux-dev}. The fast flux is poorly reproduced by standard diffusion, with up to $\sim$10\% deviations at the inner interfaces and $\sim$20\% at the outer boundaries (in agreement with the homogeneous case). Deviations of the thermal flux calculated by diffusion increase from $\sim$4\% to $\sim$10\% as the heterogeneity of the core increases. The deviations of the fast and thermal flux calculated by Ronen method are much smaller, with practically negligible values in the fuel and less than $\sim$2\% in the water. 
+The fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S$_{16}$ reference solutions are shown for each core in Fig.~\ref{fig:hetero-flux-dev}. The fast flux is poorly reproduced by standard diffusion, with up to $\sim$10\% deviations at the inner interfaces and $\sim$20\% at the outer boundaries (in agreement with the homogeneous case). Deviations of the thermal flux calculated by diffusion increase from $\sim$4\% to $\sim$10\% as the heterogeneity of the core increases. The deviations of the fast and thermal flux calculated by Ronen method are much smaller, with practically negligible values in the fuel and less than $\sim$2\% in the water. 
 
 \begin{figure}[htbp]
 	\centering
 	\includegraphics[width=0.75\linewidth]{flx_err_diff_C123.pdf}
-	\caption{Fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S\tsub{16} reference solutions for each core. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
+	\caption{Fast and thermal flux deviation of standard diffusion ($D_0$) and Ronen method (RM) with respect to S$_{16}$ reference solutions for each core. Vertical grid lines are located at assemblies interfaces. RM results are for 100 iterations and the spatial mesh spans 8 nodes in the water and 22 nodes in each fuel element.}
 	\label{fig:hetero-flux-dev}
 \end{figure}
 
@@ -1148,9 +1148,7 @@ Numerically, Tomatis and Dall'Osso chose in 2011 to deal with this potential sin
 
 %Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.  
 
-More accurate results are obtained for the two-group benchmark problem reported in \cite{Tomatis-2011} and new results are reported for a heterogeneous benchmark. The performances of the Ronen method, especially for the heterogeneous benchmark (as shown in Figs.~\ref{fig:hetero-flux}--\ref{fig:Dcoef}), strongly indicate that it is inherently suitable to deal with non-homogeneous systems and can naturally adapt to interfaces, where strong gradients of the flux might appear.
-
-In general, slow convergence is observed for the scalar flux with the larger discrepancies, comparing to the reference, located on the vacuum boundary and on the material interfaces. Although the method is converging to the reference results provided by a discrete ordinate transport code, the improvement of the convergence rate and the use of coarser meshes are crucial for the advancement of the methodology in practical applications. These topics will be addressed as future developments, as well as higher-order anisotropy.
+More accurate results are obtained for the two-group benchmark problem reported in \cite{Tomatis-2011} and new results are reported for a heterogeneous benchmark. In general, slow convergence is observed for the scalar flux with the larger discrepancies, comparing to the reference, located on the vacuum boundary and on the material interfaces. Although the method is converging to the reference results provided by a discrete ordinate transport code, the improvement of the convergence rate and the use of coarser meshes are crucial for the advancement of the methodology in practical applications. These topics will be addressed as future developments, as well as higher-order anisotropy.
 
 %
 % ---------------------------------------------------
