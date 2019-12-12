@@ -336,36 +336,6 @@ Q(x,E,\mu)=& \sum\limits_{l=0}^\infty {
 },
 \end{split}
 \end{equation}
-%\begin{equation}\label{eq:src-mmnts}
-%\sigma_l(x,E\leftarrow E')dE' = 
-%\sigma_{s,l}(x,E\leftarrow E')dE'
-%+ \delta_{l0}\frac{\chi(E)}{\keff}\nu\sigma_f(x,E')dE' \,\, 
-%\end{equation}
-%and the source term is expanded 
-%\begin{eqnarray}\label{eq:src}
-%Q(x,E,\mu)&=& \sum\limits_{l=0}^\infty {
-%	\frac{2l+1}{2} \int_0^\infty { dE'
-%		\sigma_{s,l}(x,E\leftarrow E')\psi_l(x,E')\pl{\mu} 			
-%	}
-%} 
-%+ \frac{\chi(E)}{2\keff} \int_0^\infty { dE'
-%	\nu\sigma_f(x,E') \psi_0(x,E')
-%}  \nonumber \\
-%&=&\sum\limits_{l=0}^\infty {
-%	\frac{2l+1}{2} \int_0^\infty { dE'
-%		\sigma_l(x,E\leftarrow E')\psi_l(x,E')\pl{\mu} 			
-%	}
-%} \nonumber \\
-%&=&\sum\limits_{l=0}^\infty {
-%\frac{2l+1}{2} \int_0^\infty { dE'
-%	q_l(x,E\leftarrow E')\pl{\mu} 			
-%	}
-%} \nonumber \\
-%&=&\sum\limits_{l=0}^\infty {
-%	\frac{2l+1}{2} q_l(x,E)\pl{\mu} 			
-%} 
-%\,\, ,
-%\end{eqnarray}
 where the source angular moments are defined as
 \begin{equation}\label{eq:q_l}
 q_l(x,E) \equiv \int_0^\infty dE' q_l(x,E\leftarrow E') \equiv 
@@ -387,9 +357,10 @@ q_l(x,E) \equiv \int_0^\infty dE' q_l(x,E\leftarrow E') \equiv
 
 %The independent energy parameter is omitted here for brevity and clarity but restoring it is straightforward.
 %
-In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons coming from the left, i.e., $x'<x$ ($\mu>0$), substitute Eqs.~\eqref{eq:Q-series} in Eq.~\eqref{eq:int-ang-flx-a} and integrate over the angle 
-\begin{eqnarray}\label{eq:phi+}
-\phi^+(x,E)&\equiv& \int_0^1 {d\mu \psi(x,E,\mu)} \nonumber \\
+In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons coming from the left, i.e., $x'<x$ ($\mu>0$), substitute Eqs.~\eqref{eq:Q-series} in Eq.~\eqref{eq:int-ang-flx-a} and integrate over the angle
+\begin{equation}\label{eq:phi+}
+\begin{split}
+\phi^+(x,E) \equiv& \int_0^1 {d\mu \psi(x,E,\mu)} \\
 %&=& \int_0^1 {d\mu \psi(0,\mu) e^{-\mcL(0,x)/\mu} } 
 %+ \int_0^1 {d\mu 
 %	\int_0^x { dx'
@@ -397,21 +368,21 @@ In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons co
 %	}
 %}
 %\nonumber \\
-&=& \sum\limits_{l=0}^\infty {
+=& \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} 
 		\left\{\psi_l(0,E) \int_0^1 { d\mu
 		\pl{\mu} e^{-\mcL(0,x,E)/\mu}	
 	}
-	+	\int_0^x {\!\!\! dx'
+	+	\int_0^x { dx'
 		q_l(x',E)
 		\int_0^1 { d\mu
 			\frac{\pl{\mu}}{\mu} e^{-\mcL(x',x,E)/\mu}	
 		}
 	}
 \right\}
-} \,\, .
-\end{eqnarray}
-
+}.
+\end{split}
+\end{equation}
 In order to solve the angular integrals we resort to the following result~\cite{Cengel-1984,Settle-1994}
 \begin{equation}\label{eq:Sni}
 \int_0^1 { 
