@@ -132,10 +132,9 @@ Heter2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 if __name__ == "__main__":
 
     import logging as lg
-    #lg.info("*** Solve the M&C 2011 problem ***")
     lg.info("*** Solve the Ilas 2003 problem ***")
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
-    slvr_opts = solver_options(ritmax=10)
-    # filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
-    flx, k = run_calc_with_RM_its(Heter2GSlab_data, slvr_opts, filename=None)
+    slvr_opts = solver_options(ritmax=400)
+    filename = "../output/kflx_LBC%dRBC%d_I%d_400" % (LBC, RBC, I)
+    flx, k = run_calc_with_RM_its(Heter2GSlab_data, slvr_opts, filename)
