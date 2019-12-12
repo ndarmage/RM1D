@@ -19,7 +19,7 @@ def MyWho():
 
 # definition of the spatial mesh
 L = 21.5 / 2.  # slab width, equal to half pitch of a fuel assembly
-I = 20  # nb of spatial cells
+I = 200  # nb of spatial cells
 xi = np.linspace(0, L, I+1)  # equidistant mesh
 
 geometry_type = 'slab'
@@ -32,7 +32,7 @@ xs_media = {
 media = [['HM', L]]  # i.e. homogeneously filled
 
 # set b.c.
-LBC, RBC = 2, 0
+LBC, RBC = 0, 2
 
 Homog2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 
@@ -42,6 +42,6 @@ if __name__ == "__main__":
     lg.info("*** Solve the M&C 2011 problem ***")
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
-    slvr_opts = solver_options(ritmax=10)
-    # filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
-    flx, k = run_calc_with_RM_its(Homog2GSlab_data, slvr_opts, filename=None)
+    slvr_opts = solver_options(ritmax=2)
+    filename = "../output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
+    flx, k = run_calc_with_RM_its(Homog2GSlab_data, slvr_opts, filename)

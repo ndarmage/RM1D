@@ -809,6 +809,8 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     # keep track of partial solutions on external files
     flx_save = np.empty([G, I, ritmax + 1])
     k_save = np.full(ritmax + 1, -1.)
+    kerr_save = np.full(ritmax, -1.)
+    ferr_save = np.full(ritmax, -1.)
 
     err, itr, kinit = 1.e+20, 0, k
     Dflxm1 = np.zeros_like(flx)
@@ -851,11 +853,17 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         Dflxm2 = np.array(Dflxm1, copy=True)
         Dflxm1 = flx - flxold
         ferr = np.where(flx > 0., 1. - flxold / flx, Dflxm1)
-
+        kerr = (k-kold)/k
+        
         err = abs(ferr[np.unravel_index(abs(ferr).argmax(), (G, I))])
+        
+        kerr_save[itr] = kerr
+        ferr_save[itr] = err
+        
         itr += 1
-        lg.info("+RM+ it={:^4d}, k={:<13.6g}, err={:<+13.6e}".format(
-            itr, k, err
+        
+        lg.info("+RM+ it={:^4d}, k={:<13.6g}, kerr={:<+13.6e}, ferr={:<+13.6e}".format(
+            itr, k, kerr, err
         ))
         lg.info("{:^4s}{:^13s}{:^6s}{:^13s}".format(
             "G", "max(err)", "at i", "std(err)"
@@ -875,8 +883,8 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
     k_save[itr], flx_save[:, :, itr] = k, flx  # store final values
     lg.info("Initial value of k was %13.6g." % kinit)
-    if filename is not None:
-        # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
+    if filename is not None:        
+        np.save(filename.replace('kflx','err'), [kerr_save, ferr_save], allow_pickle=True)
         np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
             i = 0
