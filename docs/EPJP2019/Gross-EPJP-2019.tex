@@ -835,11 +835,11 @@ The quantity $\delj$ at the boundary takes the simpler form of $\delj = -\delta 
 
 The Ronen algorithm used to solve the critical eigenvalue problem in the slab is described as follows (see Fig.~\ref{fig:RM-algo}):
 \begin{enumerate}
-	\item{\sl Initialize}\label{it:init} The algorithm receives the geometry and the cross sections (XS) of the problem as input data. At this stage, the correction factors $\delta D^{(0)}$ are set to zero and the initial pure-diffusion operator is constructed, that is $\mathcal{A}^{(0)} = \mathcal{A}_0$. Initial guesses for the flux $\phi^{(0)}$ and the multiplication factor $k_\textrm{eff}^{(0)}$ are set.
-	\item{\sl Diffusion solver}\label{it:DF-solve} A one-dimensional multigroup diffusion solver is executed with the migration operator $\mathcal{A}^{(k)} = \mathcal{A}_0 + \delta A^{(k)}$ to determine new estimates of the flux $\phi^{(k)}$ and of the multiplication factor $k_\textrm{eff}^{(k)}$.
-	\item{\sl Convergence check}\label{it:cvg} Convergence is checked with the relative residuals on the flux and on the multiplication factor between iteration $k$ and $(k-1)$; Ronen iterations are stopped if the relative residuals fall within the input tolerances.
-	\item{\sl Estimate currents}\label{it:Js} Both the diffusion current $\jd^{(k)}$ (Eq.~\ref{eq:JD}) and the transport current $\jtrr^{(k)}$ (Eq.~\ref{eq:tot-J}) are calculated using $\phi^{(k)}$ and $k_\textrm{eff}^{(k)}$.
-	\item{\sl Update correction}\label{it:dD} The correction factors $\delta D^{(k+1)}$ are obtained using $\delj^{(k)}$ and Eq.~\eqref{eq:dJ} in order to update the migration operator $\mathcal{A}^{(k+1)} = \mathcal{A}_0+\delta \mathcal{A}^{(k+1)}$ (Eq.~\ref{eq:FD_diff_org}), and continue with step~\ref{it:DF-solve}.
+	\item{\sl Initialize}\label{it:init} - The algorithm receives the geometry and the cross sections (XS) of the problem as input data. At this stage, the correction factors $\delta D^{(0)}$ are set to zero and the initial pure-diffusion operator is constructed, that is $\mathcal{A}^{(0)} = \mathcal{A}_0$. Initial guesses for the flux $\phi^{(0)}$ and the multiplication factor $k_\textrm{eff}^{(0)}$ are set.
+	\item{\sl Diffusion solver}\label{it:DF-solve} - A one-dimensional multigroup diffusion solver is executed with the migration operator $\mathcal{A}^{(k)} = \mathcal{A}_0 + \delta A^{(k)}$ to determine new estimates of the flux $\phi^{(k)}$ and of the multiplication factor $k_\textrm{eff}^{(k)}$.
+	\item{\sl Convergence check}\label{it:cvg} - Convergence is checked with the relative residuals on the flux and on the multiplication factor between iteration $k$ and $(k-1)$; Ronen iterations are stopped if the relative residuals fall within the input tolerances.
+	\item{\sl Estimate currents}\label{it:Js} - Both the diffusion current $\jd^{(k)}$ (Eq.~\ref{eq:JD}) and the transport current $\jtrr^{(k)}$ (Eq.~\ref{eq:tot-J}) are calculated using $\phi^{(k)}$ and $k_\textrm{eff}^{(k)}$.
+	\item{\sl Update correction}\label{it:dD} - The correction factors $\delta D^{(k+1)}$ are obtained using $\delj^{(k)}$ and Eq.~\eqref{eq:dJ} in order to update the migration operator $\mathcal{A}^{(k+1)} = \mathcal{A}_0+\delta \mathcal{A}^{(k+1)}$ (Eq.~\ref{eq:FD_diff_org}), and continue with step~\ref{it:DF-solve}.
 \end{enumerate}
 
 \begin{figure}[htbp] 
@@ -1148,7 +1148,9 @@ Numerically, Tomatis and Dall'Osso chose in 2011 to deal with this potential sin
 
 %Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.  
 
-More accurate results are obtained for the two-group benchmark problem reported in \cite{Tomatis-2011} and new results are reported for a heterogeneous benchmark. In general, slow convergence is observed for the scalar flux with the larger discrepancies, comparing to the reference, located on the vacuum boundary and on the material interfaces. Although the method is converging to the reference results provided by a discrete ordinate transport code, the improvement of the convergence rate and the use of coarser meshes are crucial for the advancement of the methodology in practical applications. These topics will be addressed as future developments, as well as higher-order anisotropy.
+More accurate results are obtained for the two-group benchmark problem reported in \cite{Tomatis-2011} and new results are reported for a heterogeneous benchmark. The performances of the Ronen method, especially for the heterogeneous benchmark (as shown in Figs.~\ref{fig:hetero-flux}--\ref{fig:Dcoef}), strongly indicate that it is inherently suitable to deal with non-homogeneous systems and can naturally adapt to interfaces, where strong gradients of the flux might appear.
+
+In general, slow convergence is observed for the scalar flux with the larger discrepancies, comparing to the reference, located on the vacuum boundary and on the material interfaces. Although the method is converging to the reference results provided by a discrete ordinate transport code, the improvement of the convergence rate and the use of coarser meshes are crucial for the advancement of the methodology in practical applications. These topics will be addressed as future developments, as well as higher-order anisotropy.
 
 %
 % ---------------------------------------------------
