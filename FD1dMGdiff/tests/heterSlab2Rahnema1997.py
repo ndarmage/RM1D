@@ -1,16 +1,15 @@
 #!/usr/bin/env python3
 # --*-- coding:utf-8 --*--
 """
-This test case runs the 2G homogeneous slab problem from [Tomatis2011]_.
+Multigroup xs for the Heterogeneous 2G problem Rahnema-1997.
 
-.. [Tomatis2011] Tomatis, D. and Dall'Osso, A., "Application of a numerical
-   transport correction in diffusion calculations", Proc. Int. Conf. on
-   Mathematics and Computational Methods Applied to Nuclear Science and
-   Engineering (M&C 2011), Rio de Janeiro, RJ, Brazil, May 8-12, 2011.
+.. [Rahnema1997] F. Rahnema, and E., M., Nichita "LEAKAGE CORRECTED
+   SPATIAL (ASSEMBLY) HOMOGENIZATION TECHNIQUE", Elseviel Science Ltd., 
+   Proc. Ann. Nucl. Energy, Vol. 24, No. 6, pp. 477-488, 1997, 
 """
 import sys
 sys.path.append('..')
-from data.heter2GIlas2003 import *
+from data.heter2GRahnema1997 import *
 from FDsDiff1D import input_data
 import numpy as np
 
@@ -132,7 +131,7 @@ Heter2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 if __name__ == "__main__":
 
     import logging as lg
-    lg.info("*** Solve the Ilas 2003 problem ***")
+    lg.info("*** Solve the Rahnema 1997 problem ***")
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
     slvr_opts = solver_options(ritmax=400)

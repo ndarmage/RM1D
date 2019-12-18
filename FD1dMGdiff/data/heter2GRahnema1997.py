@@ -1,14 +1,13 @@
 # --*-- coding:utf-8 --*--
 """
-Multigroup xs for the homogeneous 2G problem [Tomatis2011]_.
+Multigroup xs for the Heterogeneous 2G problem Rahnema-1997.
 
 .. note:: remind that the scattering moments are already multiplied by the
    coefficients of Lagrange polynomials if data are produced by APOLLO.
 
-.. [Tomatis2011] Tomatis, D. and Dall'Osso, A., "Application of a numerical
-   transport correction in diffusion calculations", Proc. Int. Conf. on
-   Mathematics and Computational Methods Applied to Nuclear Science and
-   Engineering (M&C 2011), Rio de Janeiro, RJ, Brazil, May 8-12, 2011.
+.. [Rahnema1997] F. Rahnema, and E., M., Nichita "LEAKAGE CORRECTED
+   SPATIAL (ASSEMBLY) HOMOGENIZATION TECHNIQUE", Elseviel Science Ltd., 
+   Proc. Ann. Nucl. Energy, Vol. 24, No. 6, pp. 477-488, 1997, 
 """
 
 import numpy as np
