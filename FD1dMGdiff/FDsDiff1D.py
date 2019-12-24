@@ -158,7 +158,7 @@ class solver_options:
     """Object collecting (input) solver options. INFO: set ritmax to 0 to
     skip Ronen iterations."""
     toll = 1.e-6  # default tolerance
-    itsmax = 100  # default nb. of max iterations (its)
+    itsmax = 10  # default nb. of max iterations (its)
 
     def __init__(self, iitmax=itsmax, oitmax=itsmax, ritmax=10,
                  pCMFD=False, otoll=toll, itoll=toll, rtoll=toll,
@@ -808,6 +808,8 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
     # keep track of partial solutions on external files
     flx_save = np.empty([G, I, ritmax + 1])
+    #dD_save = np.empty([G,I+1,ritmax + 1])
+    #dD_save[:,:,0] = xs[4]
     k_save = np.full(ritmax + 1, -1.)
     kerr_save = np.full(ritmax, -1.)
     ferr_save = np.full(ritmax, -1.)
@@ -816,7 +818,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     Dflxm1 = np.zeros_like(flx)
     while (err > rtoll) and (itr < ritmax):
         k_save[itr], flx_save[:, :, itr] = k, flx
-
+        
         # revert to flux density
         # (this division does not seem to affect the final result though)
         flxd = flx / Vi  # division on last index
@@ -838,7 +840,8 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
             Db, dD = compute_D(Di, flx, pJ_tran, BC), None
             # print('after', Db)
             xs[-1] = Db  # update bnd D coeffs
-
+        
+        
         flxold, kold = np.array(flx, copy=True), k
         lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
         flx, k = solve_outers(flx, k, data, xs, slvr_opts, dD)
@@ -882,10 +885,11 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     # save_fluxes('diffusion_fluxes_DT.dat',xm,flx)
 
     k_save[itr], flx_save[:, :, itr] = k, flx  # store final values
+    #dD_save[:,:,itr] = dD # store final values
     lg.info("Initial value of k was %13.6g." % kinit)
     if filename is not None:        
         np.save(filename.replace('kflx','err'), [kerr_save, ferr_save], allow_pickle=True)
-        np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
+        np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD], allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
             i = 0
             while k_save[i] >= 0:
@@ -955,7 +959,7 @@ if __name__ == "__main__":
 
     lg.info("Verify the code with the test case from the M&C article")
     from tests.homogSlab2GMC2011 import Homog2GSlab_data as data
-    #from tests.heterSlab2GIlas2003 import Heter2GSlab_data as data
+    #from tests.heterSlab2GRahnema1997 import Heter2GSlab_data as data
 
     slvr_opts = solver_options()
     filename = "output/kflx_LBC%dRBC%d_I%d" % (data.LBC, data.RBC, data.I)
