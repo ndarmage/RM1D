@@ -21,26 +21,37 @@ fsz = 24. # font size
 
 # ========== What would you like to plot? ==========
 # For heterogeneous case, consider upload several fluxes
-plot_flx      = True
-Plot_flx_dev  = True
-Plot_dD       = True
+plot_flx      = False
+Plot_flx_dev  = False
+Plot_dD       = False
+Plot_err      = True
 
-
-I = 728 # No. of mesh points
+I0 = 400 # No. of mesh points
+dx0 = 21.5/I0
+I = np.array([I0-240, I0-160, I0-80, I0, 480, 560, 720, 800])
+L = np.multiply(dx0,I)
 itr = 10 # No. of iterations
-ccng = 3 # Core configuration (Rahnema1997)
+#ccng = 3 # Core configuration (Rahnema1997)
 # ------ Load flx_RM? ------
 
 plot_RM = True
 if plot_RM:
-    path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Rahnema1997_C%d_LBC0RBC0_I%d_itr%d.npy" %(ccng,I,itr)
+    ''' Upload one file '''
+    #path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Rahnema1997_C%d_LBC0RBC0_I%d_itr%d.npy" %(ccng,I,itr)
     #path_RM_flx_file = "../../FD1dMGdiff/output/kflx_LBC0RBC0_I%d_%d.npy" % (I,itr)
+    for i in range (0,np.size(I)):    
+        flx = np.full((2,I,itr,np.size(I)),0)
+    ''' Uploading several files of different widths '''
+    for i in range (0,np.size(I)):
+        
+        path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[i],L[i],itr)
     
-    #data = np.load(path_RM_flx_file)
-    k_RM, flx_RM, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
-    
+        #data = np.load(path_RM_flx_file)
+        k_RM, flx[:,:,:,i], xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
+        flx_RM = flx[:,:,1:,i]
+        flx_D = flx[:,:,0,i]
 # ------ Load flx_SN? ------
-plot_SN = True
+plot_SN = False
 if plot_SN:
     N = 16  # No. of angles (S16)
     #path_Sn_flx_file = "CORE3LBC0RBC0_I%d_N%d.npy" % (I,N)
@@ -50,6 +61,7 @@ if plot_SN:
     # ------ Normalization of flxm - by reaction rate ------
     RR_SN = sum(np.multiply(flxm_SN[:,0,:],st).flatten())
     RR_RM = sum(np.multiply(flx_RM[:,:,1],st).flatten())
+    #RR_D = sum(np.multiply(flx_D[:,:,0],st).flatten())
     flx_SN = (RR_RM/RR_SN)*flxm_SN[:,0,:]
 
 # ------ General ------
@@ -74,7 +86,7 @@ if plot_flx:
         ax.set_prop_cycle(default_cycler)
         if plot_RM:
             ax.plot(xim, flx_RM[g,:,-1],label='$RM$' if g == 0 else "") # RM
-            ax.plot(xim, flx_RM[g,:,0],label='$D_{0}$' if g == 0 else "")  # Diffusion
+            ax.plot(xim, flx_D[g,:],label='$D_{0}$' if g == 0 else "")  # Diffusion
 
         if plot_SN:
             ax.plot(xim, flx_SN[g,:],label='$S16$' if g == 0 else "")
@@ -89,13 +101,13 @@ if plot_flx:
                  xy=(xi[I//4], flx_RM[0,I//4,-1]), xycoords='data',
                  xytext=(35, 2.5), textcoords='data',
                  arrowprops=dict(arrowstyle="->",
-                                 connectionstyle="arc3,rad=-0.2"))
+                                 connectionstyle="arc3,rad=-0.3"))
 
     ax.annotate("Thermal",fontsize=fsz,
                 xy=(xi[I//2], flx_RM[1,I//2,-1]), xycoords='data',
                 xytext=(47, 1.2), textcoords='data',
                 arrowprops=dict(arrowstyle="->",
-                                connectionstyle="arc3,rad=-0.2"))
+                                connectionstyle="arc3,rad=-0.3"))
     
     #plt.xticks(xi[0::25]) # x-axis valus represent fuel assembly
     plt.grid(True,'both','both')
@@ -111,7 +123,6 @@ if plot_flx:
 if Plot_flx_dev:
     #J = [1,2,5,10,25,50,200] # No. of itr to plot
     J = [1,5,10] # No. of itr to plot
-    # ------------- Fast flux convergence vs Sn -------------
     # Optical length
     tau_m = np.zeros((G,I))
     #tau_i = np.zeros((G,I))
@@ -174,5 +185,35 @@ if Plot_dD:
     os.system("pdfcrop Rahnema1997_C3dD_LBC0RBC0_I%d_itr%d.pdf Rahnema1997_C3dD_converg_I%d_itr%d.pdf"%(I,itr,I,itr))
 #    plt.show()
 
-
-
+# ============================================================== #
+# ================== Flux differences (Error) ================== #
+# ============================================================== #
+if Plot_err: 
+    flx_err_diff = ((flx_D - flx_SN)/flx_SN)*100
+    flx_err_RM = ((flx_RM - flx_SN)/flx_SN)*100
+    
+    tau_m = np.zeros((G,I))
+    #tau_i = np.zeros((G,I))
+    for g in range (0,G):
+        tau_m[g,:] = xim * st[g,:]
+    
+    plt.figure(figsize=(14, 5)) 
+    fig, ax = plt.subplots(G,figsize=(14, 7))
+    
+    for g in range (0,G):
+        ax[g].tick_params(axis='both', which='major', labelsize=fsz)
+        ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
+        ax[g].set_prop_cycle(default_cycler)
+        ax[g].plot(tau_m[g,-5:-1], flx_err_diff[g,-5:-1])
+        ax[g].plot(tau_m[g,-5:-1], flx_err_RM[g,-5:-1,-1])
+        ax[g].grid(True,'both','both')
+        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=1)
+      
+    ax[0].set_ylabel(r'$\delta D_{1} $ [AU]',fontsize = fsz)        
+    ax[1].set_ylabel(r'$\delta D_{2} $ [AU]',fontsize = fsz)        
+    plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)
+    
+    fig.savefig('MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf' %(I,L,itr),dpi=150,bbox_inches='tight')
+    os.system("pdfcrop MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf"%(I,L,itr,I,L,itr))
+#    plt.show()
+    
