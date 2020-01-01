@@ -33,23 +33,27 @@ L = np.multiply(dx0,I)
 itr = 10 # No. of iterations
 #ccng = 3 # Core configuration (Rahnema1997)
 # ------ Load flx_RM? ------
-
 plot_RM = True
 if plot_RM:
     ''' Upload one file '''
     #path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Rahnema1997_C%d_LBC0RBC0_I%d_itr%d.npy" %(ccng,I,itr)
     #path_RM_flx_file = "../../FD1dMGdiff/output/kflx_LBC0RBC0_I%d_%d.npy" % (I,itr)
-    for i in range (0,np.size(I)):    
-        flx = np.full((2,I,itr,np.size(I)),0)
-    ''' Uploading several files of different widths '''
-    for i in range (0,np.size(I)):
-        
-        path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[i],L[i],itr)
+    
+    path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[0],L[0],itr)
     
         #data = np.load(path_RM_flx_file)
-        k_RM, flx[:,:,:,i], xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
-        flx_RM = flx[:,:,1:,i]
-        flx_D = flx[:,:,0,i]
+    k_RM, flx_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
+    flx = {'flx0':flx_save}
+    ''' Uploading several files of different widths '''
+    for i in range (1,np.size(I)):
+        path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[i],L[i],itr)
+        #data = np.load(path_RM_flx_file)
+        k_RM, flx_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)        
+        flx['flx{}'.format(i)] = flx_save
+    
+        #flx_RM = flx_save[:,:,1:]
+        #flx_D = flx_save[:,:,0]
+        #flx[:,:,:,i] = flx_RM
 # ------ Load flx_SN? ------
 plot_SN = False
 if plot_SN:
@@ -66,7 +70,7 @@ if plot_SN:
 
 # ------ General ------
 xim = (xi[1:] + xi[:-1]) / 2. # mid-cell points
-G = np.shape(flx_RM)[0]
+G = np.shape(st)
 
 
 # ====================================================== #
@@ -201,13 +205,14 @@ if Plot_err:
     fig, ax = plt.subplots(G,figsize=(14, 7))
     
     for g in range (0,G):
-        ax[g].tick_params(axis='both', which='major', labelsize=fsz)
-        ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-        ax[g].set_prop_cycle(default_cycler)
-        ax[g].plot(tau_m[g,-5:-1], flx_err_diff[g,-5:-1])
-        ax[g].plot(tau_m[g,-5:-1], flx_err_RM[g,-5:-1,-1])
-        ax[g].grid(True,'both','both')
-        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=1)
+        for i in range (0,np.size(I)):
+            ax[g].tick_params(axis='both', which='major', labelsize=fsz)
+            ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
+            ax[g].set_prop_cycle(default_cycler)
+            ax[g].plot(tau_m[g,-6:-1], flx['flx{}'.format(i)][g,-6:-1,-1])
+            ax[g].plot(tau_m[g,-5:-1], flx_err_RM[g,-5:-1,-1])
+            ax[g].grid(True,'both','both')
+            ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=1)
       
     ax[0].set_ylabel(r'$\delta D_{1} $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\delta D_{2} $ [AU]',fontsize = fsz)        

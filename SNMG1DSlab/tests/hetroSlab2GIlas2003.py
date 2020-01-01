@@ -164,7 +164,7 @@ if __name__ == "__main__":
 
     flxm, k = solve_sn(Hetro2GSlab_data, slvr_opts, qdata)
 
-    basefilen = "../output/CORE%dLBC%dRBC%d_I%d_N%d" % (core_config,
+    basefilen = "../output/Rahnema1997_CORE%dLBC%dRBC%d_I%d_N%d" % (core_config,
                                                         Hetro2GSlab_data.LBC,
                                                         Hetro2GSlab_data.RBC,
                                                         Hetro2GSlab_data.I,

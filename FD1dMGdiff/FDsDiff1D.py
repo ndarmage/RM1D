@@ -808,8 +808,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
     # keep track of partial solutions on external files
     flx_save = np.empty([G, I, ritmax + 1])
-    #dD_save = np.empty([G,I+1,ritmax + 1])
-    #dD_save[:,:,0] = xs[4]
+    
     k_save = np.full(ritmax + 1, -1.)
     kerr_save = np.full(ritmax, -1.)
     ferr_save = np.full(ritmax, -1.)
