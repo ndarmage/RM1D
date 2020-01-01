@@ -30,17 +30,17 @@ D = one_third / (st - np.sum(ss1, axis=1))
 G = st.size  # nb of energy groups
 
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
 
-    lg.info("*** Check homogeneous cross sections data ***")
+    #lg.info("*** Check homogeneous cross sections data ***")
 
-    flx_inf = np.dot(np.linalg.inv(np.diag(st) - ss0), chi)
-    kinf = np.dot(nsf, flx_inf)
+    #flx_inf = np.dot(np.linalg.inv(np.diag(st) - ss0), chi)
+    #kinf = np.dot(nsf, flx_inf)
     # np.testing.assert_almost_equal(kinf, 1.1913539017168697, decimal=7,
     #     err_msg="kinf not verified.")
-    np.testing.assert_almost_equal(kinf, 1.0783813599102687, decimal=7,
-        err_msg="kinf not verified.")  # M&C article
+    #np.testing.assert_almost_equal(kinf, 1.0783813599102687, decimal=7,
+    #    err_msg="kinf not verified.")  # M&C article
     # np.testing.assert_allclose(flx_inf, [39.10711218,  5.85183328],
     #     err_msg="fundamental flx_inf not verified.")
-    np.testing.assert_allclose(flx_inf, [38.194379,  5.697515],
-        err_msg="fundamental flx_inf not verified.")  # M&C article
+    #np.testing.assert_allclose(flx_inf, [38.194379,  5.697515],
+    #    err_msg="fundamental flx_inf not verified.")  # M&C article

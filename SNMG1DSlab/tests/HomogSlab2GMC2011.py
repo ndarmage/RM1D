@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # --*-- coding:utf-8 --*--
 """
-This test case runs the 2G homogeneous slab problem from [Tomatis2011]_.
+This test case runs the 2G homogeneous slab problem from [Tomatis2011].
 
 .. [Tomatis2011] Tomatis, D. and Dall'Osso, A., "Application of a numerical
    transport correction in diffusion calculations", Proc. Int. Conf. on
@@ -14,17 +14,12 @@ from data.homog2GMC2011 import *
 from snmg1dslab import input_data, solver_options, quad_data
 import numpy as np
 
-def MyWho():
-     print([v for v in globals().keys() if not v.startswith('_')])
-
-
-
 L = 21.5 # Core width
-I = 400 # No. of spatial cells
+I = 200 # No. of spatial cells
 xi = np.linspace(0, L, I+1)  # equidistant mesh      
 # definition of the spatial mesh
 xm = (xi[1:] + xi[:-1]) / 2.
-dx = L/I
+dx = xi[1:] - xi[:-1]
 
 geometry_type = 'slab'
 
@@ -62,6 +57,6 @@ if __name__ == "__main__":
                                                         Homog2GSlab_data.I,
                                                         Homog2GSlab_data.xi[-1],
                                                         qdata.N)
-    np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
+    #np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
     #np.savez(basefilen + ".npz", k=k, flxm=flxm)
     
