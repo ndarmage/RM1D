@@ -51,12 +51,12 @@ if __name__ == "__main__":
     from snmg1dslab import solve_sn
 
     flxm, k = solve_sn(Homog2GSlab_data, slvr_opts, qdata)
-    basefilen = "../output/kflx_MC2011_LBC%dRBC%d_I%d_L%d_N%d",(
+    basefilen = "../output/kflx_MC2011_LBC%dRBC%d_I%d_L%d_N%d" % (
                                                         Homog2GSlab_data.LBC,
                                                         Homog2GSlab_data.RBC,
                                                         Homog2GSlab_data.I,
                                                         Homog2GSlab_data.xi[-1],
                                                         qdata.N)
-    #np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
+    np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
     #np.savez(basefilen + ".npz", k=k, flxm=flxm)
     

@@ -42,31 +42,48 @@ if plot_RM:
     path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[0],L[0],itr)
     
         #data = np.load(path_RM_flx_file)
-    k_RM, flx_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
-    flx = {'flx0':flx_save}
+    k_RM, flx_RM_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
+    flx_RM = {'flx0':flx_RM_save}
     ''' Uploading several files of different widths '''
     for i in range (1,np.size(I)):
         path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[i],L[i],itr)
         #data = np.load(path_RM_flx_file)
         k_RM, flx_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)        
-        flx['flx{}'.format(i)] = flx_save
+        flx_RM['flx{}'.format(i)] = flx_RM_save
     
         #flx_RM = flx_save[:,:,1:]
         #flx_D = flx_save[:,:,0]
         #flx[:,:,:,i] = flx_RM
 # ------ Load flx_SN? ------
-plot_SN = False
+plot_SN = True
 if plot_SN:
     N = 16  # No. of angles (S16)
+    
+    # Heterogeneous case - Rahnema1997
     #path_Sn_flx_file = "CORE3LBC0RBC0_I%d_N%d.npy" % (I,N)
-    path_Sn_flx_file = "../../SNMG1DSlab/output/CORE%dLBC0RBC0_I%d_N%d.npy"  % (ccng,I,N)
+    #path_Sn_flx_file = "../../SNMG1DSlab/output/CORE%dLBC0RBC0_I%d_N%d.npy"  % (ccng,I,N)
+    
+    # Homogeneous case - slab width (based on  Tomatis&Dall'Osso MC2011)
+    path_Sn_flx_file = "../../SNMG1DSlab/output/kflx_MC2011_LBC0RBC0_I%d_L%d_N%d.npy"  % (I[0],L[0],N)
     ref_data = np.load(path_Sn_flx_file,allow_pickle=True)
-    k_SN, flxm_SN = ref_data[0], ref_data[1]
+    k_SN, flxm_SN_save = ref_data[0], ref_data[1]
+    flxm = {'flxm0':flxm_SN_save}
+    
+    for i in range (1,np.size(I)):
+        path_Sn_flx_file = "../../SNMG1DSlab/output/kflx_MC2011_LBC0RBC0_I%d_L%d_N%d.npy" % (I[i],L[i],N)
+        #data = np.load(path_RM_flx_file)
+        k_RM, flxm_SN_save = np.load(path_Sn_flx_file,allow_pickle=True)        
+        flxm['flx{}'.format(i)] = flxm_SN_save
+     
+    RR_SN =  {'RR_SN0' : sum(np.multiply(flxm['flxm0'],st[:,0:I[0]]).flatten())}
+    RR_RM =  {'RR_RM0' : sum(np.multiply(flx_RM['flx0'][:,:,-1],st[:,0:I[0]]).flatten())}
     # ------ Normalization of flxm - by reaction rate ------
-    RR_SN = sum(np.multiply(flxm_SN[:,0,:],st).flatten())
-    RR_RM = sum(np.multiply(flx_RM[:,:,1],st).flatten())
+    for i in range(1,np.size(I)):
+        RR_SN['flxm{}'.format(i)] = sum(np.multiply(flxm['flxm{}'.format(i)],st[:,0:I[0]]).flatten())
+        RR_RM['flx{}'.format(i)] = sum(np.multiply(flx_RM['flx{}'.format(i)],st[:,0:I[0]]).flatten())
+
     #RR_D = sum(np.multiply(flx_D[:,:,0],st).flatten())
-    flx_SN = (RR_RM/RR_SN)*flxm_SN[:,0,:]
+        #flx_SN = (RR_RM/RR_SN)*flxm[:,0,:]
 
 # ------ General ------
 xim = (xi[1:] + xi[:-1]) / 2. # mid-cell points
