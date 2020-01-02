@@ -42,15 +42,16 @@ if plot_RM:
     path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[0],L[0],itr)
     
         #data = np.load(path_RM_flx_file)
-    k_RM, flx_RM_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
+    k_RM, flx_RM_save, xi_save, st, dD = np.load(path_RM_flx_file,allow_pickle=True)
     flx_RM = {'flx0':flx_RM_save}
+    xi = {'xi0':xi_save}
     ''' Uploading several files of different widths '''
     for i in range (1,np.size(I)):
         path_RM_flx_file = "../../FD1dMGdiff/output/kflx_Wd_LBC0RBC0_I%d_L%d_it%d.npy" % (I[i],L[i],itr)
         #data = np.load(path_RM_flx_file)
-        k_RM, flx_save, xi, st, dD = np.load(path_RM_flx_file,allow_pickle=True)        
+        k_RM, flx_RM_save, xi_save, st, dD = np.load(path_RM_flx_file,allow_pickle=True)        
         flx_RM['flx{}'.format(i)] = flx_RM_save
-    
+        xi['xi{}'.format(i)] = xi_save
         #flx_RM = flx_save[:,:,1:]
         #flx_D = flx_save[:,:,0]
         #flx[:,:,:,i] = flx_RM
@@ -67,27 +68,31 @@ if plot_SN:
     path_Sn_flx_file = "../../SNMG1DSlab/output/kflx_MC2011_LBC0RBC0_I%d_L%d_N%d.npy"  % (I[0],L[0],N)
     ref_data = np.load(path_Sn_flx_file,allow_pickle=True)
     k_SN, flxm_SN_save = ref_data[0], ref_data[1]
-    flxm = {'flxm0':flxm_SN_save}
+    flxm = {'flxm0':flxm_SN_save[:,0,:]}
     
     for i in range (1,np.size(I)):
         path_Sn_flx_file = "../../SNMG1DSlab/output/kflx_MC2011_LBC0RBC0_I%d_L%d_N%d.npy" % (I[i],L[i],N)
         #data = np.load(path_RM_flx_file)
         k_RM, flxm_SN_save = np.load(path_Sn_flx_file,allow_pickle=True)        
-        flxm['flx{}'.format(i)] = flxm_SN_save
-     
+        flxm['flxm{}'.format(i)] = flxm_SN_save[:,0,:]
+    
     RR_SN =  {'RR_SN0' : sum(np.multiply(flxm['flxm0'],st[:,0:I[0]]).flatten())}
     RR_RM =  {'RR_RM0' : sum(np.multiply(flx_RM['flx0'][:,:,-1],st[:,0:I[0]]).flatten())}
+    flx_SN = {'flx0':(RR_RM['RR_RM0']/RR_SN['RR_SN0'])*flxm['flxm0']}
     # ------ Normalization of flxm - by reaction rate ------
     for i in range(1,np.size(I)):
-        RR_SN['flxm{}'.format(i)] = sum(np.multiply(flxm['flxm{}'.format(i)],st[:,0:I[0]]).flatten())
-        RR_RM['flx{}'.format(i)] = sum(np.multiply(flx_RM['flx{}'.format(i)],st[:,0:I[0]]).flatten())
-
+        RR_SN['RR_SN{}'.format(i)] = sum(np.multiply(flxm['flxm{}'.format(i)],st[:,0:I[i]]).flatten())
+        RR_RM['RR_RM{}'.format(i)] = sum(np.multiply(flx_RM['flx{}'.format(i)][:,:,-1],st[:,0:I[i]]).flatten())
+    
     #RR_D = sum(np.multiply(flx_D[:,:,0],st).flatten())
-        #flx_SN = (RR_RM/RR_SN)*flxm[:,0,:]
-
+        flx_SN['flx{}'.format(i)] = (RR_RM['RR_RM{}'.format(i)]/RR_SN['RR_SN{}'.format(i)])*flxm['flxm{}'.format(i)]
+    
 # ------ General ------
-xim = (xi[1:] + xi[:-1]) / 2. # mid-cell points
-G = np.shape(st)
+xim = {'xim0':(xi['xi0'][1:] + xi['xi0'][:-1]) / 2. }# mid-cell points
+for i in range(1,np.size(I)):
+    xim['xim{}'.format(i)] = (xi['xi{}'.format(i)][1:] + xi['xi{}'.format(i)][:-1]) / 2.# mid-cell points
+
+G = st.shape[0]
 
 
 # ====================================================== #
@@ -210,32 +215,53 @@ if Plot_dD:
 # ================== Flux differences (Error) ================== #
 # ============================================================== #
 if Plot_err: 
-    flx_err_diff = ((flx_D - flx_SN)/flx_SN)*100
-    flx_err_RM = ((flx_RM - flx_SN)/flx_SN)*100
+
+    flx_err_D = {'ferrD0':((flx_RM['flx0'.format(i)][:,:,0] - 
+                        flx_SN['flx0'.format(i)])/flx_SN['flx0'.format(i)])*100}
+    flx_err_RM = {'ferrRM0':((flx_RM['flx0'.format(i)][:,:,-1] - 
+                        flx_SN['flx0'.format(i)])/flx_SN['flx0'.format(i)])*100}
+
+    for i in range(1,np.size(I)):
+        flx_err_D['ferrD{}'.format(i)] = ((flx_RM['flx{}'.format(i)][:,:,0] - 
+                        flx_SN['flx{}'.format(i)])/flx_SN['flx{}'.format(i)])*100
+        
+        flx_err_RM['ferrRM{}'.format(i)] = ((flx_RM['flx{}'.format(i)][:,:,-1] - 
+                        flx_SN['flx{}'.format(i)])/flx_SN['flx{}'.format(i)])*100
     
-    tau_m = np.zeros((G,I))
-    #tau_i = np.zeros((G,I))
+    taug = np.zeros((G,I[0]))
+    
     for g in range (0,G):
-        tau_m[g,:] = xim * st[g,:]
+        taug[g,:] = xim['xim0'][0:I[0]] * st[g,0:I[0]]                   
+    tau_m = {'tau0':taug}    
+    
+    #tau_i = np.zeros((G,I))
+    for i in range (1,np.size(I)):
+        taug = np.zeros((G,I[i]))
+        for g in range (0,G):
+            taug[g,:] = xim['xim{}'.format(i)][0:I[i]] * st[g,0:I[i]]
+        tau_m['tau{}'.format(i)] = taug
     
     plt.figure(figsize=(14, 5)) 
-    fig, ax = plt.subplots(G,figsize=(14, 7))
+    fig, ax = plt.subplots(G,figsize=(16, 10))
     
     for g in range (0,G):
+        ax[g].set_prop_cycle(default_cycler)
         for i in range (0,np.size(I)):
             ax[g].tick_params(axis='both', which='major', labelsize=fsz)
             ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-            ax[g].set_prop_cycle(default_cycler)
-            ax[g].plot(tau_m[g,-6:-1], flx['flx{}'.format(i)][g,-6:-1,-1])
-            ax[g].plot(tau_m[g,-5:-1], flx_err_RM[g,-5:-1,-1])
+            ax[g].plot(tau_m['tau{}'.format(i)][g,0:20], flx_err_D['ferrD{}'.format(i)][g,0:20],label='D%.1f'%L[i] if g == 0 else "")
+            ax[g].plot(tau_m['tau{}'.format(i)][g,0:20], flx_err_RM['ferrRM{}'.format(i)][g,0:20],label='RM%.1f'%L[i] if g == 0 else "")
+            #ax[g].plot(xim['xim{}'.format(i)][0:20], flx_err_D['ferrD{}'.format(i)][g,0:20],label='D%.1f'%L[i] if g == 0 else "")
+            #ax[g].plot(xim['xim{}'.format(i)][0:20], flx_err_RM['ferrRM{}'.format(i)][g,0:20],label='RM%.1f'%L[i] if g == 0 else "")
             ax[g].grid(True,'both','both')
-            ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=1)
+            #ax[g].set_xscale('log')
+            ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
       
-    ax[0].set_ylabel(r'$\delta D_{1} $ [AU]',fontsize = fsz)        
-    ax[1].set_ylabel(r'$\delta D_{2} $ [AU]',fontsize = fsz)        
+    ax[0].set_ylabel(r'$\Delta \phi_{1} $ [AU]',fontsize = fsz)        
+    ax[1].set_ylabel(r'$\Delta \phi_{2} $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)
     
-    fig.savefig('MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf' %(I,L,itr),dpi=150,bbox_inches='tight')
-    os.system("pdfcrop MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf"%(I,L,itr,I,L,itr))
+    fig.savefig('MC2011_Homog_Width_LBC0RBC0_RMitr%d.pdf' %(itr),dpi=300,bbox_inches='tight')
+    #os.system("pdfcrop MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf"%(I,L,itr,I,L,itr))
 #    plt.show()
     
