@@ -15,6 +15,11 @@
 \usepackage{lineno}
 \usepackage[colorlinks=true, a4paper=true, pdfstartview=FitV,
 linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+% for algorithms
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
 \usepackage{xfrac}
 \usepackage{units}
 \usepackage{tikz}
@@ -40,12 +45,14 @@ linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 \newcommand{\jp}{\ensuremath{J^+}}
 \newcommand{\jm}{\ensuremath{J^-}}
 \newcommand{\jpm}{\ensuremath{J^\pm}}
+\newcommand{\delj}{\ensuremath{\delta J}}
 \newcommand{\jD}{\ensuremath{J^{\textrm{\scriptsize{D}}}}}
 \newcommand{\bmj}{\ensuremath{\bm{J}}}
 \newcommand{\rE}{\ensuremath{(\rr,E)}}
 \newcommand{\bnabla}{\ensuremath{\bm{\nabla}}}
 \newcommand{\hzi}{\ensuremath{\sfrac{1}{2}}}
 \newcommand{\mcL}{\tau}
+\newcommand{\dx}{\Delta}
 % about notes and comments from each author
 \newcommand{\erez}[1]{{\color{blue}{\textsuperscript{EREZ:}#1}}}
 \newcommand{\roy}[1]{{\color{blue}{\textsuperscript{ROY:}#1}}}
@@ -71,7 +78,7 @@ linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 		
 		\linenumbers
 		
-		\title{INTEGRAL TRANSPORT CORRECTION TO DIFFUSION CALCULATIONS USING THE pCMFD SCHEME}
+		\title{Integral Transport Correction to Diffusion Calculations \\ Using the pCMFD Scheme}
 		
 		%% or include affiliations in footnotes:
 		\author[bgu]{R.~Gross}
@@ -103,7 +110,7 @@ linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 
 \newpage
 
-\section{INTRODUCTION}
+\section{Intoduction}
 \label{sec:intro}
 
 The distribution of the neutron flux in the reactor core is described by the neutron transport equation. Transport calculations on a full core scale can be a highly intensive computational task. To overcome this difficulty, faster (but less accurate) multigroup neutron diffusion solvers are often used. Indeed, future Gen-IV reactor designs are characterized by strong heterogeneity in the core and modern calculation schemes evolve towards best-estimate codes, aiming at high accuracy for these new configurations. Hence, the accuracy of diffusion calculations is investigated. A crucial issue in obtaining an accurate diffusion calculation is the formulation of the diffusion coefficient. The calculation of this parameter should be based on physical insights from the full transport equation, such that the resulting (transport-corrected) diffusion approximation can capture the transport phenomena of interest.
@@ -114,7 +121,7 @@ The main hypothesis of this research, called the Ronen Method (RM)~\cite{Ronen-2
 % The direct resolution of the integral relation between the diffusion coefficient and the transport current would imply the inversion of large matrices, with poor control of their conditioning. Nonetheless, the integral current can be enforced in the Coarse Mesh Finite Difference (CMFD) discretized form of the diffusion equation, which avoids the numerical issues resulting from small flux gradients. This is the option adopted in this study.
 
 % ------------------------------------------
-\section{COARSE MESH FINITE DIFFERENCES}
+\section{Coarse Mesh Finite Differences}
 \label{sec:CMFD-intro}
 
 The CMFD has been largely used in nodal diffusion codes as a technique for storage reduction, allowing for separate resolution of many two nodes problems in an iterative scheme~\cite{Smith-1983,Lawrence-1986}. Recently, multi-dimensional transport codes have used it as acceleration technique and the convergence of different implementations was studied in simple homogeneous slab problems~\cite{Jarrett-2016,Shen-2019}.
@@ -129,7 +136,7 @@ The CMFD (and its variants) was also chosen for the implementation of the RM, wh
 
 
 % ------------------------------------------
-\section{THE RONEN METHOD}
+\section{The Ronen Method}
 \label{sec:RM}
 
 In 2004, Ronen~\cite{Ronen-2004} suggested to derive corrected diffusion coefficients using Fick's law and more accurate estimations of the neutron currents by means of integral transport operators, whereas the neutron flux was resolved by diffusion theory. Denoting the integral transport and diffusion currents by $\bm{J}\rE$ and $\bm{J}^D\rE$, respectively, the Ronen idea is based on adapting the diffusion coefficient such that
@@ -162,7 +169,7 @@ This technique can avoid indeterminate divisions in case of vanishing flux gradi
 
 
 % ------------------------------------------
-\section{NUMERICAL IMPLEMENTATION}
+\section{Numerical Implementation}
 \label{sec:RM-num}
 
 The neutron balance equation for a $k$-eigenvalue problem integrated in the $i$-th element of a one-dimensional mesh is (see Fig.~\ref{fig:mesh1D})
@@ -235,10 +242,10 @@ The net and partial currents in the case of isotropic scattering are calculated 
 % \daniele{In case additional space will be needed, it will be possible to write \eqs{eq:par-curr-calc} in a condensed form by using $\pm$.}
 
 % ------------------------------------------
-\subsection{CMFD IMPLEMENTATION}
+\subsection{CMFD Implementation}
 \label{sec:RM-CMFD}
 
-In classic CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime \cite{Smith-1983}. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by finite differences according to
+In classic CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime \cite{Smith-1983}. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by discretizing Fick's law, and by finite differences, according to 
 \begin{equation}
 \label{eq:JD}
 \jD_{i+\hzi,g} \cong - D_{i+\hzi,g}
@@ -251,7 +258,7 @@ D_{i+\hzi,g} = \frac{\Delta_i D_{i,g} + \Delta_{i+1} D_{i+1,g}}
 {\Delta_i + \Delta_{i+1}}.
 \end{equation}
 %
-About the RM, more accurate estimates of the net current come from the integral expressions of \eqs{eq:par-curr-calc}, still using the scalar flux in the emission source $q_{i,g}$. In linearly anisotropic problems, the net current can also be considered to compute the source. Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
+About the RM, more accurate estimates of the net current come from the integral expressions of \eq{eq:par-curr-calc}, still using the scalar flux in the emission source $q_{i,g}$. In linearly anisotropic problems, the net current can also be considered to compute the source. Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
 \begin{equation}
 \label{eq:dJ}
 \delta J_{i+\hzi,g} = -\delta D_{i+\hzi,g}
@@ -263,7 +270,7 @@ for $i = 0, \ldots, I-2$. The division by the spatial differences can be removed
 Boundary conditions applies on the diffusion current as usual by means of an extrapolated length $\zeta$, $\zeta \jD \cong D \phi$. Mark or Marshak approximations, or other constants derived from transport theory can be used for $\zeta$ \cite{meghreblian1960reactor}. About the correction terms instead, it is simply $\delta J = -\delta D \phi$ with the boundary flux approximated at first order by the cell-averaged value.
 
 % ------------------------------------------
-\subsection{pCMFD IMPLEMENTATION}
+\subsection{pCMFD Implementation}
 \label{sec:RM-pCMFD}
 
 The CMFD introduces in the numerical scheme a free parameter per cell surface through the correction term to adjust the diffusive solution locally. Since separate calculations of the partial currents are possible, two free parameters could be used in the discretized form of the diffusion equation. This idea leads to the development of the pCMFD scheme \cite{cho2003comparison}.
@@ -318,17 +325,33 @@ still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundar
 %   \end{equation}
 % where the flux at the interface can be simply volume-averaged too, see~\eq{eq:Ds} for instance.
 % -----------------------------------------------------------------------------
+The descretized form of the diffusion equations, with pCMFD implementations, is
+\begin{equation}
+	\label{eq:pCMFD-diff1}
+	\begin{split}
+	J_{D,i+\hzi,g}^+ +\left( \delj_{i+\hzi,g}^+ - \delj_{i+\hzi,g}^- \right) - J_{D,i-\hzi,g}^+ &+ \left( + \delj_{i-\hzi,g}^+ - 
+	\delj_{i-\hzi,g}^- \right) + \sigma_{i,g}\phi_{i,g} = \\
+	&\frac{\chi_g}{\keff}\sum\limits^G_{g'=1}\nu\sigma_{f,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G \sigma_{s,i,0,g\leftarrow g'}\phi_{i,g'}\,\,.
+	\end{split}
+\end{equation}
+By using \eqs{eq:CCF-sub}, one gets
+\begin{equation}
+	\label{eq:pCMFD-diff2}
+	-2D_{i+\hzi}\frac{\phi_{i+1,g} - \phi{i,g}}{\dx_{i+1}+\dx_{i}} 
+\end{equation}
+
+
 
 In a weakly absorbing medium and several mean free paths away from the boundary or a strong absorber, all correction factors $\delta D^\pm$ are expected to vanish and the net current must be fully reproduced by the diffusion current. Of course, this must be verified by the classic CMFD scheme too.
 
 
 % ------------------------------------------
-\section{RESULTS}
+\section{Results}
 \label{sec:res}
 
 
 % ------------------------------------------
-\section{CONCLUSIONS}
+\section{Conclusions}
 \label{sec:conc}
 
 Present your summary and conclusions here.
