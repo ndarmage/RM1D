@@ -53,6 +53,8 @@ linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
 \newcommand{\hzi}{\ensuremath{\sfrac{1}{2}}}
 \newcommand{\mcL}{\tau}
 \newcommand{\dx}{\Delta}
+\newcommand{\dd}{\delta D}
+\newcommand{\tild}{\tilde{D}}
 % about notes and comments from each author
 \newcommand{\erez}[1]{{\color{blue}{\textsuperscript{EREZ:}#1}}}
 \newcommand{\roy}[1]{{\color{blue}{\textsuperscript{ROY:}#1}}}
@@ -237,9 +239,9 @@ The net and partial currents in the case of isotropic scattering are calculated 
 	\right\},
 	\end{split}
 	\end{equation}
-	where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length and the net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$, $\forall i$. Only the zeroth moment of the angular flux, that is the scalar flux after an expansion in angle on the spherical harmonics, is used at the boundary to include the contribution of possible incoming currents. \eqs{eq:par-curr-calc} are expected to yield more accurate estimates of the currents even when using a flux distribution obtained from diffusion theory. This is the main assumption of the Ronen Method.
+	where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length and the net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$, $\forall i$. Only the zeroth moment of the angular flux, that is the scalar flux after an expansion in angle on the spherical harmonics, is used at the boundary to include the contribution of possible incoming currents. \eq{eq:par-curr-calc} are expected to yield more accurate estimates of the currents even when using a flux distribution obtained from diffusion theory. This is the main assumption of the Ronen Method.
 \end{subequations}
-% \daniele{In case additional space will be needed, it will be possible to write \eqs{eq:par-curr-calc} in a condensed form by using $\pm$.}
+% \daniele{In case additional space will be needed, it will be possible to write \eq{eq:par-curr-calc} in a condensed form by using $\pm$.}
 
 % ------------------------------------------
 \subsection{CMFD Implementation}
@@ -275,10 +277,10 @@ Boundary conditions applies on the diffusion current as usual by means of an ext
 
 The CMFD introduces in the numerical scheme a free parameter per cell surface through the correction term to adjust the diffusive solution locally. Since separate calculations of the partial currents are possible, two free parameters could be used in the discretized form of the diffusion equation. This idea leads to the development of the pCMFD scheme \cite{cho2003comparison}.
 
-Two corrective terms are then introduced: $J = \jp - \jm = \jD + \delta J^+ + \delta J^-$. An upwind definition with respect to the direction of flight of neutrons is used for the corrections~\cite{Jarrett-2016,Zhu-2016}:
+Two corrective terms are then introduced: $J = \jp - \jm = \jD + \left(\delta J^+ - \delta J^-\right)$. An upwind definition with respect to the direction of flight of neutrons is used for the corrections~\cite{Jarrett-2016,Zhu-2016}:
 \begin{equation}
 \label{eq:CCF-sub}
-\delta \jp _{i+\hzi} = -\delta D^+ _{i+\hzi} \phi_i
+\delta \jp _{i+\hzi} = \delta D^+ _{i+\hzi} \phi_i
 \quad \text{and} \quad
 \delta \jm _{i+\hzi} = -\delta D^- _{i+\hzi} \phi_{i+1}.
 \end{equation}
@@ -286,8 +288,8 @@ The current by diffusion is distributed on the partial currents in equal parts i
 \begin{subequations}
 	\label{eq:delta-D-pCMFD}
 	\begin{align}
-	J^+_{i+\hzi} - \frac{1}{2}\jD_{i+\hzi} &= -\delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
-	J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= +\delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
+	J^+_{i+\hzi} - \frac{1}{2}\jD_{i+\hzi} &= \delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
+	J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= \delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
 	\end{align}
 \end{subequations}
 still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundary, using only \eq{eq:delta-D-pCMFDm} or \eq{eq:delta-D-pCMFDp} at the left and at the right boundaries, respectively. Finally, the implementation of CMFD can be upgraded to support the pCMFD scheme with minimal changes.
@@ -328,19 +330,31 @@ still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundar
 The descretized form of the diffusion equations, with pCMFD implementations, is
 \begin{equation}
 	\label{eq:pCMFD-diff1}
-	\begin{split}
-	J_{D,i+\hzi,g}^+ +\left( \delj_{i+\hzi,g}^+ - \delj_{i+\hzi,g}^- \right) - J_{D,i-\hzi,g}^+ &+ \left( + \delj_{i-\hzi,g}^+ - 
-	\delj_{i-\hzi,g}^- \right) + \sigma_{i,g}\phi_{i,g} = \\
-	&\frac{\chi_g}{\keff}\sum\limits^G_{g'=1}\nu\sigma_{f,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G \sigma_{s,i,0,g\leftarrow g'}\phi_{i,g'}\,\,.
-	\end{split}
+	J_{D,i+\hzi,g}^+ +\left( \delj_{i+\hzi,g}^+ - \delj_{i+\hzi,g}^- \right) - J_{D,i-\hzi,g}^+ + \left( + \delj_{i-\hzi,g}^+ - 
+	\delj_{i-\hzi,g}^- \right) + \sigma_{i,g}\phi_{i,g} = q_{i,g}\,\,,
 \end{equation}
-By using \eqs{eq:CCF-sub}, one gets
+where
+\begin{equation}
+	\label{eq:q}
+	q_{i,g} = \frac{\chi_g}{\keff}\sum\limits^G_{g'=1}\nu\sigma_{f,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G \sigma_{s,i,0,g\leftarrow g'}\phi_{i,g'}\,\,.
+\end{equation}
+By using Eqs.~\eqref{eq:CCF-sub}--\eqref{eq:q}, one gets
 \begin{equation}
 	\label{eq:pCMFD-diff2}
-	-2D_{i+\hzi}\frac{\phi_{i+1,g} - \phi{i,g}}{\dx_{i+1}+\dx_{i}} 
+	\begin{split}
+	-2D_{i+\hzi}\frac{\phi_{i+1,g} - \phi_{i,g}}{\dx_{i+1}+\dx_{i}} +\left( \dd^+_{i+\hzi,g}\phi_{i,g} \right.&\left. - \dd^-_{i+\hzi,g }\phi_{i+1,g}\right)
+	+2D_{i-\hzi}\frac{\phi_{i,g} - \phi_{i-1,g}}{\dx_{i}+\dx_{i-1}} \\ 
+	&- \left( \dd^+_{i-\hzi,g}\phi_{i-1,g} -\dd^-_{i-\hzi,g}\phi_{i,g}\right) +\sigma_{i,g}\phi_{i,g} = q_{i,g}\,\,.
+	\end{split}
 \end{equation}
-
-
+Setting $\tild_{i+\hzi,g} = \frac{2D_{i+\hzi,g}}{\dx_{i+1}+\dx_{i}}$, and rearranging the above term, 
+\begin{equation}
+	\label{eq:pCMFD-rearrange}
+	\begin{split}
+	\left(-\tild_{i-\hzi,g}-\dd^+_{i-\hzi,g}\right)\phi_{i-\hzi,g} + &\left( \tild_{i+\hzi,g} + \dd^+_{i+\hzi,g}+ \tild_{i-\hzi,g} + \sigma_{i,g}\right)\phi_{i,g} \\
+	&+ \left( -\tild_{i+\hzi,g} - \dd^-_{i+\hzi,g}\right)\phi_{i+1,g} = q_{i,g}\,\,.
+	\end{split}
+\end{equation}
 
 In a weakly absorbing medium and several mean free paths away from the boundary or a strong absorber, all correction factors $\delta D^\pm$ are expected to vanish and the net current must be fully reproduced by the diffusion current. Of course, this must be verified by the classic CMFD scheme too.
 
