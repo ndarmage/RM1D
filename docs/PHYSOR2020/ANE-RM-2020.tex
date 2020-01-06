@@ -269,6 +269,23 @@ J_{i+\hzi,g} - \jD_{i+\hzi,g},
 \end{equation}
 for $i = 0, \ldots, I-2$. The division by the spatial differences can be removed because the definition of $\delta D$ is arbitrary.
 
+The CMFD, eigenvalue balance equation are 
+\begin{equation}
+	\label{eq:CMFD-diff}
+	J^+_{D,i+\hzi,g} + \delj^+_{i+\hzi,g} - J^-_{D,i-\hzi,g} - \delj^-_{i-\hzi,g} + \sigma_{i,g}\phi_{i,g}= \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G\sigma_{s,i,g\leftarrow g'}\phi_{i,g'}\,\,. 
+\end{equation}
+Using Eqs.~\eqref{eq:JD}, \eqref{eq:dJ}, and rearranging, yields
+\begin{equation}
+	\label{eq:CMFD-diff-rearranged}
+	\begin{split}
+	\left( \frac{-D_{i-\hzi,g} + \dd_{i-\hzi,g}}{\dx_{i-1} + \dx_i}\right)\phi_{i-1,g}
+	& + \left(\frac{D_{i+\hzi,g} - \dd_{i+\hzi,g}}{\dx_{i+1} + \dx_i} + \frac{D_{i-\hzi,g} + \dd_{i-\hzi,g}}{\dx_i + \dx_{i-1}} + \frac{\sigma_{i,g}}{2}\right) \phi_{i,g} \\
+	& + \left( \frac{-D_{i+\hzi,g} - \dd_{i+\hzi,g}}{\dx_{i+1} + \dx_i} \right) \phi_{i+1,g} = \frac{1}{2}q_{i,g}\,\,.
+	\end{split}
+\end{equation}
+
+
+
 Boundary conditions applies on the diffusion current as usual by means of an extrapolated length $\zeta$, $\zeta \jD \cong D \phi$. Mark or Marshak approximations, or other constants derived from transport theory can be used for $\zeta$ \cite{meghreblian1960reactor}. About the correction terms instead, it is simply $\delta J = -\delta D \phi$ with the boundary flux approximated at first order by the cell-averaged value.
 
 % ------------------------------------------
@@ -288,8 +305,8 @@ The current by diffusion is distributed on the partial currents in equal parts i
 \begin{subequations}
 	\label{eq:delta-D-pCMFD}
 	\begin{align}
-	J^+_{i+\hzi} - \frac{1}{2}\jD_{i+\hzi} &= \delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
-	J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= \delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
+	J^+_{i+\hzi} &= \frac{1}{2}\jD_{i+\hzi} + \delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
+	J^-_{i+\hzi} &= - \frac{1}{2}\jD_{i+\hzi} + \delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
 	\end{align}
 \end{subequations}
 still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundary, using only \eq{eq:delta-D-pCMFDm} or \eq{eq:delta-D-pCMFDp} at the left and at the right boundaries, respectively. Finally, the implementation of CMFD can be upgraded to support the pCMFD scheme with minimal changes.
