@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # --*-- coding:utf-8 --*--
 """
-This test case runs the 2G homogeneous slab problem from [Tomatis2011]_.
+This test case runs the 2G heterogeneous slab problem from [Ilas2003]_.
 
 .. [Tomatis2011] Tomatis, D. and Dall'Osso, A., "Application of a numerical
    transport correction in diffusion calculations", Proc. Int. Conf. on
@@ -135,6 +135,6 @@ if __name__ == "__main__":
     lg.info("*** Solve the Ilas 2003 problem ***")
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
-    slvr_opts = solver_options(ritmax=400)
-    filename = "../output/kflx_LBC%dRBC%d_I%d_400" % (LBC, RBC, I)
-    flx, k = run_calc_with_RM_its(Heter2GSlab_data, slvr_opts, filename)
+    slvr_opts = solver_options(ritmax=10)
+    # filename = "output/kflx_LBC%dRBC%d_I%d" % (LBC, RBC, I)
+    flx, k = run_calc_with_RM_its(Heter2GSlab_data, slvr_opts, filename=None)

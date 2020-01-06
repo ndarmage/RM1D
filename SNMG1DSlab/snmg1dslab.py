@@ -63,89 +63,8 @@ import warnings as wrn
 import numpy as np
 from scipy.special import roots_legendre, legendre
 
-class input_data:
-    """Geometry and material input data of the 1D problem. Possible options
-    of geometry_type are slab, cylindrical and spherical. Allowed boundary
-    conditions: 0-vacuum, 1-zero flux and 2-reflection."""
-
-    def __init__(self, xs_media, media, xi, xm, dx, geometry_type='slab',
-                 LBC=0, RBC=0):
-        self.xi, self.xm, self.dx = xi, xm, dx
-        self.geometry_type = geometry_type
-        self.LBC, self.RBC = LBC, RBC
-        self.xs_media, self.media = xs_media, media
-        self.check_input()
-
-    @property
-    def I(self):
-        return self.xi.size - 1
-
-    @property
-    def L(self):
-        return self.xi[-1]
-
-    @property
-    def G(self):
-        return self.xs_media[next(iter(self.xs_media))]['st'].size
-
-
-    def check_input(self):
-        if (self.geometry_type != 'slab') and \
-           (self.geometry_type != 'cylindrical') and \
-           (self.geometry_type != 'spherical'):
-            raise ValueError('Unknown geometry_type ' + self.geometry_type)
-        if not isinstance(self.LBC, int):
-            raise TypeError('LBC must be integer.')
-        if (self.LBC < 0) and (self.LBC > 2):
-            raise ValueError('Check LBC, allowed options ')
-        if not isinstance(self.RBC, int):
-            raise TypeError('RBC must be integer.')
-        if (self.RBC < 0) and (self.RBC > 2):
-            raise ValueError('Check RBC, allowed options ')
-        if (self.geometry_type != 'slab') and (self.LBC != 2):
-            raise ValueError('Curvilinear geometries need LBC = 2.')
-        if not isinstance(self.xs_media, dict):
-            raise TypeError('The input xs_media is not a dictionary.')
-        if not isinstance(self.media, list):
-            raise TypeError('The input media is not a list.')
-#        if len(self.xs_media) != len(self.media):
-#            raise ValueError('xs media dict and list must have the same ' +
-#                             'nb. of elements.')
-        rbnd = [m[1] for m in self.media]
-        if sorted(rbnd) != rbnd:
-            raise ValueError('media list must be in order from left to right!')
-        if max(rbnd) > self.L and abs(max(rbnd) - self.L)>1e-6:
-            raise ValueError('Please check the right bounds of media (>L?)')
-
-    def __str__(self):
-        print("Geometry type is " + self.geometry_type)
-        print("Boundary conditions: (left) LBC=%d and (right) RBC=%d." %
-              (self.LBC, self.RBC))
-        print("B.C. legend: 0-vacuum, 1-zero flux and 2-reflection.")
-        print("Number of energy groups: %d" % self.G)
-        print("Number of spatial cells: %d" % self.I)
-        print("Spatial mesh xi\n" + str(self.xi))
-        print("Media list:\n" + str(self.media))
-        print(" with xs:\n" + str(self.xs_media))
-
-
-class solver_options:
-    """Object collecting (input) solver options. INFO: set ritmax to 0 to
-    skip Ronen iterations."""
-    toll = 1.e-6  # default tolerance
-    itsmax = 100  # default nb. of max iterations (its)
-
-    def __init__(self, iitmax=itsmax, oitmax=itsmax, otoll=toll, 
-                 itoll=toll, rtoll=toll):        
-        self.oitmax = oitmax  # max nb of outer iterations
-        self.iitmax = iitmax  # max nb of inner iterations
-        self.otoll = otoll  # tolerance on fiss. rates at outer its.
-        self.itoll = itoll  # tolerance on flx at inner its.        
-        self.check_input()
-
-    def check_input(self):
-        if (self.oitmax < 0) or (self.iitmax < 0):
-            raise InputError('Negative max nb. of its is not possible.')
+sys.path.append('..XFD1dMGdiff'.replace('X', os.path.sep))
+from FDsDiff1D import input_data, solver_options, unfold_xs
 
 
 def get_dirs_and_weights(N=None, L=0, qtype="Gauss-Legendre"):
@@ -172,34 +91,9 @@ class quad_data:
     """Object collecting quadrature data."""
     
     def __init__(self, N=16, L=0, qtype='Gauss-Legendre'):
-        self.N, self.L = N, L
-        self.qtype = qtype
+        self.N, self.L, self.qtype = N, L, qtype
         self.mn, self.wn, self.pl = get_dirs_and_weights(N, L, self.qtype)
         #self.check_input()
-
-#    @property
-#    def N(self):
-#        return self.N
-#
-#    @property
-#    def L(self):
-#        return self.L
-#
-#    @property
-#    def qtype(self):
-#        return self.qtype
-#     
-#    @property
-#    def mn(self):
-#       return self.mn
-#
-#    @property
-#    def wn(self):
-#       return self.wn
-#    
-#    @property
-#    def pl(self):
-#       return self.pl
 
 
 def differencing_by_SC(aflx, bflx, hm):
@@ -331,7 +225,7 @@ def solve_outers(dx, xs, qdata, flxm, k, oitsmax=20, toll=1.e-5,
                  lbc=0, rbc=0, vrbs=True):
     "Solve the criticality problem by outer iterations."
     it, emax_outers = 0, 1.e+20
-    st, ss, chi, nsf = xs # cross sections data
+    st, ss, chi, nsf = xs  # cross sections data
     mn, wn, pl = qdata.mn, qdata.wn, qdata.pl # quadrature data
     #flxn = np.sum(flxm[:,0,:]) # volume-norm
     # (initial) compute the fission contribution
@@ -360,32 +254,11 @@ def solve_outers(dx, xs, qdata, flxm, k, oitsmax=20, toll=1.e-5,
     return flxm, k
 
 
-def unfold_xs(idata):
-    xm, I, G = idata.xm, idata.I, idata.G
-    xs_media, media = idata.xs_media, idata.media
-    ss0 = np.zeros((G, G, 1, I),)
-    # ss1 = np.zeros_like(ss0)
-    st = np.zeros((G, I),)
-    nsf, chi = np.zeros_like(st), np.zeros_like(st)
-
-    lbnd = 0.
-    for m in media:
-        media_name, rbnd = m
-        idx = (lbnd < xm) & (xm < rbnd)
-        st[:, idx] = np.tile(xs_media[media_name]['st'], (I, 1))[idx].T
-        nsf[:, idx] = np.tile(xs_media[media_name]['nsf'], (I, 1))[idx].T
-        chi[:, idx] = np.tile(xs_media[media_name]['chi'], (I, 1))[idx].T        
-        tmp = np.tile(xs_media[media_name]['ss'][:, :, 0].flatten(), (I, 1)).T
-        ss0[:, :, 0, idx] = tmp.reshape(G, G, I)[:,:,idx]        
-        lbnd = rbnd
-
-    return st, ss0, chi, nsf
-
-
 def solve_sn(idata, slvr_opts, qdata):
     '''Run SN solver.'''
     lg.info("Prepare input data")
-    xs = unfold_xs(idata) # [st, ss, chi, nsf]        
+    # xs = [st, ss, chi, nsf]
+    xs = unfold_xs(idata, isotropic_scattering=False, diff_calc=False)
     # initialize the cell-integrated flux moments
     # (which are the only unknowns stored in memory at this higher level)
     # and the multiplication factor (eigenvalue)
@@ -395,7 +268,7 @@ def solve_sn(idata, slvr_opts, qdata):
 
     # start SN iterations
     lg.info("Start the SN iterations")
-    flxm, k = solve_outers(idata.dx, xs, qdata, flxm, k, 
+    flxm, k = solve_outers(idata.Di, xs, qdata, flxm, k, 
                            slvr_opts.oitmax, slvr_opts.toll,
                            idata.LBC, idata.RBC)
         
@@ -404,65 +277,56 @@ def solve_sn(idata, slvr_opts, qdata):
     return flxm, k
 
 
+if __name__ == '__main__':
 
+    # input general data
+    I = 100 # nb. of cells
+    a = 21.5 / 2. # slab width (cm)
+    N = 16 # nb. of directions
+    G = 2 # nb. of energy groups
+    # L, maximum level of scattering anisotropy
+    # (so that we will only compute flux moments up to the order L)
+    L = 0
 
-#if __name__ == '__main__':
-    
-#    from tests.hetro2GIlas2003 import Hetro2GSlab_data    
-#    slvr_opts = solver_options()
-#    
-#    filename = "output/kflx_LBC%dRBC%d_I%d" % (Hetro2GSlab_data.LBC,
-#                                               Hetro2GSlab_data.RBC,
-#                                               Hetro2GSlab_data.I)
-#    flx, k = run_calc_with_RM_its(Hetro2GSlab_data, slvr_opts, filename)
-#
-#    # input general data
-#    I = 100 # nb. of cells
-#    a = 21.5 / 2. # slab width (cm)
-#    N = 64 # nb. of directions
-#    G = 2 # nb. of energy groups
-#    # L, maximum level of scattering anisotropy
-#    # (so that we will only compute flux moments up to the order L)
-#    L = 2
-#
-#    # boundary conditions
-#    lbc, rbc = 1, 0 # left / right b.c.
-#
-#    # input cross section data
-#    st = np.zeros((G, I),)
-#    nsf = np.zeros_like(st)
-#    ss = np.zeros((G, G, L+1, I),)
-#    chi = np.array([1., 0.])
-#    st0 = np.array([5.3115e-1, 1.30058e+0])
-#    nsf0 = np.array([7.15848e-3, 1.41284e-1])
-#    ssi = np.array([[5.04664e-1, 2.03884e-3], [1.62955e-2, 1.19134e+0]])
-#    finf = np.linalg.solve(np.diag(st0) - ssi, chi)
-#    kinf = np.dot(nsf0, finf)
-#    print("The k-infty of the homogeneous infinite slab is {:8.6f}.".format( \
-#        kinf))
-#    # (reference) k_\infty = 1.07838
-#
-#    # fill input containers with the cross sections
-#    for g in range(G):
-#        st[g,:], nsf[g,:] = st0[g], nsf0[g]
-#    for i in range(I): ss[:,:,0,i] = ssi
-#    xs = [st, nsf, chi, ss]
-#
-#    # define the spatial mesh
-#    dx = np.linspace(0., a, I+1)
-#    dx = dx[1:] - dx[:-1]
-#
-#    # calculate the directions using the Gauss-Legendre quadrature
-#    qdata = get_dirs_and_weights(N, L)
-#
-#    # initialize the cell-integrated flux moments
-#    # (which are the only unknowns stored in memory at this higher level)
-#    # and the multiplication factor (eigenvalue)
-#    flxm = np.zeros((G, L+1, I),)
-#    flxm[:, 0, :], k = 1., 1.
-#
-#    # solve the criticality problem by power iterations
-#    flxm, k = solve_outers(dx, xs, qdata, flxm, k, oitsmax=100, toll=1.e-7)
-#    basefilen = "LBC%dRBC%d_I%d_N%d" % (lbc, rbc, I, N)
-#    # np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
-#    np.savez(basefilen + ".npz", k=k, flxm=flxm)
+    # boundary conditions
+    lbc, rbc = 1, 0  # left / right b.c.
+
+    # input cross section data
+    chi = np.array([1., 0.])
+    st = np.array([5.3115e-1, 1.30058e+0])
+    nsf = np.array([7.15848e-3, 1.41284e-1])
+    ss0 = np.array([[5.04664e-1, 2.03884e-3], [1.62955e-2, 1.19134e+0]])
+    finf = np.linalg.solve(np.diag(st) - ss0, chi)
+    kinf = np.dot(nsf, finf)
+    print("The k-infty of the homogeneous infinite slab is {:8.6f}.".format( \
+        kinf))
+    # (reference) k_\infty = 1.07838
+
+    # fill input containers with the cross sections
+    chi = np.zeros((G, I),)
+    chi[0, :] = 1.
+    st = np.tile(st, (I, 1)).T
+    nsf = np.tile(nsf, (I, 1)).T
+    ss = np.zeros((G, G, L+1, I),)
+    for i in range(I): ss[:,:,0,i] = ss0
+    xs = [st, ss, chi, nsf]
+
+    # define the spatial mesh
+    dx = np.linspace(0., a, I+1)
+    dx = dx[1:] - dx[:-1]
+
+    # calculate the directions using the Gauss-Legendre quadrature
+    qdata = quad_data(N, L)
+
+    # initialize the cell-integrated flux moments
+    # (which are the only unknowns stored in memory at this higher level)
+    # and the multiplication factor (eigenvalue)
+    flxm = np.zeros((G, L+1, I),)
+    flxm[:, 0, :], k = 1., 1.
+
+    # solve the criticality problem by power iterations
+    flxm, k = solve_outers(dx, xs, qdata, flxm, k, oitsmax=100, toll=1.e-7,
+                           lbc=lbc, rbc=rbc)
+    basefilen = "LBC%dRBC%d_I%d_N%d" % (lbc, rbc, I, N)
+    # np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
+    np.savez(basefilen + ".npz", k=k, flxm=flxm)

@@ -105,6 +105,13 @@ class input_data:
     @property
     def G(self):
         return self.xs_media[next(iter(self.xs_media))]['st'].size
+
+    @property
+    def Lss(self):
+        random_ss, L = self.xs_media[next(iter(self.xs_media))]['ss'], 1
+        if random_ss.ndim == 3:
+            L = max([self.xs_media[m]['ss'].shape[-1] for m in self.xs_media])
+        return L - 1
     
     def compute_cell_width(self):
         self.Di = self.xi[1:] - self.xi[:-1]
@@ -809,8 +816,6 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     # keep track of partial solutions on external files
     flx_save = np.empty([G, I, ritmax + 1])
     k_save = np.full(ritmax + 1, -1.)
-    kerr_save = np.full(ritmax, -1.)
-    ferr_save = np.full(ritmax, -1.)
 
     err, itr, kinit = 1.e+20, 0, k
     Dflxm1 = np.zeros_like(flx)
@@ -853,17 +858,11 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         Dflxm2 = np.array(Dflxm1, copy=True)
         Dflxm1 = flx - flxold
         ferr = np.where(flx > 0., 1. - flxold / flx, Dflxm1)
-        kerr = (k-kold)/k
-        
+
         err = abs(ferr[np.unravel_index(abs(ferr).argmax(), (G, I))])
-        
-        kerr_save[itr] = kerr
-        ferr_save[itr] = err
-        
         itr += 1
-        
-        lg.info("+RM+ it={:^4d}, k={:<13.6g}, kerr={:<+13.6e}, ferr={:<+13.6e}".format(
-            itr, k, kerr, err
+        lg.info("+RM+ it={:^4d}, k={:<13.6g}, err={:<+13.6e}".format(
+            itr, k, err
         ))
         lg.info("{:^4s}{:^13s}{:^6s}{:^13s}".format(
             "G", "max(err)", "at i", "std(err)"
@@ -883,8 +882,8 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
     k_save[itr], flx_save[:, :, itr] = k, flx  # store final values
     lg.info("Initial value of k was %13.6g." % kinit)
-    if filename is not None:        
-        np.save(filename.replace('kflx','err'), [kerr_save, ferr_save], allow_pickle=True)
+    if filename is not None:
+        # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
         np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
             i = 0
@@ -898,12 +897,14 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     return flx, k
 
 
-def unfold_xs(input_data):
-    "Set up the spatial mesh with cross sections data."
-    xm, I, G = xim(input_data.xi), input_data.I, input_data.G
+def unfold_xs(input_data, diff_calc=True, isotropic_scattering=True):
+    """Set up the spatial mesh with cross sections data. Scattering xs ss can
+    be limited to the only isotropic term for diffusion calculations."""
+    I, G, Lss = input_data.I, input_data.G, input_data.Lss
+    Lssp1 = Lss + 1
     xs_media, media = input_data.xs_media, input_data.media
-    ss0 = np.zeros((G, G, I),)
-    # ss1 = np.zeros_like(ss0)
+    xm = xim(input_data.xi)
+    ss = np.zeros((G, G, Lssp1, I),)
     st = np.zeros((G, I),)
     nsf, chi, D = np.zeros_like(st), np.zeros_like(st), np.zeros_like(st)
 
@@ -916,8 +917,12 @@ def unfold_xs(input_data):
         nsf[:, idx] = np.tile(xs_media[media_name]['nsf'], (n, 1)).T
         chi[:, idx] = np.tile(xs_media[media_name]['chi'], (n, 1)).T
         D[:, idx] = np.tile(xs_media[media_name]['D'], (n, 1)).T
-        tmp = np.tile(xs_media[media_name]['ss'][:, :, 0].flatten(), (n, 1)).T
-        ss0[:, :, idx] = tmp.reshape(G, G, n)
+        Lmed = xs_media[media_name]['ss'].shape[-1]
+        if Lmed > Lssp1:
+            raise ValueError("Media %s has ss with L > %d!" % \
+                             (media_name, Lss))
+        tmp = np.tile(xs_media[media_name]['ss'].flatten(), (n, 1)).T
+        ss[:, :, :, idx] = tmp.reshape(G, G, Lssp1, n)
         lbnd = rbnd
 
     # determine the diffusion coefficient on the cell borders (w/o boundaries)
@@ -925,7 +930,11 @@ def unfold_xs(input_data):
     # Db at the boundaries is considered equal to the one of the nearest cell
     Db = np.insert(Db, 0, D[:, 0], axis=1)
     Db = np.insert(Db, I, D[:,-1], axis=1)
-    return [st, ss0, chi, nsf, Db]
+    xs = [st, ss[:, :, 0, :], chi, nsf] if isotropic_scattering else \
+         [st, ss, chi, nsf]
+    if diff_calc:
+        xs.append(Db)
+    return xs
 
 
 def run_calc_with_RM_its(idata, slvr_opts, filename=None):
