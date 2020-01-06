@@ -885,6 +885,10 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     if filename is not None:
         # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
         np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
+        # np.save(filename.replace('kflx','err'), [kerr_save, ferr_save], \
+                  allow_pickle=True)
+        # np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD], \
+                  allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
             i = 0
             while k_save[i] >= 0:
@@ -964,7 +968,7 @@ if __name__ == "__main__":
 
     lg.info("Verify the code with the test case from the M&C article")
     from tests.homogSlab2GMC2011 import Homog2GSlab_data as data
-    #from tests.heterSlab2GIlas2003 import Heter2GSlab_data as data
+    #from tests.heterSlab2GRahnema1997 import Heter2GSlab_data as data
 
     slvr_opts = solver_options()
     filename = "output/kflx_LBC%dRBC%d_I%d" % (data.LBC, data.RBC, data.I)

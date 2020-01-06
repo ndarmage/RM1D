@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 # --*-- coding:utf-8 --*--
 """
-This test case runs the 2G heterogeneous slab problem from [GIlas2003]_.
+This test case runs the 2G heterogeneous slab problem from [Rahnema1997]_.
 
-.. [Tomatis2011] Tomatis, D. and Dall'Osso, A., "Application of a numerical
-   transport correction in diffusion calculations", Proc. Int. Conf. on
-   Mathematics and Computational Methods Applied to Nuclear Science and
-   Engineering (M&C 2011), Rio de Janeiro, RJ, Brazil, May 8-12, 2011.
+.. [Rahnema1997] F. Rahnema, and E., M., Nichita "LEAKAGE CORRECTED
+   SPATIAL (ASSEMBLY) HOMOGENIZATION TECHNIQUE", Elseviel Science Ltd., 
+   Proc. Ann. Nucl. Energy, Vol. 24, No. 6, pp. 477-488, 1997.
 """
 import sys, os
 sys.path.append('..X..XFD1dMGdiff'.replace('X', os.path.sep))
