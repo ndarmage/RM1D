@@ -71,7 +71,7 @@
 \lfoot{}
 %\rfoot{\thepage/\totalpages{}}%
 % Daniele Tomatis: add nb of pages in the head to inform readers
-% \rhead{\thepage/\totalpages{}}%
+\rhead{\thepage/\totalpages{}}%
 \pagestyle{fancy}
 %
 % subsequent pages header and footer (must be placed after \begin{document})
@@ -93,9 +93,9 @@
 % section title definitions
 \renewcommand{\section}{
   \renewcommand{\@seccntformat}[1]{\csname the##1\endcsname.\hspace{0.5em}}
-  \@startsection{section}{1}{\z@}{1.0ex plus 1.0ex minus 0.2ex}{0.2ex plus 0.2ex}{\normalsize\bf\center}}
+  \@startsection{section}{1}{\z@}{1.0ex plus 1.0ex minus 0.2ex}{0.2ex plus 0.2ex}{\normalsize\bf\center\MakeUppercase}}
 \renewcommand{\subsection}{\@startsection{subsection}{2}{\z@}
-  {1.0ex plus 1.0ex minus 0.2ex}{0.2ex plus 0.2ex}{\normalsize\bf}}
+  {1.0ex plus 1.0ex minus 0.2ex}{0.2ex plus 0.2ex}{\normalsize\bf\MakeUppercase}}
 \renewcommand{\subsubsection}{\@startsection{subsubsection}{3}{\z@}
   {1.0ex plus 1.0ex minus 0.2ex}{0.2ex plus 0.2ex}{\normalsize\bf}}
 %
