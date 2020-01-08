@@ -16,11 +16,11 @@ The CMFD has been largely used in nodal diffusion codes as a technique for stora
 
 The use of a coarse mesh for the discretization of the problem is generally causing considerable error by truncation applied on the finite difference approximations of the derivative terms. On the other hand, it yields very fast calculations. The CMFD method recovers corrective terms by exploiting functional relations between the (scalar) flux and the current density, which appear in the neutron balance equation. The balance equation is solved for the flux, so that local models seek more accurate estimates of the current in order to derive these corrections. In principle, the corrective terms can be computed with a different physics other than diffusion, which is always solved at the coarse level. This facilitates its application to accelerate complex multi-dimensional transport codes. This acceleration is actually implemented by rebalancing the scalar flux, with the optional use of some relaxation~\cite{Park-2017}. Hence, a non-linear iterative scheme arises between the CMFD solver and the computation of the local corrections, which use the latest estimates of the flux available from the diffusion solver.
 
-Second-order SPN equations can be solved by ordinary diffusion codes~\cite{Larsen-1993}. Yamamoto et Al.~\cite{Yamamoto-2016} noticed numerical instabilities when correcting pseudo-currents obtained solely by the second-order moments of the expanded SP3 flux. This is because this quantity is generally smaller than the scalar flux (0-th moment) and can change its sign. They proposed to modify the balance equation for the second moment in order to fix this numerical behavior. The modification consisted of a shift with a positive quantity of the second moment so that their difference between neighboring quantities is unchanged, and their sum becomes positive and arbitrarily large.
+Second-order SPN equations can be solved by ordinary diffusion codes~\cite{Larsen-1993}. Yamamoto et Al.~\cite{Yamamoto-2016} noticed numerical instabilities when correcting pseudo-currents obtained solely by the second-order moments of the expanded SP$_3$ flux. This is because this quantity is generally smaller than the scalar flux (0-th moment) and can change its sign. They proposed to modify the balance equation for the second moment in order to fix this numerical behavior. The modification consisted of a shift with a positive quantity of the second moment so that their difference between neighboring quantities is unchanged, and their sum becomes positive and arbitrarily large.
 
 When partial currents can be computed, the pCMFD method~\cite{Cho-2003} can be used to determine two distinct corrective terms per positive and negative partial currents, instead of having a single degree of freedom per cell surface. Another version of the CMFD called artificial diffusion~\cite{Zhu-2016,Jarrett-2016} redefines the diffusion coefficient as the sum of the original value and a complement derived from the current difference, which is still considered as proportional to the flux gradient. This scheme can potentially lead to negative diffusion constants.
 
-The CMFD (and its variants) was also chosen for the implementation of the RM, where an integral transport operator estimated higher order currents to calculate the correction terms. Contrary to the previous implementations, no operator was inverted to get a new higher order approximation of the flux solution. As well, this offered a fast and more accurate estimate of the current too.
+The CMFD scheme was also chosen for the implementation of the RM, where an integral transport operator estimated higher order currents to calculate the correction terms. Contrary to the previous implementations, no operator was inverted to get a new higher order approximation of the flux solution. Thereafter, this offered a fast and more accurate estimate of the current too.
 
 
 % ------------------------------------------
@@ -38,7 +38,7 @@ Since these accurate estimates of the currents were based on a known flux distri
   \label{eq:RM-it}
   D^{(k+1)}\rE = - \frac{\lvert \bm{J}^{(k)}\rE \rvert}{\lvert \bnabla \phi^{(k)}\rE \rvert},
 \end{equation}
-where $k$ is the iteration index. The use of a tensor notation is needed for the diffusion coefficient in general multidimensional problems.
+where $k$ is the iteration index. The use of a tensor notation is needed for the diffusion coefficient in general multidimensional problems \cite{boffi1972tensorial}.
 
 The motivation for this method was to overcome the inherent limitation of Fick's law requiring smooth flux gradients and thus weakly absorbing medium. Nevertheless, isotropic scattering remained as a basic postulate. For example, in a one-dimensional homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004}
 \begin{equation}
@@ -73,7 +73,7 @@ where $J$ denotes the net current at the cell surface, $\sigma$ denotes the tota
   q_{i,g} = \sum\limits_{g'=1}^G\sigma_{s,0,i,g\leftarrow g'}\phi_{i,g'} +
   \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'},
 \end{equation}
-where $\sigma_0$ is the isotropic scattering cross section, $\chi$ is the fission spectrum, $\keff$ is the effective multiplication factor (the eigenvalue), $\nu$ is the average number of neutrons emitted per thermal fission, and $\sigma_f$ is the fission cross section. As well, integer and rational subscripts indicate node-averaged and interface quantities, respectively.
+where $\sigma_0$ is the isotropic scattering cross section, $\chi$ is the fission spectrum, $\keff$ is the effective multiplication factor (the eigenvalue), $\nu$ is the average number of neutrons emitted per thermal fission, and $\sigma_f$ is the fission cross section. Integer and rational subscripts indicate node-averaged and interface quantities, respectively.
 %
 \begin{figure}[htbp]
   \centering
@@ -82,7 +82,7 @@ where $\sigma_0$ is the isotropic scattering cross section, $\chi$ is the fissio
   \label{fig:mesh1D}
 \end{figure}
 
-The net and partial currents in the case of isotropic scattering are calculated using the following expressions derived from the integral neutron transport equation~\cite{Tomatis-2011,Tomatis-2019,Gross-2020}
+The partial currents in the case of isotropic scattering are calculated using the following expressions derived from the integral neutron transport equation~\cite{Tomatis-2011,Tomatis-2019,Gross-2020}:
 \begin{subequations}
   \label{eq:par-curr-calc}
   \begin{equation}
@@ -108,7 +108,7 @@ The net and partial currents in the case of isotropic scattering are calculated 
             \right\},
     \end{split}
   \end{equation}
-where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length and the net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$, $\forall i$. Only the zeroth moment of the angular flux, that is the scalar flux after an expansion in angle on the spherical harmonics, is used at the boundary to include the contribution of possible incoming currents. \eqs{eq:par-curr-calc} are expected to yield more accurate estimates of the currents even when using a flux distribution obtained from diffusion theory. This is the main assumption of the Ronen Method.
+where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length. The net current is $J _{i+\hzi,g} = \jp _{i+\hzi,g} - \jm _{i+\hzi,g}$, $\forall i$. Only the zeroth moment of the angular flux, that is the scalar flux yet occurring after its expansion in angle on spherical harmonics, is used at the boundary to include the contribution of possible incoming currents. \eqs{eq:par-curr-calc} are expected to yield more accurate estimates of the currents even when using a flux distribution obtained from diffusion theory. This is the main assumption of the Ronen Method.
 \end{subequations}
 % \daniele{In case additional space will be needed, it will be possible to write \eqs{eq:par-curr-calc} in a condensed form by using $\pm$.}
 
@@ -116,7 +116,7 @@ where $\mcL_g(x',x)\equiv \int_{x'}^{x} \sigma_g(x'')dx''$ is the optical length
 \subsection{CMFD Implementation}
 \label{sec:RM-CMFD}
 
-In classic CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime \cite{Smith-1983}. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by discretizing Fick's law, and by finite differences, according to
+In classic CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$ used in \eq{eq:balance}. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime \cite{Smith-1983}. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by discretizing Fick's law, and by finite differences, according to
 \begin{equation}
   \label{eq:JD}
   \jD_{i+\hzi,g} \cong - D_{i+\hzi,g}
@@ -136,27 +136,30 @@ About the RM, more accurate estimates of the net current come from the integral 
     \frac{\phi_{i+1,g} + \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2} =
   J_{i+\hzi,g} - \jD_{i+\hzi,g},
 \end{equation}
-for $i = 0, \ldots, I-2$. The division by the spatial differences can be removed because the definition of $\delta D$ is arbitrary.
-
-The CMFD, eigenvalue balance equation are 
-\begin{equation}
-  \label{eq:CMFD-diff}
-  \begin{gathered}
-  J^+_{D,i+\hzi,g} + \delj^+_{i+\hzi,g} - J^-_{D,i-\hzi,g} - \delj^-_{i-\hzi,g} + \sigma_{i,g}\phi_{i,g}=\\
-  \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G\sigma_{s,i,g\leftarrow g'}\phi_{i,g'}.
-  \end{gathered}
-\end{equation}
-Using Eqs.~\eqref{eq:JD}, \eqref{eq:dJ}, and rearranging, yields
+for $i = 0, \ldots, I-2$. The division by the spatial differences can be removed because the definition of $\delta D$ is arbitrary. By retrieving the net current from \eq{eq:dJ} and substitution in \eq{eq:balance} with the source from \eq{eq:qsrc} yields the CMFD balance equation. Finally, using Eqs.~\eqref{eq:JD}, \eqref{eq:dJ} and rearranging, the flux follows by solving a system of linear equations:
+%
+% Daniele: the signs at superscript are not valid here. This is removed to get shorter text. A sentence is added to the previous paragraph to introduce implicitly the eqn to solove.
+%
+%The CMFD, eigenvalue balance equation are 
+%\begin{equation}
+%  \label{eq:CMFD-diff}
+%  \begin{gathered}
+%  J^+_{D,i+\hzi,g} + \delj^+_{i+\hzi,g} - J^-_{D,i-\hzi,g} - \delj^-_{i-\hzi,g} + \sigma_{i,g}\phi_{i,g}=\\
+%  \frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G\sigma_{s,i,g\leftarrow g'}\phi_{i,g'}.
+%  \end{gathered}
+%\end{equation}
+%Using Eqs.~\eqref{eq:JD}, \eqref{eq:dJ}, and rearranging, yields
 \begin{equation}
   \label{eq:CMFD-diff-rearranged}
   \begin{split}
   \left( \frac{-D_{i-\hzi,g} + \dd_{i-\hzi,g}}{\dx_{i-1} + \dx_i}\right) &\phi_{i-1,g} \\
   + \left(\frac{D_{i+\hzi,g} - \dd_{i+\hzi,g}}{\dx_{i+1} + \dx_i} + \frac{D_{i-\hzi,g} + \dd_{i-\hzi,g}}{\dx_i + \dx_{i-1}} + \frac{\sigma_{i,g}}{2}\right) &\phi_{i,g} \\
-  + \left( \frac{-D_{i+\hzi,g} - \dd_{i+\hzi,g}}{\dx_{i+1} + \dx_i} \right) &\phi_{i+1,g} = \frac{1}{2}q_{i,g}.
+  + \left( \frac{-D_{i+\hzi,g} - \dd_{i+\hzi,g}}{\dx_{i+1} + \dx_i} \right) &\phi_{i+1,g} = \frac{1}{2}q_{i,g},
   \end{split}
 \end{equation}
+for $0 < i < I-1$.
 
-Boundary conditions applies on the diffusion current as usual by means of an extrapolated length $\zeta$, \ie{} $\zeta \jD \cong D \phi$. The constant $\zeta$ can follow from Mark or Marshak approximations, or others derived again from transport theory \cite{meghreblian1960reactor}. About the correction terms instead, it is simply $\delta J = -\delta D \phi$ with the boundary flux approximated at first order by the cell-averaged value.
+Boundary conditions applies on the diffusion current as usual by means of an extrapolated length $\zeta$, \ie{} $\zeta \jD \cong D \phi$. The constant $\zeta$ can follow from Mark or Marshak approximations, or others derived again from transport theory \cite{meghreblian1960reactor}. About the correction terms instead, it is simply $\delta J = -\delta D \phi$ with the boundary flux approximated at first order by the cell-averaged value. The introduction of these closures in the equations for $i=0$ and $i=I-1$ is straightforward.
 
 % ------------------------------------------
 \subsection{pCMFD Implementation}
@@ -171,6 +174,11 @@ Two corrective terms are then introduced: $J = \jp - \jm = \jD + \delta J^+ + \d
   \quad \text{and} \quad
   \delta \jm _{i+\hzi} = -\delta D^- _{i+\hzi} \phi_{i+1}.
 \end{equation}
+%
+% Daniele: the signs used for the \pm J corrections is not so important because
+% of the arbitrarity of the corrections themselves. But whatever the choice
+% has been made, the implementation must stick closely with it.
+%
 The current by diffusion is distributed on the partial currents in equal parts in order to compute the new corrective coefficients $\delta D^{\pm}$,
 \begin{subequations}
   \label{eq:delta-D-pCMFD}
@@ -179,7 +187,7 @@ The current by diffusion is distributed on the partial currents in equal parts i
     J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= +\delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
   \end{align}
 \end{subequations}
-still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundary, using only \eq{eq:delta-D-pCMFDm} or \eq{eq:delta-D-pCMFDp} at the left and at the right boundaries, respectively. Finally, the implementation of CMFD can be upgraded to support the pCMFD scheme with minimal changes.
+still for $i=0, \ldots, I-2$.
 % -----------------------------------------------------------------------------
 %
 % Daniele: the following proposition has shown to be inconsistent.
@@ -214,37 +222,40 @@ still for $i=0, \ldots, I-2$. The diffusion current is not halved at the boundar
 %   \end{equation}
 % where the flux at the interface can be simply volume-averaged too, see~\eq{eq:Ds} for instance.
 % -----------------------------------------------------------------------------
-The descretized form of the diffusion equations, with pCMFD implementations, is
-\begin{equation}
-  \label{eq:pCMFD-diff1}
-  \begin{gathered}
-  J_{D,i+\hzi,g}^+ +\left( \delj_{i+\hzi,g}^+ - \delj_{i+\hzi,g}^- \right) - J_{D,i-\hzi,g}^+
-  + \left( + \delj_{i-\hzi,g}^+ - \delj_{i-\hzi,g}^- \right) \\ + \sigma_{i,g}\phi_{i,g} = q_{i,g},
-  \end{gathered}
-\end{equation}
-where
-\begin{equation}
-  \label{eq:q}
-  q_{i,g} = \frac{\chi_g}{\keff}\sum\limits^G_{g'=1}\nu\sigma_{f,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G \sigma_{s,i,0,g\leftarrow g'}\phi_{i,g'}.
-\end{equation}
-By using Eqs.~\eqref{eq:CCF-sub}--\eqref{eq:q}, one gets
-\begin{equation}
-  \label{eq:pCMFD-diff2}
-  \begin{split}
-  -2D_{i+\hzi}\frac{\phi_{i+1,g} - \phi_{i,g}}{\dx_{i+1}+\dx_{i}} &+\left( \dd^+_{i+\hzi,g}\phi_{i,g}  - \dd^-_{i+\hzi,g }\phi_{i+1,g}\right)
-  +2D_{i-\hzi}\frac{\phi_{i,g} - \phi_{i-1,g}}{\dx_{i}+\dx_{i-1}} \\ 
-  &- \left( \dd^+_{i-\hzi,g}\phi_{i-1,g} -\dd^-_{i-\hzi,g}\phi_{i,g}\right) +\sigma_{i,g}\phi_{i,g} = q_{i,g}.
-  \end{split}
-\end{equation}
-Setting $\tild_{i+\hzi,g} = \left. 2D_{i+\hzi,g} \middle/ (\dx_{i+1}+\dx_{i})\right.$, and rearranging the above term, 
+%
+% Daniele: removed to get shorter text and avoid repetitions
+%
+%The descretized form of the diffusion equations, with pCMFD implementations, is
+%\begin{equation}
+%  \label{eq:pCMFD-diff1}
+%  \begin{gathered}
+%  J_{D,i+\hzi,g}^+ +\left( \delj_{i+\hzi,g}^+ - \delj_{i+\hzi,g}^- \right) - J_{D,i-\hzi,g}^+
+%  + \left( + \delj_{i-\hzi,g}^+ - \delj_{i-\hzi,g}^- \right) \\ + \sigma_{i,g}\phi_{i,g} = q_{i,g},
+%  \end{gathered}
+%\end{equation}
+%where
+%\begin{equation}
+%  \label{eq:q}
+%  q_{i,g} = \frac{\chi_g}{\keff}\sum\limits^G_{g'=1}\nu\sigma_{f,g'}\phi_{i,g'} + \sum\limits_{g'=1}^G \sigma_{s,i,0,g\leftarrow g'}\phi_{i,g'}.
+%\end{equation}
+The same substitutions indicated in section \ref{sec:RM-CMFD} lead to the pCMFD balance equation, where after introducing Eqs. \ref{eq:JD} and \ref{eq:CCF-sub} for the currents it is in the $i$-th cell
+%\begin{equation}
+%  \label{eq:pCMFD-diff2}
+%  \begin{split}
+%  -2D_{i+\hzi}\frac{\phi_{i+1,g} - \phi_{i,g}}{\dx_{i+1}+\dx_{i}} &+\left( \dd^+_{i+\hzi,g}\phi_{i,g}  - \dd^-_{i+\hzi,g }\phi_{i+1,g}\right)
+%  +2D_{i-\hzi}\frac{\phi_{i,g} - \phi_{i-1,g}}{\dx_{i}+\dx_{i-1}} \\ 
+%  &- \left( \dd^+_{i-\hzi,g}\phi_{i-1,g} -\dd^-_{i-\hzi,g}\phi_{i,g}\right) +\sigma_{i,g}\phi_{i,g} = q_{i,g}.
+%  \end{split}
+%\end{equation}
 \begin{equation}
   \label{eq:pCMFD-rearrange}
   \begin{split}
-  \left(-\tild_{i-\hzi,g}-\dd^+_{i-\hzi,g}\right)&\phi_{i-\hzi,g} \\
-  + \left( \tild_{i+\hzi,g} + \dd^+_{i+\hzi,g}+ \tild_{i-\hzi,g} + \sigma_{i,g}\right)&\phi_{i,g} \\
-  + \left( -\tild_{i+\hzi,g} - \dd^-_{i+\hzi,g}\right)&\phi_{i+1,g} = q_{i,g}.
+  \left(-\tild_{i-\hzi,g}+\dd^+_{i-\hzi,g}\right)&\phi_{i-1,g} \\
+  + \left( \tild_{i+\hzi,g} - \dd^+_{i+\hzi,g} + \tild_{i-\hzi,g} + \dd^-_{i-\hzi,g} + \sigma_{i,g}\right)&\phi_{i,g} \\
+  + \left( -\tild_{i+\hzi,g} - \dd^-_{i+\hzi,g}\right)&\phi_{i+1,g} = q_{i,g},
   \end{split}
 \end{equation}
+with $\tild_{i+\hzi,g} = \left. 2D_{i+\hzi,g} \middle/ (\dx_{i+1}+\dx_{i})\right.$. The diffusion current is not halved at the boundary, using only \eq{eq:delta-D-pCMFDm} or \eq{eq:delta-D-pCMFDp} at the left and at the right boundaries, respectively. Indeed, the implementation of CMFD can be upgraded to support the pCMFD scheme with minimal changes.
 
 In a weakly absorbing medium and several mean free paths away from the boundary or a strong absorber, all correction factors $\delta D^\pm$ are expected to vanish and the net current must be fully reproduced by the diffusion current. Of course, this must be verified by the classic CMFD scheme too.
 
