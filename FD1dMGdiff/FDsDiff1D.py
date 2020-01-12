@@ -88,6 +88,7 @@ class input_data:
         self.xs_media, self.media = xs_media, media
         self.check_input()
         self.compute_cell_width()
+        self.compute_mid_cell_coordinate()
         self.compute_cell_volumes()
 
     @property
@@ -115,6 +116,10 @@ class input_data:
     
     def compute_cell_width(self):
         self.Di = self.xi[1:] - self.xi[:-1]
+    
+    def compute_mid_cell_coordinate(self):
+        self.xm = (self.xi[1:] + self.xi[:-1]) / 2.
+    
     
     def compute_cell_volumes(self):
         self.Vi = compute_cell_volumes(self.xi, geo=self.geometry_type)
@@ -657,7 +662,7 @@ def compute_D(Di, flx, pJ, BC=(0, 0), zero=1.e-6, chk=False):
         if not np.allclose(Jcmp, J[:, 1:-1]):
             lg.debug("Computed/input currents mismatch")
             lg.debug('Jout', Jcmp)
-            ld.debug('Jin ', J[:, 1:-1])
+            lg.debug('Jin ', J[:, 1:-1])
         JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])
         JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])
         if not np.allclose(JL, J[:, 0]):
@@ -884,11 +889,11 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     lg.info("Initial value of k was %13.6g." % kinit)
     if filename is not None:
         # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
-        np.save(filename + ".npy", [k_save, flx_save], allow_pickle=True)
+        np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD], allow_pickle=True)
         # np.save(filename.replace('kflx','err'), [kerr_save, ferr_save], \
-                  allow_pickle=True)
+        #          allow_pickle=True)
         # np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD], \
-                  allow_pickle=True)
+        #          allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
             i = 0
             while k_save[i] >= 0:

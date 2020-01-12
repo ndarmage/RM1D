@@ -63,7 +63,7 @@ import warnings as wrn
 import numpy as np
 from scipy.special import roots_legendre, legendre
 
-sys.path.append('..XFD1dMGdiff'.replace('X', os.path.sep))
+sys.path.append('../..XFD1dMGdiff'.replace('X', os.path.sep))
 from FDsDiff1D import input_data, solver_options, unfold_xs
 
 
