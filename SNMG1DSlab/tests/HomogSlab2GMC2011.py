@@ -8,8 +8,9 @@ This test case runs the 2G homogeneous slab problem from [Tomatis2011].
    Mathematics and Computational Methods Applied to Nuclear Science and
    Engineering (M&C 2011), Rio de Janeiro, RJ, Brazil, May 8-12, 2011.
 """
-import sys
+import sys, os
 sys.path.append('..')
+sys.path.append('..X..XFD1dMGdiff'.replace('X', os.path.sep))
 from data.homog2GMC2011 import *
 from snmg1dslab import input_data, solver_options, quad_data
 import numpy as np
@@ -17,12 +18,10 @@ import numpy as np
 # comment for Roy: please, check the following bacause it should be redundant
 # after import
 
-L = 21.5 # Core width
-I = 200 # No. of spatial cells
+L = 21.5  # Core width
+I = 100  # No. of spatial cells
 xi = np.linspace(0, L, I+1)  # equidistant mesh      
 # definition of the spatial mesh
-xm = (xi[1:] + xi[:-1]) / 2.
-dx = xi[1:] - xi[:-1]
 
 geometry_type = 'slab'
 
@@ -38,8 +37,7 @@ media = [['HM', L]]  # i.e. homogeneously filled
 LBC, RBC = 0, 0
 
 # Initiate inpur data object
-Homog2GSlab_data = input_data(xs_media, media, xi, xm, dx, geometry_type, LBC, RBC)
-
+Homog2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 # Initiate solver options object
 slvr_opts = solver_options()
 
