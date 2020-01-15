@@ -19,7 +19,7 @@ import numpy as np
 # after import
 
 L = 21.5 # Core width
-I = 100 # No. of spatial cells
+I = 400 # No. of spatial cells
 xi = np.linspace(0, L, I+1)  # equidistant mesh      
 # definition of the spatial mesh
 
@@ -58,6 +58,6 @@ if __name__ == "__main__":
                                                         Homog2GSlab_data.I,
                                                         Homog2GSlab_data.xi[-1],
                                                         qdata.N)
-    np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
+    np.save(basefilen + ".npy", np.array([[k], flxm]), allow_pickle=True)
     #np.savez(basefilen + ".npz", k=k, flxm=flxm)
     

@@ -838,16 +838,16 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         pJ_tran = compute_tran_currents(flxd, k, Di, xs, BC)
         # Remind that Jp, Jm = *pJ_tran, J = Jp - Jm
 
-        if slvr_opts.CMFD:
+        #if slvr_opts.CMFD:
             # compute the currents by diffusion and finite differences
-            J_diff = compute_diff_currents(flxd, Db, Di, BC)
+        J_diff = compute_diff_currents(flxd, Db, Di, BC)
             # compute the corrective delta-diffusion-coefficients
-            dD = compute_delta_D(flxd, J_diff, pJ_tran, slvr_opts.pCMFD)
-        else:
+        dD = compute_delta_D(flxd, J_diff, pJ_tran, slvr_opts.pCMFD)
+        #else:
             # print('before',Db)
-            Db, dD = compute_D(Di, flx, pJ_tran, BC), None
+        #    Db, dD = compute_D(Di, flx, pJ_tran, BC), None
             # print('after', Db)
-            xs[-1] = Db  # update bnd D coeffs
+        #    xs[-1] = Db  # update bnd D coeffs
 
         flxold, kold = np.array(flx, copy=True), k
         lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
