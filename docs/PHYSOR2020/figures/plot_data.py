@@ -4,7 +4,15 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+from matplotlib import gridspec
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
 from matplotlib.ticker import FormatStrFormatter
+import matplotlib.ticker as mtick
+#from matplotlib.ticker import ScalarFormatter
+#class ScalarFormatterForceFormat(ScalarFormatter):
+#    def _set_format(self,vmin,vmax):  # Override function that finds format to use.
+#        self.format = "%1.2f"  # Give format here
+
 from matplotlib import rc
 sys.path.append('..')
 
@@ -25,18 +33,20 @@ plot_flx      = False
 Plot_flx_cvg  = False
 Plot_dD       = False
 Plot_err      = False
-Plot_k        = True
+Plot_k        = False
+plot_flx_zoom = False
+Plot_rho      = True
 
 I = 400 # No. of mesh points
 dx = 21.5/I
-itr = 5 # No. of iterations
+itr = 250 # No. of iterations
 #ccng = 3 # Core configuration (Rahnema1997)
 # ------ Load flx_RM? ------
 plot_RM = True
 if plot_RM:
     ''' Upload one file '''
-    path_RM_flx_file1 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_CMFD_I400_ritr5.npy"
-    path_RM_flx_file2 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_pCMFD_I400_ritr5.npy"
+    path_RM_flx_file1 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_CMFD_I400_ritr250.npy"
+    path_RM_flx_file2 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_pCMFD_I400_ritr250.npy"
     
         #data = np.load(path_RM_flx_file)
     k_RM1, flx_RM1, xi1, st, dD1 = np.load(path_RM_flx_file1,allow_pickle=True)
@@ -59,8 +69,8 @@ if plot_SN:
 
     # ------ Normalization of flxm - by reaction rate ------
     RR_SN = sum(np.multiply(flxm,st).flatten())
-    RR_RM2 = sum(np.multiply(flx_RM2[:,:,-1],st).flatten())
-    flx_SN = (RR_RM2/RR_SN)*flxm
+    RR_RM1 = sum(np.multiply(flx_RM1[:,:,-1],st).flatten())
+    flx_SN = (RR_RM1/RR_SN)*flxm
        
 # ------ General ------
 xim = (xi[1:] + xi[:-1]) / 2.# mid-cell points
@@ -83,17 +93,18 @@ if plot_flx:
     for g in range (0,G):
         ax.set_prop_cycle(default_cycler)
         if plot_RM:
-            ax.plot(xim, (flx_RM1[g,:,-1] - flx_RM2[g,:,-1])/flx_RM1[g,:,-1]*100,label='$RM$' if g == 0 else "") # RM
-            #ax.plot(xim, flx_SN[g,0,:],label='$SN$' if g == 0 else "") # SN
+            ax.plot(xim[I//2:-1], flx_RM1[g,I//2:-1,-1],label='$RM-CMFD$' if g == 0 else "") # CMFD
+            ax.plot(xim[I//2:-1], flx_RM2[g,I//2:-1,-1],label='$RM-pCMFD$' if g == 0 else "") # pCMFD
+            
             #ax.plot(xim, flx_D[g,:],label='$D_{0}$' if g == 0 else "")  # Diffusion
 
-#        if plot_SN:
+        if plot_SN:
 #            ax.plot(xim, flx_SN[g,:],label='$S16$' if g == 0 else "")
-#        
+            ax.plot(xim[I//2:-1], flx_SN[g,I//2:-1],label='$SN$' if g == 0 else "") # SN
     
     plt.xlabel(r'$x$ $[cm]$',fontsize=fsz)
     plt.ylabel(r'$\phi$ $[AU]$',fontsize=fsz) 
-    plt.xlim(xi[0], xi[-1])
+    #plt.xlim(xi[0], xi[-1])
     #plt.ylim(0, )
     
 #    ax.annotate("Fast",fontsize=fsz,
@@ -112,7 +123,7 @@ if plot_flx:
     plt.grid(True,'both','both')
     ax.legend(loc='upper right',fontsize=fsz,ncol=1)
     
-    filename = 'Tomatis2011_pCMFD_flx_%d_RMitr%d.pdf' %(I,itr)
+    filename = 'Tomatis2011_flx_%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
     #plt.show()
     os.system("pdfcrop %s %s" % (filename,filename))
@@ -121,7 +132,7 @@ if plot_flx:
 # ================  plot flux convergence ================ #
 # ====================================================== #
 if Plot_flx_cvg:
-    J = [1,2,3,4,5] # No. of itr to plot
+    J = [0,1,2,5,10,25,50,150,250] # No. of itr to plot
 
     # Optical length
     tau_m = np.zeros((G,I))
@@ -129,12 +140,15 @@ if Plot_flx_cvg:
     for g in range (0,G):
         tau_m[g,:] = xim * st[g,:]
 
-    dev_flx = np.zeros((G,I,np.size(J)))
+    #dev_flx_CMFD = np.zeros((G,I,np.size(J)))
+    dev_flx_pCMFD = np.zeros((G,I,np.size(J)))
     
     # Calculate flux deviation
     for j in range (0,np.size(J)):
-        dev_flx[:,:,j] = (flx_RM2[:,:,J[j]] - flx_SN[:,:]) / flx_SN[:,:] *100
+        #dev_flx_CMFD[:,:,j] = (flx_RM1[:,:,J[j]] - flx_SN[:,:]) / flx_SN[:,:] *100
+        dev_flx_pCMFD[:,:,j] = (flx_RM2[:,:,J[j]] - flx_SN[:,:]) / flx_SN[:,:] *100
 
+    
     plt.figure(figsize=(14, 5)) 
     fig, ax = plt.subplots(G,figsize=(14, 9))
     
@@ -144,19 +158,20 @@ if Plot_flx_cvg:
         ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
         ax[g].set_prop_cycle(default_cycler)
         for j in range (0,np.size(J)):
-            ax[g].plot(tau_m[g,0:I//2], dev_flx[g,0:I//2,j],label='it-%d'%J[j])
+            #ax[g].plot(tau_m[g,0:I//2], dev_flx_CMFD[g,0:I//2,j],label='it-%d'%J[j])
+            ax[g].plot(tau_m[g,0:I//2], dev_flx_pCMFD[g,0:I//2,j],label='it-%d'%J[j])
         
         ax[g].set_xlim(tau_m[g,0], tau_m[g,-1])
         ax[g].set_xscale('log')
         ax[g].grid(True,'both','both')
-        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=np.size(J))
+        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=np.size(J)//2)
     
     ax[0].set_ylabel(r'$\Delta \phi_{1} $ [\%]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\Delta \phi_{2} $ [\%]',fontsize = fsz)        
     
     plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)
     
-    filename = 'Tomatis2011_CMFD_cvg_I%d_RMitr%d.pdf' %(I,itr)
+    filename = 'Tomatis2011_cvg_pCMFD_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
     #plt.show()
     os.system("pdfcrop %s %s" % (filename,filename))
@@ -174,16 +189,20 @@ if Plot_dD:
         ax[g].tick_params(axis='both', which='major', labelsize=fsz)
         ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
         ax[g].set_prop_cycle(default_cycler)
+        ax[g].plot(xi, dD1[g,:],label='CMFD')
         ax[g].plot(xi, dD2[0][g,:],label='dDp')
         ax[g].plot(xi, dD2[1][g,:],label='dDm')
+        
+        
         ax[g].set_xlim(xi[0], xi[-1])
         ax[g].grid(True,'both','both')
-        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=1)
+        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=3)
     
     ax[0].set_ylabel(r'$\delta D_{1}^+ $ [AU]',fontsize = fsz)        
-    ax[1].set_ylabel(r'$\delta D_{2}_- $ [AU]',fontsize = fsz)        
+    ax[1].set_ylabel(r'$\delta D_{2}^- $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$x$ [cm]',fontsize=fsz)
-    filename = 'Tomatis2011_LBC0RBC0_pCMFD_dD_I%d_RMitr%d.pdf' %(I,itr)
+    
+    filename = 'Tomatis2011_dD_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=150,bbox_inches='tight')
     os.system("pdfcrop %s %s"%(filename,filename))
 #    plt.show()
@@ -193,31 +212,16 @@ if Plot_dD:
 # ============================================================== #
 if Plot_err: 
 
-    flx_err_D = {'ferrD0':((flx_RM['flx0'.format(i)][:,:,0] - 
-                        flx_SN['flx0'.format(i)])/flx_SN['flx0'.format(i)])*100}
-    flx_err_RM = {'ferrRM0':((flx_RM['flx0'.format(i)][:,:,-1] - 
-                        flx_SN['flx0'.format(i)])/flx_SN['flx0'.format(i)])*100}
+    flx_err_D = (flx_RM1[:,:,0] - flx_SN)/flx_SN*100
+    flx_err_CMFD =(flx_RM1[:,:,-1] -flx_SN)/flx_SN*100
+    flx_err_pCMFD =(flx_RM2[:,:,-1] -flx_SN)/flx_SN*100
 
-    for i in range(1,np.size(I)):
-        flx_err_D['ferrD{}'.format(i)] = ((flx_RM['flx{}'.format(i)][:,:,0] - 
-                        flx_SN['flx{}'.format(i)])/flx_SN['flx{}'.format(i)])*100
-        
-        flx_err_RM['ferrRM{}'.format(i)] = ((flx_RM['flx{}'.format(i)][:,:,-1] - 
-                        flx_SN['flx{}'.format(i)])/flx_SN['flx{}'.format(i)])*100
-    
-    taug = np.zeros((G,I[0]))
-    
-    for g in range (0,G):
-        taug[g,:] = xim['xim0'][0:I[0]] * st[g,0:I[0]]                   
-    tau_m = {'tau0':taug}    
-    
+    # Optical length
+    tau_m = np.zeros((G,I))
     #tau_i = np.zeros((G,I))
-    for i in range (1,np.size(I)):
-        taug = np.zeros((G,I[i]))
-        for g in range (0,G):
-            taug[g,:] = xim['xim{}'.format(i)][0:I[i]] * st[g,0:I[i]]
-        tau_m['tau{}'.format(i)] = taug
-    
+    for g in range (0,G):
+        tau_m[g,:] = xim * st[g,:]
+        
     plt.figure(figsize=(14, 5)) 
     fig, ax = plt.subplots(G,figsize=(16, 10))
     
@@ -226,10 +230,9 @@ if Plot_err:
         for i in range (0,np.size(I)):
             ax[g].tick_params(axis='both', which='major', labelsize=fsz)
             ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-            ax[g].plot(tau_m['tau{}'.format(i)][g,0:20], flx_err_D['ferrD{}'.format(i)][g,0:20],label='D%.1f'%L[i] if g == 0 else "")
-            ax[g].plot(tau_m['tau{}'.format(i)][g,0:20], flx_err_RM['ferrRM{}'.format(i)][g,0:20],label='RM%.1f'%L[i] if g == 0 else "")
-            #ax[g].plot(xim['xim{}'.format(i)][0:20], flx_err_D['ferrD{}'.format(i)][g,0:20],label='D%.1f'%L[i] if g == 0 else "")
-            #ax[g].plot(xim['xim{}'.format(i)][0:20], flx_err_RM['ferrRM{}'.format(i)][g,0:20],label='RM%.1f'%L[i] if g == 0 else "")
+            ax[g].plot(tau_m[g,0:20], flx_err_D[g,0:20],label='D' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:20], flx_err_CMFD[g,0:20],label='CMFD' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:20], flx_err_pCMFD[g,0:20],label='pCMFD' if g == 0 else "")
             ax[g].grid(True,'both','both')
             #ax[g].set_xscale('log')
             ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
@@ -238,23 +241,21 @@ if Plot_err:
     ax[1].set_ylabel(r'$\Delta \phi_{2} $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)
     
-    fig.savefig('MC2011_Homog_Width_LBC0RBC0_RMitr%d.pdf' %(itr),dpi=300,bbox_inches='tight')
-    #os.system("pdfcrop MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf MC2011_Homog_WD_LBC0RBC0_I%d_L%d_itr%d.pdf"%(I,L,itr,I,L,itr))
-#    plt.show()
-    
-    
-    
-    
+    filename = 'Tomatis2011_flx_err_I%d_RMitr%d.pdf' %(I,itr)
+    fig.savefig(filename,dpi=300,bbox_inches='tight')
+    os.system("pdfcrop %s %s" %(filename,filename))    
     
 # ============================================================== #
-# ================== Flux differences (Error) ================== #
+# =========================== k_eff ============================ #
 # ============================================================== #
 if Plot_k:     
     
     fig, ax = plt.subplots(figsize=(10,2.5))
     
     ax.tick_params(axis='both', which='major', labelsize=15)
-    It = np.array([0,1,2,3,4,5])
+    
+    It = np.array([0,1,2,5,10,25,50,75,100,150,200,250])
+    
     ax.yaxis.set_major_formatter(FormatStrFormatter('%.5f'))
     ax.tick_params(axis='both', which='minor', labelsize=15)
     ax.set_xlabel('Iteration No.',fontsize=18)
@@ -265,11 +266,126 @@ if Plot_k:
     ax.yaxis.grid(color='gray', linestyle='dashed')
     ax.xaxis.grid(color='gray', linestyle='dashed')
     plt.yticks(np.linspace(k_RM1[0],k_RM1[-1],4))
-    ax.scatter(It, k_RM1, color='r', marker='x', label='CMFD')
-    ax.scatter(It, k_RM2, color='b',marker='^', label='pCMFD')
+    
+    for j in range(0,np.size(It)):
+        ax.scatter(It[j], k_RM1[j], color='r', marker='x', label='CMFD' if j == 0 else "" )
+        ax.scatter(It[j], k_RM2[j], color='b',marker='^', label='pCMFD' if j == 0 else "")
+    
     ax.legend(loc='lower right',fontsize=fsz//2)
     
-    filename = 'Tomatis2011_k_over_itr_10RMit.pdf'
+    filename = 'Tomatis2011_k_over_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
     os.system("pdfcrop %s %s" %(filename,filename))
     
+# ================================================== #
+# ================== Flux zoon-in ================== #
+# ================================================== #
+if plot_flx_zoom:
+    fig = plt.subplots(figsize=(14,11))
+    ax1 = plt.subplot(2,1,1)
+    ax1.tick_params(axis='both', which='major', labelsize=24)
+    ax1.tick_params(axis='both', which='minor', labelsize=24)
+    plt.plot(xim[199::5], flx_RM1[0,199::5,-1],':r^',label='RM-CMFD')
+    plt.plot(xim[199:],   flx_RM1[0,199:,0],'g--',label='$D_0$')
+    plt.plot(xim[199::5], flx_RM2[0,199::5,-1],'b-*',label='RM-pCMFD')
+    plt.plot(xim[199:],   flx_SN[0,199:],'k-',label='S16')
+    #plt.yticks(np.linspace(-0.1,0.1,5)) # x-axis valus represent fuel assembly
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    plt.ylabel(r'$\phi_1$ $[AU]$',fontsize=24)
+    plt.grid(True,'both','both')
+    ax1.legend(loc='lower left',fontsize=20,ncol=4)
+    #plt.yticks(np.linspace(6, 50,5)) # apply the y-limits
+    plt.ylim(min(flx_SN[0,:]-0.5), max(flx_SN[0,:])+1.5)
+    # -------------------- 1st zoomin --------------------
+    axins1 = zoomed_inset_axes(ax1, 3.3, loc="upper right")
+    axins1.plot(xim[379::5], flx_RM1[0,379::5,-1],':r^')
+    axins1.plot(xim[379:],   flx_RM1[0,379:,0],'g--')
+    axins1.plot(xim[379::5], flx_RM2[0,379::5,-1],'b-*')
+    axins1.plot(xim[379:],   flx_SN[0,379:],'k-')
+    axins1.set_xlim(xim[383], xim[-1]+0.05) # apply the x-limits
+    axins1.set_ylim(flx_SN[0,380]-0.45, flx_SN[0,-1]+0.5) # apply the y-limits
+    plt.grid(True,'both','both')
+    plt.yticks(visible=True,fontsize=15)
+    #plt.xticks()
+    plt.xticks(np.linspace(xi1[380],xi1[-1],5),visible=True,fontsize=15)
+    axins1.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
+
+    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    mark_inset(ax1, axins1, loc1=3, loc2=4, fc="none", ec="0.6")
+    # -------------------- 2nd plot --------------------
+    ax2 = plt.subplot(2,1,2, sharex=ax1)
+    ax2.tick_params(axis='both', which='major', labelsize=24)
+    ax2.tick_params(axis='both', which='minor', labelsize=24)
+    plt.plot(xim[199::5], flx_RM1[1,199::5,-1],':r^',label='RM-CMFD')
+    plt.plot(xim[199:],   flx_RM1[1,199:,0],'g--',label='$D_0$')
+    plt.plot(xim[199::5], flx_RM2[1,199::5,-1],'b-*',label='RM-pCMFD')
+    plt.plot(xim[199:],   flx_SN[1,199:],'k-',label='S16')
+    plt.setp(ax2.get_xticklabels(), visible=True)
+    plt.setp(ax2.get_yticklabels(), visible=True)
+    plt.xlim(xi1[200], xi1[-1])
+    plt.ylim(min(flx_SN[1,:]-0.1), max(flx_SN[1,:])+0.2) 
+    plt.ylabel(r'$\phi_2$ $[AU]$',fontsize=24)
+    plt.grid(True,'both','both')
+    ax2.legend(loc='lower left',fontsize=20,ncol=4)
+    plt.xlabel(r'$x$ $[cm]$',fontsize=28)
+    plt.xticks(np.linspace(xi1[200],xi1[-1],10))
+    # -------------------- 2nd zoomin --------------------
+    axins2 = zoomed_inset_axes(ax2, 4.5, loc="upper right")
+    axins2.plot(xim[384::5], flx_RM1[1,384::5,-1],':r^')
+    axins2.plot(xim[384:],   flx_RM1[1,384:,0],'g--')
+    axins2.plot(xim[384::5], flx_RM2[1,384::5,-1],'b-*')
+    axins2.plot(xim[384:],   flx_SN[1,384:],'k-')
+    
+    axins2.set_xlim(xi1[388], xi1[-1]) # apply the x-limits
+    plt.grid(True,'both','both')
+    plt.yticks(visible=True,fontsize=15)
+    plt.xticks(np.linspace(xi1[385],xi1[-1],5),visible=True,fontsize=15)
+    axins2.xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
+    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    mark_inset(ax2, axins2, loc1=3, loc2=4, fc="none", ec="0.6")
+    
+    
+    plt.subplots_adjust(hspace=.1)
+    
+    
+    filename = 'Tomatis2011_flx_I%d_RMitr%d.pdf' %(I,itr)
+    plt.savefig(filename,dpi=300,bbox_inches='tight')
+    os.system("pdfcrop %s %s" %(filename,filename))
+
+
+# ============================================================ #
+# ===================== Delta rho [pcm] ====================== #
+# ============================================================ #
+if Plot_rho:     
+    drho1 = np.zeros(itr+1)
+    drho2 = np.zeros(itr+1)
+    
+    drho1 = (- 1./k_RM1 + 1/float(k_SN) )*1e5
+    drho2 = (- 1./k_RM2 + 1/float(k_SN) )*1e5
+    RMitr = np.linspace(1,200,200)
+    fig, ax = plt.subplots(figsize=(10,2.5))
+    
+    ax.tick_params(axis='both', which='major', labelsize=15)
+    
+    ax.yaxis.set_major_formatter(FormatStrFormatter('%.5f'))
+    ax.tick_params(axis='both', which='minor', labelsize=15)
+    ax.set_xlabel('Iteration No.',fontsize=18)
+    ax.set_ylabel('$\Delta\rho [pcm]$',fontsize=18)
+    ax.tick_params(axis='y')
+    ax.set_axisbelow(True) 
+    #plt.ylim(min(k_RM1)-0.0005, max(k_RM1)+0.0005)
+    ax.yaxis.grid(color='gray', linestyle='dashed')
+    ax.xaxis.grid(color='gray', linestyle='dashed')
+    #plt.yticks(np.linspace(k_RM1[0],k_RM1[-1],4))
+    
+    for j in range(0,np.size(It)):
+        ax.scatter(RMitr, drho1, color='r--', marker='x', label='CMFD')
+        ax.scatter(RMitr, drho2, color=':b',marker='^', label='pCMFD')
+    
+    ax.legend(loc='lower right',fontsize=fsz//2)
+    
+    filename = 'Tomatis2011_rho_I%d_RMitr%d.pdf' %(I,itr)
+    fig.savefig(filename,dpi=300,bbox_inches='tight')
+    os.system("pdfcrop %s %s" %(filename,filename))
+    
+
