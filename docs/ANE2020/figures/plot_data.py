@@ -36,7 +36,7 @@ Plot_err      = False
 Plot_k        = False
 plot_flx_zoom = True
 Plot_rho      = False
-
+Plot_LB       = False
 I = 400 # No. of mesh points
 dx = 21.5/I
 itr = 250 # No. of iterations
@@ -358,43 +358,62 @@ if plot_flx_zoom:
     
     plt.figure(figsize=(14, 5)) 
     fig, ax = plt.subplots(G,figsize=(14, 9))
-    
+    #axins = 
+    #axins = fig.add_subplot(ax[G-1], 3.3)
     for g in range (0,G):
     
         ax[g].tick_params(axis='both', which='major', labelsize=fsz)
         ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
         ax[g].set_prop_cycle(default_cycler)
         
-        ax[g].plot(tau_m[g,0:I//2+1], flx_RM1[g,0:I//2+1,-1],label='RM-CMFD')
-        ax[g].plot(tau_m[g,0:I//2+1], flx_RM1[g,0:I//2+1,0],label='$D_0$')
-        ax[g].plot(tau_m[g,0:I//2+1], flx_RM2[g,0:I//2+1,-1],label='RM-pCMFD')
-        ax[g].plot(tau_m[g,0:I//2+1], flx_SN[g,0:I//2+1],label='S16')
-        ax[g].set_xticks(tau_m[g,0:(I//2+1):25])
+        ax[g].plot(tau_m[g,I//2::5], flx_RM1[g,I//2::5,-1],label='RM-CMFD')
+        ax[g].plot(tau_m[g,I//2:], flx_RM1[g,I//2:,0],label='$D_0$')
+        ax[g].plot(tau_m[g,I//2::5], flx_RM2[g,I//2::5,-1],label='RM-pCMFD')
+        ax[g].plot(tau_m[g,I//2:], flx_SN[g,I//2:],label='S16')
+        ax[g].set_xticks(tau_m[g,199::25])
         #ax[g].set_xticks(tau_m[g,I//2],tau_m[g,-1])
-        ax[g].set_xlim(tau_m[g,0], tau_m[g,I//2+1])
+        ax[g].set_xlim(tau_m[g,199], tau_m[g,-1])
         ax[g].grid(True,'both','both')
         ax[g].legend(loc='lower center',fontsize=fsz//1.5,ncol=4)
         ax[g].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-        #axins[g] = zoomed_inset_axes(ax[g], 3.3, loc="upper right")
-        #axins[g].plot(tau_m[g,379::5], flx_RM1[g,379::5,-1],':r^')
-        #axins[g].plot(tau_m[g,379:],   flx_RM1[g,379:,0],'g--')
-        #axins[g].plot(tau_m[g,379::5], flx_RM2[g,379::5,-1],'b-*')
-        #axins[g].plot(tau_m[g,379:],   flx_SN[g,379:],'k-')
-        #axins[g].set_xlim(tau_m[g,383], tau_m[g,-1]+0.05) # apply the x-limits
-        #axins[g].set_ylim(flx_SN[g,380]-0.45, flx_SN[g,-1]+0.5) # apply the y-limits
-        plt.grid(True,'both','both')
+        
+        
         plt.yticks(visible=True,fontsize=15)
         #plt.xticks()
         #plt.xticks(np.linspace(xi1[380],xi1[-1],5),visible=True,fontsize=15)
         #axins[g].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
     
-        #from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-        #mark_inset(ax[g], axins[g], loc1=3, loc2=4, fc="none", ec="0.6")
-    
+     
     ax[0].set_ylabel(r'$\phi_{1} $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\phi_{2} $ [AU]',fontsize = fsz)        
+    plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)  
     
-    plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)
+    
+    axins0 = zoomed_inset_axes(ax[0], 2.5, loc="upper right")
+    axins0.plot(tau_m[0,0:19:5], flx_RM1[0,0:19:5,-1],':r^')
+    axins0.plot(tau_m[0,0:19],   flx_RM1[0,0:19,0],'g--')
+    axins0.plot(tau_m[0,0:19:5], flx_RM2[0,0:19:5,-1],'b-*')
+    axins0.plot(tau_m[0,0:19],   flx_SN[0,0:19],'k-')
+    axins0.set_xlim(tau_m[0,384], tau_m[0,-1]+0.05) # apply the x-limits
+    axins0.set_ylim(flx_SN[0,384], flx_SN[0,-1]) # apply the y-limits
+    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    mark_inset(ax[0], axins0, loc1=3, loc2=4, fc="none", ec="0.6")
+        
+    
+    plt.grid(True,'both','both')
+    axins1 = zoomed_inset_axes(ax[1], 2.5, loc="upper right")
+    axins1.plot(tau_m[1,384::5], flx_RM1[1,384::5,-1],':r^')
+    axins1.plot(tau_m[1,384:],   flx_RM1[1,384:,0],'g--')
+    axins1.plot(tau_m[1,384::5], flx_RM2[1,384::5,-1],'b-*')
+    axins1.plot(tau_m[1,384:],   flx_SN[1,384:],'k-')
+    axins1.set_xlim(tau_m[1,384], tau_m[1,-1]+0.05) # apply the x-limits
+    axins1.set_ylim(flx_SN[1,384], flx_SN[1,-1]) # apply the y-limits
+    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    mark_inset(ax[1], axins1, loc1=3, loc2=4, fc="none", ec="0.6")
+    
+    plt.grid(True,'both','both')
+
+   
     
     
     filename = 'Tomatis2011_flx_I%d_RMitr%d.pdf' %(I,itr)
@@ -438,8 +457,44 @@ if Plot_rho:
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
     ax.legend(loc='upper right',fontsize=fsz//2)
     plt.xlim(RMitr[0], RMitr[-1]+10) 
+    
     filename = 'Tomatis2011_rho_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
     os.system("pdfcrop %s %s" %(filename,filename))
-    
 
+
+# ============================================================ #
+# =================== Left Boundary err % ==================== #
+# ============================================================ #
+if Plot_LB:     
+    
+    
+    RMitr = np.linspace(1,250,250)
+    
+    plt.figure(figsize=(14, 5)) 
+    fig, ax = plt.subplots(G,figsize=(16, 10))
+    
+    for g in range (0,G):
+        flx_err_CMFD =(flx_RM1[g,0,1:] -flx_SN[g,0])/flx_SN[g,0]*100
+        flx_err_pCMFD =(flx_RM2[g,0,1:] -flx_SN[g,0])/flx_SN[g,0]*100
+        ax[g].set_prop_cycle(default_cycler)
+        for i in range (0,np.size(I)):
+            ax[g].tick_params(axis='both', which='major', labelsize=fsz)
+            ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
+            ax[g].set_xlim(RMitr[0], RMitr[-1]+10) 
+            ax[g].plot(RMitr, flx_err_CMFD,label='CMFD' if g == 0 else "")
+            ax[g].plot(RMitr, flx_err_pCMFD,label='pCMFD' if g == 0 else "")
+            ax[g].grid(True,'both','both')
+            ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
+            
+            #ax[g].set_xticks(RMitr[0:(I//2+1):25])
+    
+    ax[0].set_ylabel(r'$\Delta \phi_{1} $ [AU]',fontsize = fsz)        
+    ax[1].set_ylabel(r'$\Delta \phi_{2} $ [AU]',fontsize = fsz)        
+    plt.xlabel('Iteration No.',fontsize=fsz)
+    
+    
+    filename = 'Tomatis2011_flx_err_LB_I%d_RMitr%d.pdf' %(I,itr)
+    fig.savefig(filename,dpi=300,bbox_inches='tight')
+    os.system("pdfcrop %s %s" %(filename,filename))    
+    
