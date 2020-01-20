@@ -134,7 +134,9 @@ if __name__ == "__main__":
     lg.info("*** Solve the Rahnema 1997 problem ***")
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
-    slvr_opts = solver_options(ritmax=10)
+    ritmax = 10
+    CMFD, pCMFD = True, False
+    slvr_opts = solver_options(ritmax=ritmax, CMFD=CMFD, pCMFD=pCMFD)
     filename = "../output/kflx_Rahnema1997_C%d_LBC%dRBC%d_I%d_itr%d" % \
                (core_config, LBC, RBC, I, ritmax)
     flx, k = run_calc_with_RM_its(Heter2GSlab_data, slvr_opts, filename)

@@ -1,0 +1,6 @@
+In order to show changes in a revised marked copy, execute the following commands.
+
+git show 752056af1e0983f1b638c68c8a4486920b33a48b:./Gross-EPJP-2019.tex > old_version.tex
+latexdiff --append-context2cmd="abstract"  old_version.tex Gross-EPJP-2019.tex > marked_copy.tex
+
+and compile marked_copy.tex as usual.
