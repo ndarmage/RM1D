@@ -200,9 +200,9 @@ In 2004, Ronen~\cite{Ronen-2004} suggested to derive corrected diffusion coeffic
 
 Since these accurate estimates of the currents are based on a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficients in the global calculation. 
 \begin{equation}\label{eq:RM-it}
-D^{(k+1)}\rE = - \jtr^{(k)}\rE \left[\bnabla\phi^{(k)}\rE\right]^{-1} \,\, ,
+D^{(k+1)}\rE = -\frac{\jtr^{(k)}\rE}{\bnabla\phi^{(k)}\rE} \,\, ,
 \end{equation}
-where $k$ is the iteration index. The use of a tensor notation is needed for the diffusion coefficient in general multidimensional problems.
+where $k$ is the iteration index.
 
 The motivation for this method was to overcome the inherent limitation of Fick's law requiring smooth flux gradients and thus small neutron absorption rate with respect to scattering in general. Nevertheless, isotropic scattering remained as a basic postulate.
 For example, in a one-dimensional homogeneous slab with void boundary conditions, Eq.~\eqref{eq:RM-it} takes the following form~\cite{Ronen-2004} 
@@ -224,31 +224,48 @@ This technique, largely adopted in the literature of nodal methods~\cite{Smith-1
 \label{sec:Peierls}
 
 There are several ways to drive the integral expression for the flux in slab geometry. Most of them start with assuming homogeneous and isotropic scattering and sources, yielding the \emph{Peierls equation} \cite{Davison-1957,Case-1967,Bell-1970,Pomraning-1973,Duderstadt-1979,Lewis-1984}. The derivation of expression for slab geometry (of thickness $a$) is straightforward, yielding
-\begin{eqnarray}\label{eq:flux-slab-l-0-no-bndry-terms}
-\phi(x,E)&=&\frac{1}{2}\int_0^a { dx'
-	E_1\left[\sigma(E)\lvert x-x'\rvert\right] q(x',E) 
-}\nonumber \\
-&=& \frac{1}{2}\int_0^a { \!\!\! dx'
-	E_1\left[\sigma(E)\lvert x-x'\rvert\right]
-	\left[
-	\int_0^\infty { \!\!\! dE'
-		\sigma_s(E\leftarrow E')\phi(x',E') 
-	} + S(x',E)
-	\right] 
-} \,\, ,
-\end{eqnarray}
+\begin{equation}\label{eq:flux-slab-l-0-no-bndry-terms}
+\begin{split}
+\phi(x,E)=&\frac{1}{2}\int_0^a { dx'
+	E_1\left[\sigma(E)\lvert x-x'\rvert\right] q(x',E)
+} \text{, with} \\
+q(x',E) =& \int_0^\infty { dE'
+		\sigma_s(E \leftarrow E')\phi(x',E') + S(x',E)
+}
+\end{split}
+\end{equation}
+% commented to overcome an error of latexdiff
+%\begin{eqnarray}\label{eq:flux-slab-l-0-no-bndry-terms}
+%\phi(x,E)&=&\frac{1}{2}\int_0^a { dx'
+%	E_1\left[\sigma(E)\lvert x-x'\rvert\right] q(x',E) 
+%}\nonumber \\
+%&=& \frac{1}{2}\int_0^a { \!\!\! dx'
+%	E_1\left[\sigma(E)\lvert x-x'\rvert\right]
+%	\left[
+%	\int_0^\infty { \!\!\! dE'
+%		\sigma_s(E\leftarrow E')\phi(x',E') 
+%	} + S(x',E)
+%	\right] 
+%} \,\, ,
+%\end{eqnarray}
 where $E_1(x)$ is a first order exponential integral~\cite{Abramowitz-1964}. Note that this expression does not include the contribution of uncollided neutrons originate from the flux at the boundaries.
 
 Another starting point for the derivation of the integral expression for the flux in slab geometry is to directly integrate along a line the transport equation~\cite{Davison-1957,Pomraning-1973,Duderstadt-1979,Lewis-1984}
-\begin{eqnarray}\label{eq:full-ITE-w-bndry-terms}
-\psi(\rr,\OO) &=& \int_0^R { dR'
+\begin{equation}\label{eq:full-ITE-w-bndry-terms}
+\psi(\rr,\OO) = \int_0^R { dR'
 	q(\rr-R'\OO,\OO) e^{-\mcL(\rr,\rr-R'\OO)}
-} 
-%\nonumber \\
-%&+& 
-+\psi(\rr-R\OO,\OO) e^{-\mcL(\rr,\rr-R\OO)}
-\,\, ,
-\end{eqnarray}
+} + \psi(\rr-R\OO,\OO) e^{-\mcL(\rr,\rr-R\OO)},
+\end{equation}
+% commented to avoid an error by latexdiff
+%\begin{eqnarray}\label{eq:full-ITE-w-bndry-terms}
+%\psi(\rr,\OO) &=& \int_0^R { dR'
+%	q(\rr-R'\OO,\OO) e^{-\mcL(\rr,\rr-R'\OO)}
+%} 
+%%\nonumber \\
+%%&+& 
+%+\psi(\rr-R\OO,\OO) e^{-\mcL(\rr,\rr-R\OO)}
+%\,\, ,
+%\end{eqnarray}
 where $\mcL(\rr,\rr-R'\OO)$ is the \emph{optical length}, defined as
 \begin{equation}\label{eq:opl}
 \mcL(\rr,\rr-R'\OO) \equiv 
@@ -294,36 +311,31 @@ The angular dependence of the source and the uncollided boundary flux terms is e
 } \,\, .
 \end{eqnarray}
 The source cross sections are written explicitly as~\cite{Tomatis-2011}
-\begin{equation}\label{eq:src-mmnts}
-\sigma_l(x,E\leftarrow E')dE' = 
-\sigma_{s,l}(x,E\leftarrow E')dE'
-+ \delta_{l0}\frac{\chi(E)}{\keff}\nu\sigma_f(x,E')dE' \,\, 
-\end{equation}
-and the source term is expanded 
-\begin{eqnarray}\label{eq:src}
-Q(x,E,\mu)&=& \sum\limits_{l=0}^\infty {
+\begin{equation}\label{eq:src}
+\begin{split}
+Q(x,E,\mu)=& \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} \int_0^\infty { dE'
 		\sigma_{s,l}(x,E\leftarrow E')\psi_l(x,E')\pl{\mu} 			
 	}
 } 
 + \frac{\chi(E)}{2\keff} \int_0^\infty { dE'
 	\nu\sigma_f(x,E') \psi_0(x,E')
-}  \nonumber \\
-&=&\sum\limits_{l=0}^\infty {
+} \\
+=&\sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} \int_0^\infty { dE'
 		\sigma_l(x,E\leftarrow E')\psi_l(x,E')\pl{\mu} 			
 	}
-} \nonumber \\
-&=&\sum\limits_{l=0}^\infty {
+} \\
+=&\sum\limits_{l=0}^\infty {
 \frac{2l+1}{2} \int_0^\infty { dE'
 	q_l(x,E\leftarrow E')\pl{\mu} 			
 	}
-} \nonumber \\
-&=&\sum\limits_{l=0}^\infty {
+} \\
+=&\sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} q_l(x,E)\pl{\mu} 			
-} 
-\,\, ,
-\end{eqnarray}
+},
+\end{split}
+\end{equation}
 where the source angular moments are defined as
 \begin{equation}\label{eq:q_l}
 q_l(x,E) \equiv \int_0^\infty dE' q_l(x,E\leftarrow E') \equiv 
@@ -345,9 +357,10 @@ q_l(x,E) \equiv \int_0^\infty dE' q_l(x,E\leftarrow E') \equiv
 
 %The independent energy parameter is omitted here for brevity and clarity but restoring it is straightforward.
 %
-In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons coming from the left, i.e., $x'<x$ ($\mu>0$), substitute Eqs.~\eqref{eq:Q-series} in Eq.~\eqref{eq:int-ang-flx-a} and integrate over the angle 
-\begin{eqnarray}\label{eq:phi+}
-\phi^+(x,E)&\equiv& \int_0^1 {d\mu \psi(x,E,\mu)} \nonumber \\
+In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons coming from the left, i.e., $x'<x$ ($\mu>0$), substitute Eqs.~\eqref{eq:Q-series} in Eq.~\eqref{eq:int-ang-flx-a} and integrate over the angle
+\begin{equation}\label{eq:phi+}
+\begin{split}
+\phi^+(x,E) \equiv& \int_0^1 {d\mu \psi(x,E,\mu)} \\
 %&=& \int_0^1 {d\mu \psi(0,\mu) e^{-\mcL(0,x)/\mu} } 
 %+ \int_0^1 {d\mu 
 %	\int_0^x { dx'
@@ -355,21 +368,21 @@ In order to calculate the scalar flux $\phi^+$ at $x$ resulting from neutrons co
 %	}
 %}
 %\nonumber \\
-&=& \sum\limits_{l=0}^\infty {
+=& \sum\limits_{l=0}^\infty {
 	\frac{2l+1}{2} 
 		\left\{\psi_l(0,E) \int_0^1 { d\mu
 		\pl{\mu} e^{-\mcL(0,x,E)/\mu}	
 	}
-	+	\int_0^x {\!\!\! dx'
+	+	\int_0^x { dx'
 		q_l(x',E)
 		\int_0^1 { d\mu
 			\frac{\pl{\mu}}{\mu} e^{-\mcL(x',x,E)/\mu}	
 		}
 	}
 \right\}
-} \,\, .
-\end{eqnarray}
-
+}.
+\end{split}
+\end{equation}
 In order to solve the angular integrals we resort to the following result~\cite{Cengel-1984,Settle-1994}
 \begin{equation}\label{eq:Sni}
 \int_0^1 { 
