@@ -226,14 +226,14 @@ The angular flux from the integral transport equation (with standard notation) i
 \varphi(x, \mu) = \varphi(x_b, \mu) e^{-\tau(x_b, x)/\mu} + \int_{x_0}^x {dx' \frac{q(x', \mu)}{\mu} e^{-\tau(x', x)/\mu}},
 \label{eq:NTE}
 \end{equation}
-with the optical length $\tau(x_1, x_2) = \int_{x_1}^{x_2}{dx' \sigma_t(x')}$. Contrary to other formulations, we do not include $\mu$ in the definition of the optical length to ease the numerical integrations in the following. $x_b = x_{-1/2} = a$ if $\mu > 0$, $x_b = x_{I-1/2} = b$ otherwise. The inclusion of the energy variable in Eq. \ref{eq:NTE} is straightforward; we use hereafter the multi-group theory, writing the source $q_g$ as\footnote{Curly brackets remind the possible use of the $k$-eigenvalue with vanishing external sources.}:
+with the optical length $\tau(x_1, x_2) = \int_{x_1}^{x_2}{dx' \sigma_t(x')}$. Contrary to other formulations, we do not include $\mu$ in the definition of the optical length to ease the numerical integrations in the following. $x_0 = x_{-1/2} = a$ if $\mu > 0$, $x_0 = x_{I-1/2} = b$ otherwise. The inclusion of the energy variable in Eq. \ref{eq:NTE} is straightforward; we use hereafter the multi-group theory, writing the source $q_g$ as\footnote{Curly brackets remind the possible use of the $k$-eigenvalue in case of vanishing external sources.}:
 \begin{equation*}
 q_g = \sum_{g'=1}^G{\left[
   \sum_{l=0}^\infty{ \frac{2l+1}{2}\sigma_{s,l, g' \rightarrow g}(x)P_l(\mu)\varphi_{l,g'}(x)
   + \frac{\chi_g}{2\{k\}} \nu\sigma_{f,g'}(x)\phi_{g'}(x)}\right] + S_g
                  },
 \end{equation*}
-where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that the scalar flux $\phi$ is equal to half of the first moment $\varphi_0$. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1. Hereafter we consider only isotropic sources.
+where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that the scalar flux $\phi$ is equal to the first moment $\varphi_0$. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1. Hereafter we consider only isotropic sources.
 
 Multiplication of Eq. \ref{eq:NTE} by the direction cosine of the neutron velocity $\mu$ and the integration over $[-1, 1]$ provides the expression for the current, see \cite{tomatis2011application}. The integration on $\mu$ yields integral exponential functions by a simple change of variable ($\mu = \pm 1/u$, according to the sign of $\mu$) \cite{AS1964handbook}:
 \begin{equation*}
