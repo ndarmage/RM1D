@@ -43,7 +43,7 @@ if __name__ == "__main__":
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
     ritmax = 10
-    CMFD, pCMFD = False, True
+    CMFD, pCMFD = True, False
     slvr_opts = solver_options(ritmax=ritmax, CMFD=CMFD, pCMFD=pCMFD)
     filename = "./kflx_LBC%dRBC%d_I%d_it%d" % (LBC, RBC, I, ritmax)
     flx, k = run_calc_with_RM_its(Homog2GSlab_data, slvr_opts, filename)
