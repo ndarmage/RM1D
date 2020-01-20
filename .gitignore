@@ -9,3 +9,4 @@ docs/EPJP2019/Gross-EPJP-2019.blg
 *.log
 *.blg
 *.gz
+*.out
