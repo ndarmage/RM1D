@@ -129,7 +129,8 @@ where the diffusion coefficient at the interface is volume-averaged as
 {\Delta_i + \Delta_{i+1}}.
 \end{equation}
 %
-About the RM, more accurate estimates of the net current come from the integral expressions of \eqs{eq:par-curr-calc}, still using the scalar flux in the emission source $q_{i,g}$. In linearly anisotropic problems, the net current can also be considered to compute the source. Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
+About the RM, more accurate estimates of the net current come from the integral expressions of \eqs{eq:par-curr-calc}, still using the scalar flux in the emission source $q_{i,g}$. % In linearly anisotropic problems, the net current can also be considered to compute the source. <-- pure bullshit ! Can't happen in diffusion.
+Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
 \begin{equation}
   \label{eq:dJ}
   \delta J_{i+\hzi,g} = -\delta D_{i+\hzi,g}
