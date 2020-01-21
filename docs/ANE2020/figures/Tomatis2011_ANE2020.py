@@ -22,7 +22,7 @@ default_cycler = (cycler(color=['r', 'g', 'b', 'y']) *
                   #*
                   cycler(linestyle=['-', '--', ':', '-.']) 
                   )
-                  
+
 rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
 rc('text', usetex=True)
 fsz = 24. # font size
@@ -38,19 +38,20 @@ plot_flx_zoom = True
 Plot_rho      = False
 Plot_LB       = False
 I = 400 # No. of mesh points
-dx = 21.5/I
+#dx = 21.5/I
 itr = 250 # No. of iterations
 #ccng = 3 # Core configuration (Rahnema1997)
 # ------ Load flx_RM? ------
 plot_RM = True
 if plot_RM:
     ''' Upload one file '''
-    path_RM_flx_file1 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_CMFD_I400_ritr250.npy"
-    path_RM_flx_file2 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_pCMFD_I400_ritr250.npy"
-    
+    path_RM_flx_file1 = "kflx_MC2011_LBC0RBC0_CMFD_I400_it250.npy"
+    path_RM_flx_file2 = "kflx_MC2011_LBC0RBC0_pCMFD_I400_it250.npy"
+    #path_RM_flx_file3 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_I400_it10.npy"
         #data = np.load(path_RM_flx_file)
     k_RM1, flx_RM1, xi1, st, dD1 = np.load(path_RM_flx_file1,allow_pickle=True)
     k_RM2, flx_RM2, xi2, st, dD2 = np.load(path_RM_flx_file2,allow_pickle=True)
+    #cCMFD = np.load(path_RM_flx_file3,allow_pickle=True)
     xi = xi2
 
 # ------ Load flx_SN? ------
@@ -71,7 +72,7 @@ if plot_SN:
     RR_SN = sum(np.multiply(flxm,st).flatten())
     RR_RM1 = sum(np.multiply(flx_RM1[:,:,-1],st).flatten())
     flx_SN = (RR_RM1/RR_SN)*flxm
-       
+
 # ------ General ------
 xim = (xi[1:] + xi[:-1]) / 2.# mid-cell points
 G = st.shape[0]
@@ -86,7 +87,7 @@ G = st.shape[0]
 # =====================  plot flux ===================== #
 # ====================================================== #
 if plot_flx:        
-    fig, ax = plt.subplots(figsize=(11,7))
+    fig, ax = plt.subplots(figsize=(14,7))
     # change the fontsize of major/minor ticks label 
     ax.tick_params(axis='both', which='major', labelsize=fsz)
     ax.tick_params(axis='both', which='minor', labelsize=fsz)
@@ -181,6 +182,7 @@ if Plot_flx_cvg:
 # ====================================================== #
 if Plot_dD: 
 
+    
     plt.figure(figsize=(14, 5)) 
     fig, ax = plt.subplots(G,figsize=(14, 7))
     
@@ -192,12 +194,12 @@ if Plot_dD:
         ax[g].plot(xi, dD1[g,:],label='CMFD')
         ax[g].plot(xi, dD2[0][g,:],label='dDp')
         ax[g].plot(xi, dD2[1][g,:],label='dDm')
-        
-        
         ax[g].set_xlim(xi[0], xi[-1])
         ax[g].grid(True,'both','both')
-        ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=3)
-    
+        ax[g].legend(loc='upper center',fontsize=fsz//1.5,ncol=3)
+        ax[g].set_ylim(dD2[0][g,1]-0.1, dD2[1][g,-2]+0.2)
+        plt.xticks(xi[0::50]) # x-axis valus represent fuel assembly
+    plt.setp(ax[0].get_xticklabels(), visible=False)
     ax[0].set_ylabel(r'$\delta D_{1}^+ $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\delta D_{2}^- $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$x$ [cm]',fontsize=fsz)
@@ -223,20 +225,22 @@ if Plot_err:
         tau_m[g,:] = xim * st[g,:]
         
     plt.figure(figsize=(14, 5)) 
-    fig, ax = plt.subplots(G,figsize=(16, 10))
+    fig, ax = plt.subplots(G,figsize=(14, 6))
     
     for g in range (0,G):
         ax[g].set_prop_cycle(default_cycler)
         for i in range (0,np.size(I)):
             ax[g].tick_params(axis='both', which='major', labelsize=fsz)
             ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-            ax[g].plot(tau_m[g,0:20], flx_err_D[g,0:20],label='D' if g == 0 else "")
-            ax[g].plot(tau_m[g,0:20], flx_err_CMFD[g,0:20],label='CMFD' if g == 0 else "")
-            ax[g].plot(tau_m[g,0:20], flx_err_pCMFD[g,0:20],label='pCMFD' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:30], flx_err_D[g,0:30],label='$D_0$' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:30], flx_err_pCMFD[g,0:30],'r^',label='pCMFD' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:30], flx_err_CMFD[g,0:30],label='CMFD' if g == 0 else "")
+            
             ax[g].grid(True,'both','both')
             #ax[g].set_xscale('log')
-            ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
-      
+            ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=3)
+            ax[g].set_xlim(tau_m[g,0], tau_m[g,30])
+    
     ax[0].set_ylabel(r'$\Delta \phi_{1} $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\Delta \phi_{2} $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)
@@ -250,7 +254,7 @@ if Plot_err:
 # ============================================================== #
 if Plot_k:     
     
-    fig, ax = plt.subplots(figsize=(10,2.5))
+    fig, ax = plt.subplots(figsize=(14,2.5))
     
     ax.tick_params(axis='both', which='major', labelsize=15)
     
@@ -364,58 +368,50 @@ if plot_flx_zoom:
     
         ax[g].tick_params(axis='both', which='major', labelsize=fsz)
         ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-        ax[g].set_prop_cycle(default_cycler)
+        #ax[g].set_prop_cycle(default_cycler)
         
-        ax[g].plot(tau_m[g,I//2::5], flx_RM1[g,I//2::5,-1],label='RM-CMFD')
-        ax[g].plot(tau_m[g,I//2:], flx_RM1[g,I//2:,0],label='$D_0$')
-        ax[g].plot(tau_m[g,I//2::5], flx_RM2[g,I//2::5,-1],label='RM-pCMFD')
-        ax[g].plot(tau_m[g,I//2:], flx_SN[g,I//2:],label='S16')
-        ax[g].set_xticks(tau_m[g,199::25])
+        ax[g].plot(tau_m[g,0:I//2:5], flx_RM1[g,0:I//2:5,-1],':r^',label='RM-CMFD')
+        ax[g].plot(tau_m[g,0:I//2:5], flx_RM2[g,0:I//2:5,-1],'g-*',label='RM-pCMFD')
+        ax[g].plot(tau_m[g,0:I//2],   flx_RM1[g,0:I//2,0],'b--',label='$D_0$')
+        ax[g].plot(tau_m[g,0:I//2],   flx_SN[g,0:I//2],'k-.',label='S16')
+        
         #ax[g].set_xticks(tau_m[g,I//2],tau_m[g,-1])
-        ax[g].set_xlim(tau_m[g,199], tau_m[g,-1])
+        ax[g].set_xlim(tau_m[g,0], tau_m[g,I//2])
         ax[g].grid(True,'both','both')
-        ax[g].legend(loc='lower center',fontsize=fsz//1.5,ncol=4)
+        ax[g].legend(loc='upper left',fontsize=fsz//1.5,ncol=4)
         ax[g].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-        
-        
-        plt.yticks(visible=True,fontsize=15)
-        #plt.xticks()
-        #plt.xticks(np.linspace(xi1[380],xi1[-1],5),visible=True,fontsize=15)
-        #axins[g].xaxis.set_major_formatter(mtick.FormatStrFormatter('%.2f'))
-    
+        #plt.yticks(visible=True)
      
     ax[0].set_ylabel(r'$\phi_{1} $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\phi_{2} $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$\tau$ [optical length]',fontsize=fsz)  
     
     
-    axins0 = zoomed_inset_axes(ax[0], 2.5, loc="upper right")
+    axins0 = zoomed_inset_axes(ax[0], 2.8, loc=7)
     axins0.plot(tau_m[0,0:19:5], flx_RM1[0,0:19:5,-1],':r^')
-    axins0.plot(tau_m[0,0:19],   flx_RM1[0,0:19,0],'g--')
-    axins0.plot(tau_m[0,0:19:5], flx_RM2[0,0:19:5,-1],'b-*')
-    axins0.plot(tau_m[0,0:19],   flx_SN[0,0:19],'k-')
-    axins0.set_xlim(tau_m[0,384], tau_m[0,-1]+0.05) # apply the x-limits
-    axins0.set_ylim(flx_SN[0,384], flx_SN[0,-1]) # apply the y-limits
+    axins0.plot(tau_m[0,0:19:5], flx_RM2[0,0:19:5,-1],'g-*')
+    axins0.plot(tau_m[0,0:19],   flx_RM1[0,0:19,0],'b--')
+    axins0.plot(tau_m[0,0:19],   flx_SN[0,0:19],'k-.')
+    axins0.set_xlim(tau_m[0,0], tau_m[0,19]) # apply the x-limits
+    axins0.set_ylim(flx_SN[0,0], flx_SN[0,19]) # apply the y-limits
     from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-    mark_inset(ax[0], axins0, loc1=3, loc2=4, fc="none", ec="0.6")
+    mark_inset(ax[0], axins0, loc1=2, loc2=3, fc="none", ec="0.4")
         
     
     plt.grid(True,'both','both')
-    axins1 = zoomed_inset_axes(ax[1], 2.5, loc="upper right")
-    axins1.plot(tau_m[1,384::5], flx_RM1[1,384::5,-1],':r^')
-    axins1.plot(tau_m[1,384:],   flx_RM1[1,384:,0],'g--')
-    axins1.plot(tau_m[1,384::5], flx_RM2[1,384::5,-1],'b-*')
-    axins1.plot(tau_m[1,384:],   flx_SN[1,384:],'k-')
-    axins1.set_xlim(tau_m[1,384], tau_m[1,-1]+0.05) # apply the x-limits
-    axins1.set_ylim(flx_SN[1,384], flx_SN[1,-1]) # apply the y-limits
+    axins1 = zoomed_inset_axes(ax[1], 2.8, loc=7)
+    axins1.plot(tau_m[1,0:19:5], flx_RM1[1,0:19:5,-1],':r^')
+    axins1.plot(tau_m[1,0:19:5], flx_RM2[1,0:19:5,-1],'g-*')
+    axins1.plot(tau_m[1,0:19],   flx_RM1[1,0:19,0],'b--')
+    axins1.plot(tau_m[1,0:19],   flx_SN[1,0:19],'k:')
+    axins1.set_xlim(tau_m[1,0], tau_m[1,19]) # apply the x-limits
+    axins1.set_ylim(flx_SN[1,0], flx_SN[1,19]) # apply the y-limits
     from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-    mark_inset(ax[1], axins1, loc1=3, loc2=4, fc="none", ec="0.6")
+    mark_inset(ax[1], axins1, loc1=2, loc2=3, fc="none", ec="0.4")
     
     plt.grid(True,'both','both')
 
    
-    
-    
     filename = 'Tomatis2011_flx_I%d_RMitr%d.pdf' %(I,itr)
     plt.savefig(filename,dpi=300,bbox_inches='tight')
     os.system("pdfcrop %s %s" %(filename,filename))
@@ -431,7 +427,7 @@ if Plot_rho:
     drho1 = (1./k_RM1 - 1/k_SN )*1e5
     drho2 = (1./k_RM2 - 1/k_SN )*1e5
     RMitr = np.linspace(1,250,250)
-    fig, ax = plt.subplots(figsize=(10,2.5))
+    fig, ax = plt.subplots(figsize=(14,2.5))
     
     ax.tick_params(axis='both', which='major', labelsize=15)
     
@@ -472,23 +468,21 @@ if Plot_LB:
     RMitr = np.linspace(1,250,250)
     
     plt.figure(figsize=(14, 5)) 
-    fig, ax = plt.subplots(G,figsize=(16, 10))
+    fig, ax = plt.subplots(G,figsize=(14, 6))
+
     
     for g in range (0,G):
         flx_err_CMFD =(flx_RM1[g,0,1:] -flx_SN[g,0])/flx_SN[g,0]*100
         flx_err_pCMFD =(flx_RM2[g,0,1:] -flx_SN[g,0])/flx_SN[g,0]*100
         ax[g].set_prop_cycle(default_cycler)
-        for i in range (0,np.size(I)):
-            ax[g].tick_params(axis='both', which='major', labelsize=fsz)
-            ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-            ax[g].set_xlim(RMitr[0], RMitr[-1]+10) 
-            ax[g].plot(RMitr, flx_err_CMFD,label='CMFD' if g == 0 else "")
-            ax[g].plot(RMitr, flx_err_pCMFD,label='pCMFD' if g == 0 else "")
-            ax[g].grid(True,'both','both')
-            ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
-            
-            #ax[g].set_xticks(RMitr[0:(I//2+1):25])
-    
+        ax[g].tick_params(axis='both', which='major', labelsize=fsz)
+        ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
+        ax[g].set_xlim(RMitr[0], RMitr[-1]) 
+        ax[g].plot(RMitr, flx_err_CMFD,label='CMFD' if g == 0 else "")
+        ax[g].plot(RMitr, flx_err_pCMFD,label='pCMFD' if g == 0 else "")
+        ax[g].grid(True,'both','both')
+        ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
+    plt.setp(ax[0].get_xticklabels(), visible=False)
     ax[0].set_ylabel(r'$\Delta \phi_{1} $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\Delta \phi_{2} $ [AU]',fontsize = fsz)        
     plt.xlabel('Iteration No.',fontsize=fsz)

@@ -264,8 +264,43 @@ In a weakly absorbing medium and several mean free paths away from the boundary 
 \section{Results}
 \label{sec:res}
 
-xy
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_I400_RMitr250.pdf}
+	\caption{Comparison of the fluxes as calculated by the reference S$_N$, RM-CMFD, RM-pCMFD codes, and a standard multigroup diffusion without RM correction ($D_0$). The insets show a zoom-in of the fluxes near the boundary. Results shown here after 250 Ronen iterations and 400 cells.}
+	\label{fig:slab-fluxes}		
+\end{figure}
 
+
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_dD_I400_RMitr250.pdf}
+	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($\delta D^+, \delta D^-$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
+	\label{fig:slab-RM-corr-factor}
+\end{figure}
+
+\begin{figure}[htbp]
+	% convergence
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_k_over_I400_RMitr250.pdf}	
+	\caption{Convergence of the criticality eigenvalue along 250 Ronen iterations.}
+	\label{fig:conv}
+\end{figure}
+
+\begin{figure}[hbtp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_I400_RMitr250.pdf}
+	\caption{The spatial flux deviation of the RM-CMFD and RM-pCMFD iterations with respect to the reference S$_{16}$ solution for the left half slab.}
+	\label{fig:conv3}
+\end{figure}
+
+\begin{figure}[htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_LB_I400_RMitr250.pdf}
+	\caption{Deviation of the fluxes at the left-most cell, calculated by RM-CMFD and RM-pCMFD codes, with respect to the reference solution after 250 Ronen iterations.}
+	\label{fig:slab-fluxes-dev}
+\end{figure}
 % ------------------------------------------
 \section{Conclusions}
 \label{sec:conc}
