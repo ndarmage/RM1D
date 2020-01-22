@@ -262,7 +262,7 @@ def solve_sn(idata, slvr_opts, qdata):
     '''Run SN solver.'''
     lg.info("Prepare input data")
     # xs = [st, ss, chi, nsf]
-    xs = unfold_xs(idata, isotropic_scattering=False, diff_calc=False)
+    xs = unfold_xs(idata, diff_calc=False)
     # initialize the cell-integrated flux moments
     # (which are the only unknowns stored in memory at this higher level)
     # and the multiplication factor (eigenvalue)
