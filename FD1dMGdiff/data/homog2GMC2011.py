@@ -17,11 +17,10 @@ import logging as lg
 one_third = 1. / 3.
 
 st = np.array([0.531150, 1.30058])
-ss = np.zeros((2, 2, 2),)
+ss = np.zeros((2, 2, 1),)
 ss0 = np.array([[0.504664, 0.00203884], [0.0162955, 1.19134]])
-ss1 = np.array([[0., 0.], [0., 0.]])
-ss1 *= one_third
-ss[:,:,0], ss[:,:,1] = ss0, ss1
+ss1 = np.array([[0., 0.], [0., 0.]]) * one_third
+ss[:,:,0] = ss0  # ss[:,:,0], ss[:,:,1] = ss0, ss1
 nsf = np.array([0.00715848, 0.141284])
 chi = np.array([1., 0.])
 
