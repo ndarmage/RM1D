@@ -71,6 +71,26 @@ lg.basicConfig(level=lg.INFO)  # filename = logfile
 fix_reflection_by_flx2 = True
 
 
+opt_theta_coeffs = np.array( \
+    [-2.284879e-7, +1.222516e-5, -2.683648e-4, \
+     +3.145553e-3, -2.152599e-2, +8.740501e-2, -5.542780e-2])
+
+
+def opt_theta(tau):
+    """Polynomial fit of optimal theta in odCMFD by Zhu et al. ANE 95 (2016)
+    116-124."""
+    if tau >= 1:
+        t, poly_degree = opt_theta_coeffs[0], opt_theta_coeffs.size - 1
+        for i in range(poly_degree):
+            t *= tau
+            t += opt_theta_coeffs[i + 1]
+    elif tau >= 14:
+        t = 0.127
+    else:
+        t = 0.
+    return t
+
+
 # get the mid-points of cells defined in the input spatial mesh x
 def xim(x):
     return (x[1:] + x[:-1]) / 2.
@@ -983,6 +1003,16 @@ def unfold_xs(input_data, diff_calc=True):
     # Db at the boundaries is considered equal to the one of the nearest cell
     Db = np.insert(Db, 0, D[:, 0], axis=1)
     Db = np.insert(Db, I, D[:,-1], axis=1)
+#    # test odCMFD
+#    Vm = np.insert(xim(input_data.Vi), 0, input_data.Vi[0])
+#    Vm = np.insert(Vm, -1, input_data.Vi[-1])
+#    tau_max = np.max(input_data.Vi * st)
+#    opt_theta_by_Zhu = opt_theta(tau_max)
+#    # NOTE: our max_tau values are much smaller than what is used in MOC 
+#    # transport calculations and so opt_theta is almost always zero.
+#    lg.info("Optimal theta for odCMFD = %.3f with max(tau) = %.5f" % \
+#        (opt_theta_by_Zhu, tau_max))
+#    Db += opt_theta_by_Zhu * np.tile(Vm, (G, 1))
     xs = [st, ss, chi, nsf]
     if diff_calc:
         xs.append(Db)
