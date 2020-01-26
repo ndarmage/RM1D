@@ -9,8 +9,9 @@ This test case runs the 2G heterogeneous slab problem from [Rahnema1997]_.
 """
 import sys, os
 sys.path.append('..X..XFD1dMGdiff'.replace('X', os.path.sep))
-from data.heter2GIlas2003 import *
-from tests.heterSlab2GIlas2003 import *
+from data.heter2GRahnema1997 import *
+from tests.heterSlab2GRahnema1997 import Heter2GSlab_data
+sys.path.append('..')  # do not use this at the beginning!
 from snmg1dslab import input_data, solver_options, quad_data
 import numpy as np
 
@@ -18,8 +19,8 @@ import numpy as np
 # set b.c.
 # LBC, RBC = 0, 0
 
-# Initiate inpur data object
-Heter2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
+# or initiate input data object here...
+# Heter2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 
 # Initiate solver options object
 slvr_opts = solver_options()

@@ -80,7 +80,7 @@
 \newcommand{\shortTitle}      % Short title here
    {The Ronen Method in simple 1-D problems}
 
-\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\sign}{sgn}
 \newcommand{\pluseq}{\mathrel{+}=}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
@@ -226,16 +226,17 @@ The angular flux from the integral transport equation (with standard notation) i
 \varphi(x, \mu) = \varphi(x_b, \mu) e^{-\tau(x_b, x)/\mu} + \int_{x_0}^x {dx' \frac{q(x', \mu)}{\mu} e^{-\tau(x', x)/\mu}},
 \label{eq:NTE}
 \end{equation}
-with the optical length $\tau(x_1, x_2) = \int_{x_1}^{x_2}{dx' \sigma_t(x')}$. Contrary to other formulations, we do not include $\mu$ in the definition of the optical length to ease the numerical integrations in the following. $x_b = x_{-1/2} = a$ if $\mu > 0$, $x_b = x_{I-1/2} = b$ otherwise. The inclusion of the energy variable in Eq. \ref{eq:NTE} is straightforward; we use hereafter the multi-group theory, writing the source $q_g$ as\footnote{Curly brackets remind the possible use of the $k$-eigenvalue with vanishing external sources.}:
-\begin{equation*}
+with the optical length $\tau(x_1, x_2) = \int_{x_1}^{x_2}{dx' \sigma_t(x')}$. Contrary to other formulations, we do not include the direction cosine of the neutron velocity $\mu$ in the definition of the optical length to ease the numerical integrations in the following. Eq. \ref{eq:NTE} holds for both positive directions $(\mu > 0)$ where $x_0 = x_{-1/2} = a$, and negative ones $(\mu > 0)$ where $x_0 = x_{I-1/2} = b$. The inclusion of the energy variable in Eq. \ref{eq:NTE} is straightforward; we use hereafter the multi-group theory, writing the source $q_g$ as\footnote{Curly brackets remind the possible use of the $k$-eigenvalue in case of vanishing external sources.}:
+\begin{equation}
+\label{eq:srcg}
 q_g = \sum_{g'=1}^G{\left[
   \sum_{l=0}^\infty{ \frac{2l+1}{2}\sigma_{s,l, g' \rightarrow g}(x)P_l(\mu)\varphi_{l,g'}(x)
   + \frac{\chi_g}{2\{k\}} \nu\sigma_{f,g'}(x)\phi_{g'}(x)}\right] + S_g
                  },
-\end{equation*}
-where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that the scalar flux $\phi$ is equal to half of the first moment $\varphi_0$. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1. Hereafter we consider only isotropic sources.
+\end{equation}
+where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that only the scalar flux $\phi$ being equal to the first moment $\varphi_0$ is retained for the fission term. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1.% Hereafter we consider only isotropic sources.
 
-Multiplication of Eq. \ref{eq:NTE} by the direction cosine of the neutron velocity $\mu$ and the integration over $[-1, 1]$ provides the expression for the current, see \cite{tomatis2011application}. The integration on $\mu$ yields integral exponential functions by a simple change of variable ($\mu = \pm 1/u$, according to the sign of $\mu$) \cite{AS1964handbook}:
+Multiplication of Eq. \ref{eq:NTE} by $\mu$ and the integration over $[-1, 1]$ provides the expression for the current, see \cite{tomatis2011application}. The integration on $\mu$ yields integral exponential functions by a simple change of variable ($\mu = \pm 1/u$, according to the sign of $\mu$) \cite{AS1964handbook}:
 \begin{equation*}
 E_n(\tau) = \int_0^1{d\mu\, e^{-\tau / \mu} \mu^{n-2}} = \int_1^\infty{du\, e^{-\tau u}u^{-n}}.
 \end{equation*}
@@ -243,24 +244,35 @@ These special functions are then used to compute the current at the cell interfa
 \begin{equation}
 \begin{split}
 % J_g(x_{i+1/2}) &=
-J_{g,i+1/2} &= \int_0^1 {d\mu\, \mu \varphi_g(a, \mu) e^{-\tau_g(a, x_{i+1/2})/\mu}}
-       - \int_0^{-1}{d\mu\, \mu \varphi_g(b, \mu) e^{-\tau_g(b, x_{i+1/2})/\mu}}\\
-       & + \sum_{j=0}^{I-1} { \sign(x_{i+1/2} - x_{j+1/2}) \frac{q_{0,g,j}}{2} \int_{x_{j-1/2}}^{x_{j+1/2}}{dx' E_{2}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) } }.
+J_{g,i+1/2} &= \int_0^{ 1}{d\mu\, \mu \varphi_g(a, \mu) e^{-\tau_g(a, x_{i+1/2})/\mu}}
+             - \int_0^{-1}{d\mu\, \mu \varphi_g(b, \mu) e^{-\tau_g(b, x_{i+1/2})/\mu}}\\
+  & + \sum_{j=0}^{I-1} \left[  \sign(x_{i+1/2} - x_{j+1/2}) \frac{q_{0,g,j}}{2} \int_{x_{j-1/2}}^{x_{j+1/2}}{dx' E_{2}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) } \right.\\
+  & \left. \qquad+ \frac{3}{2}q_{1,g,j} \int_{x_{j-1/2}}^{x_{j+1/2}}{dx' E_{3}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) }\right],
 \end{split}
 \label{eq:J_tr}
 \end{equation}
-The $g$-th source $q_{g,j}$ is the volume-average in the cell $j$. The optical lengths show the subscript $g$ because they are evaluated with the corresponding total cross section $\sigma_{t,g}$. For the property $E'_{n+1}(\ell) = -E_n(\ell)$, the spatial integral of the $E_2$ function can be solved analytically by integrating on $\tau$:
+where $q_{(.),g,j}$ are the moments of the souce $q_g$ from Eq. \ref{eq:srcg} averaged in the volume of the $j$-th cell:
+\begin{equation*}
+\label{eq:srclg}
+\begin{split}
+   q_{0,g,j} &= \sum_{g'}\left(\sigma_{s,0,g' \rightarrow g,j} +
+                              \chi_g \nu\sigma_{f,g',j}
+                        \right) \phi_{g',j},\\
+   q_{1,g,j} &= \sum_{g'}\sigma_{s,1,g' \rightarrow g,j}J_{g',j}.
+\end{split}
+\end{equation*}
+The current appearing in $q_{1,g,j}$, that is in case of linearly anisotropic scattering, is also to be considered as volume-averaged in the cell $j$. The optical lengths show the subscript $g$ because they are evaluated with the corresponding total cross section $\sigma_{t,g}$. For the property $E'_{n+1}(\ell) = -E_n(\ell)$, the spatial integrals of the integral exponential functions can be solved analytically by integrating on $\tau$:
 \begin{equation*}
 \begin{aligned}
 \int_{x_{j-1/2}}^{x_{j+1/2}}{ dx' E_{n}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) } =
-\frac{\sign(x_{i+1/2} - x_{j+1/2})}{\sigma_{t,g}} \cdot \\
+\frac{\sign(x_{i+1/2} - x_{j+1/2})}{\sigma_{t,g,j}} \cdot \\
 \left[
   E_{n+1} \left(\lvert \tau_g(x_{j+1/2}, x_{i+1/2}) \rvert \right)
  -E_{n+1} \left(\lvert \tau_g(x_{j-1/2}, x_{i+1/2}) \rvert \right)
 \right].
 \end{aligned}
 \end{equation*}
-These quantities can be computed only for $i > j$ since the others are simply opposite in sign.
+These quantities can be computed for $i > j$ only, because the others are simply opposite in sign.
 
 {\color{red}Roy-Erez: Please add a paragraph or reformulate the previous one to introduce the escape probabilities in the slab.}
 

@@ -71,6 +71,26 @@ lg.basicConfig(level=lg.INFO)  # filename = logfile
 fix_reflection_by_flx2 = True
 
 
+opt_theta_coeffs = np.array( \
+    [-2.284879e-7, +1.222516e-5, -2.683648e-4, \
+     +3.145553e-3, -2.152599e-2, +8.740501e-2, -5.542780e-2])
+
+
+def opt_theta(tau):
+    """Polynomial fit of optimal theta in odCMFD by Zhu et al. ANE 95 (2016)
+    116-124."""
+    if tau >= 1:
+        t, poly_degree = opt_theta_coeffs[0], opt_theta_coeffs.size - 1
+        for i in range(poly_degree):
+            t *= tau
+            t += opt_theta_coeffs[i + 1]
+    elif tau >= 14:
+        t = 0.127
+    else:
+        t = 0.
+    return t
+
+
 # get the mid-points of cells defined in the input spatial mesh x
 def xim(x):
     return (x[1:] + x[:-1]) / 2.
@@ -247,12 +267,12 @@ def solveTDMA(a, b, c, d):
 
 
 def compute_fission_source(chi, nsf, flx):
-    # the input flux must be volume-integrated
+    # warning: the input flux can be volume-integrated or not
     return (chi * np.sum(nsf * flx, axis=0)).flatten()
 
 
 def compute_scattering_source(ss0, flx):
-    # the input flux must be volume-integrated
+    # warning: the input flux can be volume-integrated or not
     return np.sum(ss0 * flx, axis=1).flatten()
 
 
@@ -277,6 +297,17 @@ def compute_cell_volumes(xi, geo=None):
         else:
             raise ValueError("Unknown geometry type " + geo)
     return Di
+
+
+def first_order_coeff_at_interfaces(f, Vi):
+    """Compute the diffusion coefficient by 1st order finite-difference
+    currents determined at both sides of an interface."""
+    G, I = f.shape
+    Im1 = I - 1
+    
+    fb = 2 * f[:, 1:] * f[:, :-1]
+    return fb / (f[:, 1: ] * np.tile(Vi[:-1], G).reshape(G, Im1) +
+                 f[:, :-1] * np.tile(Vi[1: ], G).reshape(G, Im1))
 
 
 def vol_averaged_at_interface(f, Vi):
@@ -422,60 +453,78 @@ def opl(j, i, Ptg):
     return np.sum(Ptg[j:i+1])
 
 
-def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), L=1):
+def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), curr=None):
     """Compute the partial currents given by the integral transport equation
     with the input flux flx. An artificial second moment is used to match
-    vanishing current at the boundary in case of reflection."""
+    vanishing current at the boundary in case of reflection. When the input
+    current curr is provided, the linearly anisotropic term is accounted in
+    the source if anisotropic scattering cross section data are available."""
     LBC, RBC = BC
-    st, ss0, chi, nsf, Db = xs
+    st, ss, chi, nsf, Db = xs
     G, I = st.shape
-    # J = np.zeros((G,I+1),)  # currents at the cell bounds
-    Jp = np.zeros((G, I+1),)  # plus partial currents at the cell bounds
-    Jm = np.zeros_like(Jp)  # minus partial currents at the cell bounds
 
-    q = compute_source(ss0, chi, nsf, flx, k).reshape(G, I)
+    ss0 = ss[:, :, 0, :]
+    q0 = 0.5 * compute_source(ss0, chi, nsf, flx, k).reshape(G, I)
     # divide the volume-integrated source by the cell volumes if the input
     # flux is volume-integrated
     # q /= np.tile(Di, G).reshape(G, I)
-    # The current implementation does not support yet any flux anisotropy, so
-    # q is fixed as in the following.
-    q = np.expand_dims(q, axis=0)
+    # warning: divide the source by st for the next numerical integration
+    q0 /= st  # term-by-term division
+    if curr is not None:
+        # the following will raise IndexError if ss1 is not available
+        # and the program will stop to inform the user of missing data
+        ss1 = ss[:, :, 1, :]
+        q1 = 1.5 * compute_scattering_source(ss1, curr) / st
+
+    # J = np.zeros((G,I+1),)  # currents at the cell bounds
+    Jp = np.zeros((G, I+1),)  # plus partial currents at the cell bounds
+    Jm = np.zeros_like(Jp)  # minus partial currents at the cell bounds
 
     # compute the total removal probability per cell
     Pt = np.tile(Di, G).reshape(G, I) * st
 
     for g in range(G):
-        for l in range(L):
-            # We use here a matrix to store the transfer probabilities, though
-            # only the elements on one colums should be stored by the recipro-
-            # city theorem.
-            # (2 * l + 1.) / 2. = l + 0.5
-            qgoStg = (l + 0.5) * q[l, g, :] / st[g, :]
-            # # Net current
-            # Ajig = np.zeros((I, I+1),)
-            # for i in range(I+1):
-            #     for j in range(I):
-            #         Ajig[j,i] = (En(l+3, opl(j+1, i-1, Pt[g, :]))
-            #                    - En(l+3, opl( j , i-1, Pt[g, :])))
-            #                     if j < i else \
-            #                     (En(l+3, opl(i,  j , Pt[g, :]))
-            #                    - En(l+3, opl(i, j-1, Pt[g, :]))) * (-1)**l
-            # J[g, :] += np.dot(qgoStg, Ajig)
+        # We use here a matrix to store the transfer probabilities, though
+        # only the elements on one colums should be stored by the recipro-
+        # city theorem.
 
-            # Partial currents
-            Ajigp = np.zeros((I, I+1),)
-            Ajigm = np.zeros_like(Ajigp)
+        # # Net current
+        # l = 0  # left as reminder of old implementation with all moments
+        # Ajig = np.zeros((I, I+1),)
+        # for i in range(I+1):
+        #     for j in range(I):
+        #         Ajig[j,i] = (En(3, opl(j+1, i-1, Pt[g, :]))
+        #                    - En(3, opl( j , i-1, Pt[g, :])))
+        #                     if j < i else \
+        #                     (En(3, opl(i,  j , Pt[g, :]))
+        #                    - En(3, opl(i, j-1, Pt[g, :]))) * (-1)**l
+        # J[g, :] += np.dot(q0[g, :], Ajig)
+
+        # Partial currents
+        Ajigp = np.zeros((I, I+1),)
+        Ajigm = np.zeros_like(Ajigp)
+        for i in range(I+1):
+            for j in range(i):
+                Ajigp[j, i] = (En(3, opl(j+1, i-1, Pt[g, :]))
+                             - En(3, opl( j , i-1, Pt[g, :])))
+            for j in range(i, I):
+                Ajigm[j, i] = (En(3, opl(i,  j , Pt[g, :]))
+                             - En(3, opl(i, j-1, Pt[g, :])))
+                # the following is not needed for l = 0
+                # Ajigm[j, i] *= (-1)**l or if l%2 != 0: Ajigm[j, i] *= -1
+        Jp[g, :] += np.dot(q0[g, :], Ajigp)
+        Jm[g, :] -= np.dot(q0[g, :], Ajigm)
+        
+        if curr is not None:
             for i in range(I+1):
                 for j in range(i):
-                    Ajigp[j, i] = (En(l+3, opl(j+1, i-1, Pt[g, :]))
-                                 - En(l+3, opl( j , i-1, Pt[g, :])))
+                    Ajigp[j, i] = (En(4, opl(j+1, i-1, Pt[g, :]))
+                                 - En(4, opl( j , i-1, Pt[g, :])))
                 for j in range(i, I):
-                    Ajigm[j, i] = (En(l+3, opl(i,  j , Pt[g, :]))
-                                 - En(l+3, opl(i, j-1, Pt[g, :])))
-                    # Ajigm[j, i] *= (-1)**l
-                    if l % 2 != 0: Ajigm[j, i] *= -1
-            Jp[g, :] += np.dot(qgoStg, Ajigp)
-            Jm[g, :] -= np.dot(qgoStg, Ajigm)
+                    Ajigm[j, i] = (En(4, opl(i,  j , Pt[g, :]))
+                                 - En(4, opl(i, j-1, Pt[g, :])))
+            Jp[g, :] += np.dot(q1[g, :], Ajigp)
+            Jm[g, :] += np.dot(q1[g, :], Ajigm)  # check the sign!
 
         # add bnd. cnds.
         # Zero flux and vacuum have zero incoming current; a boundary term is
@@ -557,7 +606,8 @@ def compute_diff_currents(flx, Db, Di, BC=(0, 0)):
 
 
 def compute_delta_diff_currents(flx, dD, Di, BC=(0, 0), pCMFD=False):
-    """Compute the correction currents by delta diffusion coefficients dD."""
+    """Compute the correction currents by delta diffusion coefficients dD;
+    this function is valid only with a CMFD scheme."""
     LBC, RBC = BC
     G, I = dD.shape
     I -= 1
@@ -688,7 +738,8 @@ def compute_delta_J(J_diff, pJ_tran, pCMFD=False):  # potentially obsolete
 def solve_outers(flx, k, data, xs, slvr_opts, dD=None):
     "Solve the outer iterations by the power method."
     # unpack objects
-    st, ss0, chi, nsf, Db = xs
+    st, ss, chi, nsf, Db = xs
+    ss0 = ss[:, :, 0, :]
     G, I = data.G, data.I
     LBC, RBC = data.BC
     itsmax, tolls = slvr_opts.itsmax, slvr_opts.tolls
@@ -805,6 +856,13 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     diffusion."""
     # unpack data
     Db = xs[-1]  # retrieve Db which does not change with CMFD
+    ss = xs[1]  # check for scattering anisotropy in input xs data
+    lin_anis = False
+    try:
+        if np.sum(ss[:, :, 1, :]) > 0.:
+            lin_anis = True
+    except:
+        pass  # continue without raising an error
     xi, Di, Vi = data.xi, data.Di, data.Vi
     G, I, BC = data.G, data.I, data.BC
     itsmax, tolls = slvr_opts.itsmax, slvr_opts.tolls
@@ -829,18 +887,24 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
         # revert to flux density
         # (this division does not seem to affect the final result though)
-        flxd = flx / Vi  # division on last index
+        flxd, Jd = flx / Vi, None  # division on last index
+
+        # compute the currents by diffusion and finite differences
+        # (not used later in isotropic problems without CMFD)
+        J_diff = compute_diff_currents(flxd, Db, Di, BC)
+        if lin_anis:
+            Jd = J_diff + compute_delta_diff_currents(flxd, dD, Di, BC, \
+                                                      slvr_opts.pCMFD)
+            Jd = (Jd[:, 1:] + Jd[:, :-1]) / 2.  # simple cell-average
 
         # compute the currents by integral transport (Ronen Method)
         # #lg.warning("USE THE REFERENCE SN FLUX IN THE TRANSPORT OPERATOR")
         # # rflx = flxm_SN[:, 0, :] / Vi
         # # J_tran = compute_tran_currents(rflx, k_SN, Di, xs, BC)
-        pJ_tran = compute_tran_currents(flxd, k, Di, xs, BC)
+        pJ_tran = compute_tran_currents(flxd, k, Di, xs, BC, Jd)
         # Remind that Jp, Jm = *pJ_tran, J = Jp - Jm
 
         if slvr_opts.CMFD:
-            # compute the currents by diffusion and finite differences
-            J_diff = compute_diff_currents(flxd, Db, Di, BC)
             # compute the corrective delta-diffusion-coefficients
             dD = compute_delta_D(flxd, J_diff, pJ_tran, slvr_opts.pCMFD)
         else:
@@ -906,7 +970,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     return flx, k
 
 
-def unfold_xs(input_data, diff_calc=True, isotropic_scattering=True):
+def unfold_xs(input_data, diff_calc=True):
     """Set up the spatial mesh with cross sections data. Scattering xs ss can
     be limited to the only isotropic term for diffusion calculations."""
     I, G, Lss = input_data.I, input_data.G, input_data.Lss
@@ -939,8 +1003,17 @@ def unfold_xs(input_data, diff_calc=True, isotropic_scattering=True):
     # Db at the boundaries is considered equal to the one of the nearest cell
     Db = np.insert(Db, 0, D[:, 0], axis=1)
     Db = np.insert(Db, I, D[:,-1], axis=1)
-    xs = [st, ss[:, :, 0, :], chi, nsf] if isotropic_scattering else \
-         [st, ss, chi, nsf]
+#    # test odCMFD
+#    Vm = np.insert(xim(input_data.Vi), 0, input_data.Vi[0])
+#    Vm = np.insert(Vm, -1, input_data.Vi[-1])
+#    tau_max = np.max(input_data.Vi * st)
+#    opt_theta_by_Zhu = opt_theta(tau_max)
+#    # NOTE: our max_tau values are much smaller than what is used in MOC 
+#    # transport calculations and so opt_theta is almost always zero.
+#    lg.info("Optimal theta for odCMFD = %.3f with max(tau) = %.5f" % \
+#        (opt_theta_by_Zhu, tau_max))
+#    Db += opt_theta_by_Zhu * np.tile(Vm, (G, 1))
+    xs = [st, ss, chi, nsf]
     if diff_calc:
         xs.append(Db)
     return xs
