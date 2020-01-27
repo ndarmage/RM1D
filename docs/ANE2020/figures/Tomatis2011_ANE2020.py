@@ -33,9 +33,10 @@ plot_flx      = False
 Plot_flx_cvg  = False
 Plot_dD       = False
 Plot_err      = False
+Plot_MAX_err  = False # Under development
 Plot_k        = False
 plot_flx_zoom = False
-Plot_rho      = True
+Plot_rho      = False
 Plot_LB       = False
 I = 400 # No. of mesh points
 #dx = 21.5/I
@@ -247,7 +248,40 @@ if Plot_err:
     filename = 'Tomatis2011_flx_err_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
     os.system("pdfcrop %s %s" %(filename,filename))    
+
+# ============================================================== #
+# ========================= MAX Flux Error ========================= #
+# ============================================================== #
+if Plot_MAX_err: 
+
+    max_flx_err_CMFD = (flx_RM1[:,:,2:] - flx_RM1[:,:,1:-1])/ flx_RM1[:,:,1:-1]
+    max_flx_err_pCMFD = (flx_RM2[:,:,2:] - flx_RM2[:,:,1:-1])/ flx_RM2[:,:,1:-1]
+
+    RMitr = np.linspace(1,250,250)
     
+    plt.figure(figsize=(14, 5)) 
+    fig, ax = plt.subplots(G,figsize=(14, 6))
+    
+    for g in range (0,G):
+        ax[g].set_prop_cycle(default_cycler)
+        for i in range (0,np.size(I)):
+            ax[g].tick_params(axis='both', which='major', labelsize=fsz)
+            ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
+            ax[g].plot(RMitr, max_flx_err_CMFD[g,:],label='CMFD' if g == 0 else "")
+            ax[g].plot(RMitr, max_flx_err_pCMFD[g,:],'r-d',label='pCMFD' if g == 0 else "")
+            ax[g].grid(True,'both','both')
+            ax[g].set_xscale('log')
+            ax[g].set_yscale('log')
+            ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=3)
+            #ax[g].set_xlim(tau_m[g,0], tau_m[g,39])
+    
+    ax[0].set_ylabel(r'$\epsilon^1_{\phi} $ [AU]',fontsize = fsz)        
+    ax[1].set_ylabel(r'$\epsilon^2_{\phi} $ [AU]',fontsize = fsz)        
+    plt.xlabel(r'Iteration No.',fontsize=fsz)
+    
+    filename = 'Tomatis2011_flx_MAX_err_I%d_RMitr%d.pdf' %(I,itr)
+    fig.savefig(filename,dpi=300,bbox_inches='tight')
+    os.system("pdfcrop %s %s" %(filename,filename))    
 # ============================================================== #
 # =========================== k_eff ============================ #
 # ============================================================== #
@@ -415,7 +449,7 @@ if plot_flx_zoom:
 
 
 # ============================================================ #
-# ===================== Delta rho [pcm] ====================== #
+# ===================== Delta k [pcm] ====================== #
 # ============================================================ #
 if Plot_rho:     
     drho1 = np.zeros(itr+1)
@@ -430,7 +464,7 @@ if Plot_rho:
     
     ax.tick_params(axis='both', which='minor', labelsize=15)
     ax.set_xlabel('Iteration No.',fontsize=18)
-    ax.set_ylabel('$\Delta\\rho$ [pcm]',fontsize=18)
+    ax.set_ylabel('$\Delta k_{eff}$ [pcm]',fontsize=18)
     ax.tick_params(axis='y')
     ax.set_axisbelow(True) 
     #plt.ylim(min(k_RM1)-0.0005, max(k_RM1)+0.0005)
@@ -438,6 +472,7 @@ if Plot_rho:
     ax.xaxis.grid(color='gray', linestyle='dashed')
     
     ax.set_prop_cycle(default_cycler)
+    ax.plot(RMitr, drho1[0], label='$D_0$')
     ax.plot(RMitr, drho1[1:], label='CMFD')
     ax.plot(RMitr, drho2[1:], label='pCMFD')
     ax.set_xscale('log')
@@ -446,7 +481,7 @@ if Plot_rho:
     ax.legend(loc='upper right',fontsize=fsz//2)
     plt.xlim(RMitr[0], RMitr[-1]) 
     
-    filename = 'Tomatis2011_rho_I%d_RMitr%d.pdf' %(I,itr)
+    filename = 'Tomatis2011_dk_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
     os.system("pdfcrop %s %s" %(filename,filename))
 

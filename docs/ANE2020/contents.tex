@@ -285,7 +285,7 @@ Considering a bare slab of width 21.5 cm, representing a Pressurized Water React
 	\end{tabular}
 \end{table}
 
-Fig.~\ref{fig:slab-fluxes} shows the fast and thermal fluxes calculated by diffusion, CMFD, pCMFD and S$_16$ of the left half slab. The abscissa shows values of the group-dependent neutron mean free path (mfp) $\tau$.
+Fig.~\ref{fig:slab-fluxes} shows the fast and thermal fluxes calculated by diffusion, CMFD, pCMFD and S$_{16}$ of the left half slab. The abscissa's values are the group-dependent neutron mean free path (mfp) $\tau$. One or two mpf's from the boundary towards the center of the slab are enough for diffusion, to match well the reference S$_16$ results. On the other hand, closer to the boundary, the Ronen method shows better results. 
 
 \begin{figure}[!htbp]
 	\centering
@@ -294,7 +294,7 @@ Fig.~\ref{fig:slab-fluxes} shows the fast and thermal fluxes calculated by diffu
 	\label{fig:slab-fluxes}		
 \end{figure}
 
-One or two mpf's from the boundary towards the center of the slab are enough for diffusion, to match well the reference S$_16$ results. On the other hand, closer to the boundary, the Ronen method shows better results. The flux deviations of the left half slab, are shown in Fig.~\ref{fig:flx_err_homg}, calculated by $\Delta\keff = \left(\keff^{-1}-k_{\text{ref}}^{-1}\right)\times 10^5$ pcm.
+In Fig~\ref{fig:flx_err_homg}, the flux deviation (calculated by $\Delta \phi = \left[\left(\phirm-\phiref\right)/\phiref\right]\times 100$) at the first 40 cells of the left slab has approximately $\sim 20\%$ difference between diffusion and RM calculations. The difference observed closer to the boundary, due to the fact that the major transport effect occur near the boundary of the homogeneous slab. 
 
 \begin{figure}[!hbtp]
 	\centering
@@ -303,28 +303,32 @@ One or two mpf's from the boundary towards the center of the slab are enough for
 	\label{fig:flx_err_homg}
 \end{figure}
 
-\begin{figure}[!htbp]
-	\centering
-	\includegraphics[width=0.9\linewidth]{Tomatis2011_rho_I400_RMitr250.pdf}	
-	\caption{Convergence of the reactivity along 250 Ronen iterations, with respect to S$_N$.}
-	\label{fig:rho_homg}
-\end{figure}
-
+A comparison of the flux deviation, calculated by the two implementations of the RM, within the left-most (I=0) cell is shown in Fig.~\ref{fig:slab-fluxes-dev-LB}. The deviation of CMFD and pCMFD has very close trend along the 250 iterations, reaching approximately $\sim 2\%$ compared to the reference solution.
 
 \begin{figure}[!htbp]
 	\centering
 	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_LB_I400_RMitr250.pdf}
 	\caption{Deviation of the fluxes at the left-most cell, calculated by RM-CMFD and RM-pCMFD codes, with respect to the reference solution after 250 Ronen iterations.}
-	\label{fig:slab-fluxes-dev}
+	\label{fig:slab-fluxes-dev-LB}
 \end{figure}
 
 
+In Fig~\ref{fig:rho_homg}, the behavior of the eigenvalue difference $\Delta\keff$ in pcm, along RM iterations are represented, and calculated by $\Delta\keff = \left(\keff^{-1}-\kref^{-1}\right)\times 10^5$ pcm. The value of the eigenvalues reported by the reference S$_{16}$ solution is  $\kref = 0.74441$,  and by diffusion calculation $\keff = 0.74133$, which gives the value $\Delta\keff \approx 558$ pcm. One RM iteration resulting in tens of pcm, but CMFD perform well than pCMFD at the very first few iterations. After a steep decline of $\Delta\keff$, achieving by 10 iterations, both numerical implementations converging at the same rate, with a typical linear equation, approximated by $\Delta\keff \approx 4.545\cdot 10^-7 \times (\#\text{it}) + 0.744363$, it stands for iteration.
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_dk_I400_RMitr250.pdf}	
+	\caption{Convergence of the reactivity along 250 Ronen iterations, with respect to S$_N$.}
+	\label{fig:rho_homg}
+\end{figure}
+
+The correction factors of CMFD and pCMFD (denoted by $\dd$, $dD^{+\setminus -}$, respectively) are shown in Fig~\ref{fig:slab-RM-dD}. 
 
 \begin{figure}[!htbp]
 	\centering
 	\includegraphics[width=0.9\linewidth]{Tomatis2011_dD_I400_RMitr250.pdf}
-	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($\delta D^+, \delta D^-$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
-	\label{fig:slab-RM-corr-factor}
+	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($dD^{+\setminus -}$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
+	\label{fig:slab-RM-dD}
 \end{figure}
 
 
