@@ -34,8 +34,8 @@ Plot_flx_cvg  = False
 Plot_dD       = False
 Plot_err      = False
 Plot_k        = False
-plot_flx_zoom = True
-Plot_rho      = False
+plot_flx_zoom = False
+Plot_rho      = True
 Plot_LB       = False
 I = 400 # No. of mesh points
 #dx = 21.5/I
@@ -45,8 +45,8 @@ itr = 250 # No. of iterations
 plot_RM = True
 if plot_RM:
     ''' Upload one file '''
-    path_RM_flx_file1 = "kflx_MC2011_LBC0RBC0_CMFD_I400_it250.npy"
-    path_RM_flx_file2 = "kflx_MC2011_LBC0RBC0_pCMFD_I400_it250.npy"
+    path_RM_flx_file1 = "kflx_Tomatis2011_CMFD_LBC0RBC0_I400_it250.npy"
+    path_RM_flx_file2 = "kflx_Tomatis2011_pCMFD_LBC0RBC0_I400_it250.npy"
     #path_RM_flx_file3 = "../../../FD1dMGdiff/output/kflx_MC2011_LBC0RBC0_I400_it10.npy"
         #data = np.load(path_RM_flx_file)
     k_RM1, flx_RM1, xi1, st, dD1 = np.load(path_RM_flx_file1,allow_pickle=True)
@@ -64,7 +64,7 @@ if plot_SN:
     #path_Sn_flx_file = "../../SNMG1DSlab/output/CORE%dLBC0RBC0_I%d_N%d.npy"  % (ccng,I,N)
     
     # Homogeneous case - slab width (based on  Tomatis&Dall'Osso MC2011)
-    path_SN_flx_file = "../../../SNMG1DSlab/output/kflx_MC2011_LBC0RBC0_I400_L21_N16.npy"
+    path_SN_flx_file = "kflx_Tomatis2011_SN_LBC0RBC0_I400_L21_N16.npy"
     ref_data = np.load(path_SN_flx_file,allow_pickle=True)
     k_SN, flxm = ref_data[0], ref_data[1][:,0,:]
 
@@ -192,16 +192,16 @@ if Plot_dD:
         ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
         ax[g].set_prop_cycle(default_cycler)
         ax[g].plot(xi, dD1[g,:],label='CMFD')
-        ax[g].plot(xi, dD2[0][g,:],label='dDp')
-        ax[g].plot(xi, dD2[1][g,:],label='dDm')
+        ax[g].plot(xi, dD2[0][g,:],label='$pCMFD^+$')
+        ax[g].plot(xi, dD2[1][g,:],label='$pCMFD^-$')
         ax[g].set_xlim(xi[0], xi[-1])
         ax[g].grid(True,'both','both')
         ax[g].legend(loc='upper center',fontsize=fsz//1.5,ncol=3)
         ax[g].set_ylim(dD2[0][g,1]-0.1, dD2[1][g,-2]+0.2)
         plt.xticks(xi[0::50]) # x-axis valus represent fuel assembly
     plt.setp(ax[0].get_xticklabels(), visible=False)
-    ax[0].set_ylabel(r'$\delta D_{1}^+ $ [AU]',fontsize = fsz)        
-    ax[1].set_ylabel(r'$\delta D_{2}^- $ [AU]',fontsize = fsz)        
+    ax[0].set_ylabel(r'$\delta D_{1} $ [AU]',fontsize = fsz)        
+    ax[1].set_ylabel(r'$\delta D_{2} $ [AU]',fontsize = fsz)        
     plt.xlabel(r'$x$ [cm]',fontsize=fsz)
     
     filename = 'Tomatis2011_dD_I%d_RMitr%d.pdf' %(I,itr)
@@ -210,7 +210,7 @@ if Plot_dD:
 #    plt.show()
 
 # ============================================================== #
-# ================== Flux differences (Error) ================== #
+# ========================= Flux Error ========================= #
 # ============================================================== #
 if Plot_err: 
 
@@ -232,14 +232,13 @@ if Plot_err:
         for i in range (0,np.size(I)):
             ax[g].tick_params(axis='both', which='major', labelsize=fsz)
             ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
-            ax[g].plot(tau_m[g,0:30], flx_err_D[g,0:30],label='$D_0$' if g == 0 else "")
-            ax[g].plot(tau_m[g,0:30], flx_err_pCMFD[g,0:30],'r^',label='pCMFD' if g == 0 else "")
-            ax[g].plot(tau_m[g,0:30], flx_err_CMFD[g,0:30],label='CMFD' if g == 0 else "")
-            
+            ax[g].plot(tau_m[g,0:40], flx_err_CMFD[g,0:40],label='CMFD' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:40], flx_err_pCMFD[g,0:40],'r-d',label='pCMFD' if g == 0 else "")
+            ax[g].plot(tau_m[g,0:40], flx_err_D[g,0:40],label='$D_0$' if g == 0 else "")
             ax[g].grid(True,'both','both')
             #ax[g].set_xscale('log')
             ax[g].legend(loc='upper right',fontsize=fsz//1.5,ncol=3)
-            ax[g].set_xlim(tau_m[g,0], tau_m[g,30])
+            ax[g].set_xlim(tau_m[g,0], tau_m[g,39])
     
     ax[0].set_ylabel(r'$\Delta \phi_{1} $ [AU]',fontsize = fsz)        
     ax[1].set_ylabel(r'$\Delta \phi_{2} $ [AU]',fontsize = fsz)        
@@ -397,7 +396,6 @@ if plot_flx_zoom:
     from mpl_toolkits.axes_grid1.inset_locator import mark_inset
     mark_inset(ax[0], axins0, loc1=2, loc2=3, fc="none", ec="0.4")
         
-    
     plt.grid(True,'both','both')
     axins1 = zoomed_inset_axes(ax[1], 2.8, loc=7)
     axins1.plot(tau_m[1,0:19:5], flx_RM1[1,0:19:5,-1],':r^')
@@ -410,7 +408,6 @@ if plot_flx_zoom:
     mark_inset(ax[1], axins1, loc1=2, loc2=3, fc="none", ec="0.4")
     
     plt.grid(True,'both','both')
-
    
     filename = 'Tomatis2011_flx_I%d_RMitr%d.pdf' %(I,itr)
     plt.savefig(filename,dpi=300,bbox_inches='tight')
@@ -427,7 +424,7 @@ if Plot_rho:
     drho1 = (1./k_RM1 - 1/k_SN )*1e5
     drho2 = (1./k_RM2 - 1/k_SN )*1e5
     RMitr = np.linspace(1,250,250)
-    fig, ax = plt.subplots(figsize=(14,2.5))
+    fig, ax = plt.subplots(figsize=(14,3))
     
     ax.tick_params(axis='both', which='major', labelsize=15)
     
@@ -439,20 +436,15 @@ if Plot_rho:
     #plt.ylim(min(k_RM1)-0.0005, max(k_RM1)+0.0005)
     ax.yaxis.grid(color='gray', linestyle='dashed')
     ax.xaxis.grid(color='gray', linestyle='dashed')
-    #plt.yticks(np.linspace(k_RM1[0],k_RM1[-1],4))
     
     ax.set_prop_cycle(default_cycler)
-#    ax.scatter(RMitr[0:20], drho1[0:20], color='b', marker='x', label='CMFD')
-#    ax.scatter(RMitr[20::5], drho1[20::5], color='b', marker='x')
-#    ax.scatter(RMitr[0:20], drho2[0:20], color='r',marker='^', label='pCMFD')
-#    ax.scatter(RMitr[20::5], drho2[20::5], color='r',marker='^')
     ax.plot(RMitr, drho1[1:], label='CMFD')
     ax.plot(RMitr, drho2[1:], label='pCMFD')
     ax.set_xscale('log')
     
     ax.yaxis.set_major_formatter(mtick.FormatStrFormatter('%.0f'))
     ax.legend(loc='upper right',fontsize=fsz//2)
-    plt.xlim(RMitr[0], RMitr[-1]+10) 
+    plt.xlim(RMitr[0], RMitr[-1]) 
     
     filename = 'Tomatis2011_rho_I%d_RMitr%d.pdf' %(I,itr)
     fig.savefig(filename,dpi=300,bbox_inches='tight')
@@ -463,7 +455,6 @@ if Plot_rho:
 # =================== Left Boundary err % ==================== #
 # ============================================================ #
 if Plot_LB:     
-    
     
     RMitr = np.linspace(1,250,250)
     
@@ -479,7 +470,7 @@ if Plot_LB:
         ax[g].tick_params(axis='both', which='minor', labelsize=fsz)
         ax[g].set_xlim(RMitr[0], RMitr[-1]) 
         ax[g].plot(RMitr, flx_err_CMFD,label='CMFD' if g == 0 else "")
-        ax[g].plot(RMitr, flx_err_pCMFD,label='pCMFD' if g == 0 else "")
+        ax[g].plot(RMitr[0::5], flx_err_pCMFD[0::5],'rd',label='pCMFD' if g == 0 else "")
         ax[g].grid(True,'both','both')
         ax[g].legend(loc='upper right',fontsize=fsz//2,ncol=np.size(I))
     plt.setp(ax[0].get_xticklabels(), visible=False)

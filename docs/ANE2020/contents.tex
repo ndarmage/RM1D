@@ -264,44 +264,75 @@ In a weakly absorbing medium and several mean free paths away from the boundary 
 % ------------------------------------------
 \section{Results}
 \label{sec:res}
+Two test cases are shown in this section. The first is a one-dimensional (1-D) homogeneous plane, representing a typical fuel assembly~\cite{Tomatis-2011}. The second benchmark include three different cores, which are 1-D representation of a Boiling Water Reactor (BWR) configuration~\cite{Rahnema-1997}. Both test cases are calculated and compared by two-group nodal diffusion code (denoted as $D_0$) and the Ronen method (with the implementation of CMFD and pCMFD), and are verified against a discrete ordinates S$_N$ code, with N=16. For all test cases, isotropic scattering are considered. Therefore, the diffusion coefficients for the homogeneous case, calculated by $D_g = (3\sigma_{tr,g})^{-1} = (3\sigma_g)^{-1}$. Void boundary conditions, which are implemented within the diffusion solver, in terms of extrapolated distance for each energy group, and calculated by $d_{ext,g} = 2.13 D_g$. For sake of clarity, the fast and thermal energy groups are denoted by 1 and 2, respectively.
 
-\begin{figure}[htbp]
+\subsection{Homogeneous case}
+\label{sec:homog}
+Considering a bare slab of width 21.5 cm, representing a Pressurized Water Reactor (PWR) fuel assembly, homogenized into two energy groups with corresponding cross sections, which are shown in Table~\ref{tab:xs_hom}. Calculations were performed with $I=400$ (No. of cells).
+
+\begin{table}[!htbp]
+	\centering
+	\caption{Two-group macroscopic cross sections [cm\tsup{-1}] of the homogeneous case~\cite{Tomatis-2011}.}
+	\label{tab:xs_hom}
+	\begin{tabular}{cccccc}
+		%\midrule
+		Group $g$ &  $\sigma_{g}$ & \multicolumn{2}{c}{$\sigma_{s,0,g\leftarrow g'}$} & $\chi_g$ & $\nu\sigma_{f,g}$ \\ 
+		\midrule
+		1 & 5.3115$\times$10\tsup{-1} & 5.04664$\times$10\tsup{-1} & 2.03884$\times$10\tsup{-3} & 1 & 7.15848$\times$10\tsup{-3} \\
+		%\midrule
+		2 & 1.30058$\times$10\tsup{0}& 1.62955$\times$10\tsup{-2} & 1.19134$\times$10\tsup{0}	& 0 & 1.41284$\times$10\tsup{-1} \\
+		%\midrule
+	\end{tabular}
+\end{table}
+
+Fig.~\ref{fig:slab-fluxes} shows the fast and thermal fluxes calculated by diffusion, CMFD, pCMFD and S$_16$ of the left half slab. The abscissa shows values of the group-dependent neutron mean free path (mfp) $\tau$.
+
+\begin{figure}[!htbp]
 	\centering
 	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_I400_RMitr250.pdf}
-	\caption{Comparison of the fluxes as calculated by the reference S$_N$, RM-CMFD, RM-pCMFD codes, and a standard multigroup diffusion without RM correction ($D_0$). The insets show a zoom-in of the fluxes near the boundary. Results shown here after 250 Ronen iterations and 400 cells.}
+	\caption{Comparison of the fluxes as calculated by the reference S$_N$, RM-CMFD - RM-pCMFD codes, and a standard multigroup diffusion without RM correction ($D_0$). The insets show a zoom-in of the fluxes near the boundary. Results shown here after 250 Ronen iterations and 400 cells.}
 	\label{fig:slab-fluxes}		
+\end{figure}
+
+One or two mpf's from the boundary towards the center of the slab are enough for diffusion, to match well the reference S$_16$ results. On the other hand, closer to the boundary, the Ronen method shows better results. The flux deviations of the left half slab, are shown in Fig.~\ref{fig:flx_err_homg}, calculated by $\Delta\keff = \left(\keff^{-1}-k_{\text{ref}}^{-1}\right)\times 10^5$ pcm.
+
+\begin{figure}[!hbtp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_I400_RMitr250.pdf}
+	\caption{The spatial flux deviation of the RM-CMFD and RM-pCMFD iterations with respect to the reference S$_{16}$ solution for the left half slab.}
+	\label{fig:flx_err_homg}
+\end{figure}
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_rho_I400_RMitr250.pdf}	
+	\caption{Convergence of the reactivity along 250 Ronen iterations, with respect to S$_N$.}
+	\label{fig:rho_homg}
+\end{figure}
+
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_LB_I400_RMitr250.pdf}
+	\caption{Deviation of the fluxes at the left-most cell, calculated by RM-CMFD and RM-pCMFD codes, with respect to the reference solution after 250 Ronen iterations.}
+	\label{fig:slab-fluxes-dev}
 \end{figure}
 
 
 
-\begin{figure}[htbp]
+\begin{figure}[!htbp]
 	\centering
 	\includegraphics[width=0.9\linewidth]{Tomatis2011_dD_I400_RMitr250.pdf}
 	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($\delta D^+, \delta D^-$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
 	\label{fig:slab-RM-corr-factor}
 \end{figure}
 
-\begin{figure}[htbp]
-	% convergence
-	\centering
-	\includegraphics[width=0.9\linewidth]{Tomatis2011_k_over_I400_RMitr250.pdf}	
-	\caption{Convergence of the criticality eigenvalue along 250 Ronen iterations.}
-	\label{fig:conv}
-\end{figure}
 
-\begin{figure}[hbtp]
-	\centering
-	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_I400_RMitr250.pdf}
-	\caption{The spatial flux deviation of the RM-CMFD and RM-pCMFD iterations with respect to the reference S$_{16}$ solution for the left half slab.}
-	\label{fig:conv3}
-\end{figure}
 
-\begin{figure}[htbp]
-	\centering
-	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_LB_I400_RMitr250.pdf}
-	\caption{Deviation of the fluxes at the left-most cell, calculated by RM-CMFD and RM-pCMFD codes, with respect to the reference solution after 250 Ronen iterations.}
-	\label{fig:slab-fluxes-dev}
-\end{figure}
+
+
+
+
 % ------------------------------------------
 \section{Conclusions}
 \label{sec:conc}
