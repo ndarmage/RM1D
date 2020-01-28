@@ -322,7 +322,31 @@ In Fig~\ref{fig:rho_homg}, the behavior of the eigenvalue difference $\Delta\kef
 	\label{fig:rho_homg}
 \end{figure}
 
-The correction factors of CMFD and pCMFD (denoted by $\dd$, $dD^{+\setminus -}$, respectively) are shown in Fig~\ref{fig:slab-RM-dD}. 
+The correction factors of CMFD and pCMFD (denoted by $\dd$, $dD^{+\setminus -}$, respectively) are shown in Fig~\ref{fig:slab-RM-dD}. The correction factor $\dd$ calculated by CMFD, are equal to zero within the slab, but have different behavior closer to the boundaries. On the other hand, the current corrections are about $\dd^{p/-} \sim \mp 1/4$ at the center of the slab, and have particular behavior close to the boundaries. The flat steady values of the factors at the center of the slab (or few mfp's away from the boundary) can be explained by the following simple relations.  within the definition of the current $J(x,\mu)^\pm$ as follows
+\begin{equation}
+\label{eq:current_def}
+J(x,\mu)^\pm = \int\limits_0^1 d\mu\,\muvarphi(x,\mu)
+\end{equation}
+Expanding the angular flux $\phi(x,\mu)$ by $P_1$ approximation
+\begin{equation}
+\label{eq:p1}
+\varphi(x,\mu) = \sum\limits_{l=0}^{L=1}\frac{2l+1}{2}P_l(\mu)\varphi_l(x) = \frac{1}{2}\phi_0(x) + \frac{3}{2}\mu\varphi_1(x)\,\,,
+\end{equation}
+rearranging and segregating the current corrections on one side of the equation, yield
+\begin{equation}
+	\begin{split}
+		\label{eq:current_p1}
+		J(x,\mu)^\pm &= \int\limits_0^1 d\mu\mu\left[\frac{1}{2}\varphi_0(x) + \frac{3}{2}\mu\varphi_1(x)\right] \\
+		&= \frac{1}{4}\phi_0(x) + \frac{1}{2}\varphi_1(x)\,\,.
+	\end{split}
+\end{equation}
+Assuming that Fick's law is accurate, i.e. several mfp's away from significant gradients (boundary in a homogeneous slab), and in weakly absorbing medium, by equalizing Eq.~\ref{eq:delta-D-pCMFD} and Eq.~\ref{eq:current_p1}, and rearranging, one gets
+%\begin{equation}
+%	\label{eq:dd_quarter}
+%	\begin{split}
+%	\dd\pm \approx \frac{\left[ \frac{\varphi(x)}{den} \right]}{den}
+%	\end{split}
+%\end{equation}
 
 \begin{figure}[!htbp]
 	\centering
