@@ -187,7 +187,7 @@ The current by diffusion is distributed on the partial currents in equal parts i
   \begin{align}
     J^+_{i+\hzi} - \frac{1}{2}\jD_{i+\hzi} &= -\delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
     J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= +\delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm} \\
-    J^\pm_{i+\hzi} = \pm \frac{1}{2}\jD_{i+\hzi} \mp \delta D^{\pm} _{i+\hzi} \phi_{i+(1\mp 1)/2}\label{eq:delta-D-pCMFDpm} \,\,,
+    J^\pm_{i+\hzi} = \pm \frac{1}{2}\jD_{i+\hzi}& \mp \delta D^{\pm} _{i+\hzi} \phi_{i+(1\mp 1)/2}\label{eq:delta-D-pCMFDpm} \,\,,
   \end{align}
 \end{subequations}
 still for $i=0, \ldots, I-2$.
@@ -323,10 +323,10 @@ In Fig~\ref{fig:rho_homg}, the behavior of the eigenvalue difference $\Delta\kef
 	\label{fig:rho_homg}
 \end{figure}
 
-The correction factors of CMFD and pCMFD (denoted by $\dd$, $dD^{+\setminus -}$, respectively) are shown in Fig~\ref{fig:slab-RM-dD}. The correction factor $\dd$ calculated by CMFD, are equal to zero within the slab, but have different behavior closer to the boundaries. On the other hand, the current corrections are about $\dd^{p/-} \sim \mp 1/4$ at the center of the slab, and have particular behavior close to the boundaries. The flat steady values of the factors at the center of the slab (or few mfp's away from the boundary) can be explained by the following simple relations.  within the definition of the current $J(x,\mu)^\pm$ as follows
+The correction factors of CMFD and pCMFD (denoted by $\dd$, $dD^{\pm}$, respectively) are shown in Fig~\ref{fig:slab-RM-dD}. The correction factor $\dd$ calculated by CMFD, are equal to zero within the slab, but have different behavior closer to the boundaries. On the other hand, the current corrections are about $\dd^{\pm} \sim \mp 1/4$ at the center of the slab, and have particular behavior close to the boundaries. The flat steady values of the factors at the center of the slab (or few mfp's away from the boundary) can be explained by the following simple relations.  within the definition of the current $J(x,\mu)^\pm$ as follows
 \begin{equation}
 \label{eq:current_def}
-J(x,\mu)^\pm = \int\limits_0^1 d\mu\,\mu\varphi(x,\mu)
+J^\pm(x,\mu) = \int\limits_0^{\pm 1} d\mu\,\mu\,\varphi(x,\mu)\,\,.
 \end{equation}
 Expanding the angular flux $\phi(x,\mu)$ by $P_1$ approximation
 \begin{equation}
@@ -338,31 +338,33 @@ Substituing into Eq.~\ref{eq:current_def}, and integrating
 	\begin{split}
 		\label{eq:current_p1}
 		J^\pm(x,\mu) &= \int\limits_0^{\pm 1} d\mu\mu\left[\frac{1}{2}\varphi_0(x) + \frac{3}{2}\mu\varphi_1(x)\right] \\
-		J^\pm(x) &= \frac{1}{4}\phi_0(x) \mp \frac{1}{2}\varphi_1(x)\,\,.
+		J^\pm(x) &= \frac{1}{4}\phi_0(x) \pm \frac{1}{2}\varphi_1(x)\,\,.
 	\end{split}
 \end{equation}
 The descretized form is
 \begin{equation}
 \label{eq:curent_p1_i}
-J^\pm_{i+\hzi} = \frac{1}{4}\phi_{0,i} \mp \frac{1}{2}J^{\pm}_{i+\hzi}\,\,.
+J^\pm_{i+\hzi} = \frac{1}{4}\phi_{0,i+\hzi} \pm \frac{1}{2}J^{\pm}_{i+\hzi}\,\,.
 \end{equation}
 The first moment of the flux ($\varphi_1$) is the current $J$. Assuming that Fick's law is accurate, i.e. several mfp's away from significant gradients (boundary in a homogeneous slab), and in weakly absorbing medium, 
 by equalizing Eq.~\ref{eq:delta-D-pCMFDpm} and Eq.~\ref{eq:curent_p1_i}, rearranging and segregating the current corrections on one side of the equation, one gets
 \begin{equation}
 	\label{eq:dd_quarter}
 	\begin{split}
-	\pm \frac{1}{2}\jD_{i+\hzi} \mp \delta D^{\pm} _{i+\hzi} \phi_{0,i+(1\mp 1)/2} & = \frac{1}{4}\phi_{0,i} \mp \frac{1}{2} J^{\pm}_{D,i+\hzi} \\
-	\dd^\pm_{i+\hzi} \approx \frac{1}{4}\cdot\frac{\phi_{0,i}}{\phi_{0,i+(1\mp 1)/2}} & \approx \frac{1}{4}\,\,.
+	\pm \frac{1}{2}\jD_{i+\hzi} \mp \delta D^{\pm} _{i+\hzi} \phi_{0,i+(1\mp 1)/2} & = \frac{1}{4}\phi_{0,i+\hzi} \pm \frac{1}{2} J^{\pm}_{D,i+\hzi} \\
+	\dd^\pm_{i+\hzi} \approx \mp \frac{1}{4}\cdot\frac{\phi_{0,i+\hzi}}{\phi_{0,i+(1\mp 1)/2}} & \approx \mp\frac{1}{4}\,\,.
 	\end{split}
 \end{equation}
 
 \begin{figure}[!htbp]
 	\centering
 	\includegraphics[width=0.9\linewidth]{Tomatis2011_dD_I400_RMitr250.pdf}
-	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($dD^{+\setminus -}$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
+	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($dD^{\pm}$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
 	\label{fig:slab-RM-dD}
 \end{figure}
 
+\subsection{Heterogeneous case}
+\label{sec:heterog}
 
 
 
