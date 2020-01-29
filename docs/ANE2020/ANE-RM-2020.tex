@@ -15,7 +15,6 @@
 \usepackage{lineno}
 \usepackage[colorlinks=true, a4paper=true, pdfstartview=FitV,%
             linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
-
 % for algorithms
 % \usepackage{algorithm}
 % \usepackage{algpseudocode}
@@ -24,16 +23,23 @@
 \usepackage{xfrac}
 \usepackage{units}
 
+% For merging cells in tabulars
+\usepackage{array}
+\usepackage{booktabs}
+\setlength{\heavyrulewidth}{1.5pt}
+\setlength{\abovetopsep}{4pt}
+
 \usepackage[printonlyused]{acronym}
 
 \journal{Annals of Nuclear Energy}
 
 \newcommand{\eq}[1]{Eq.~(\ref{#1})}
 \newcommand{\eqs}[1]{Eqs.~(\ref{#1})}
-% \newcommand{\tsup}[1]{\textsuperscript{#1}}
-% \newcommand{\tsub}[1]{\textsuberscript{#1}}
 \newcommand{\keff}{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}
+\newcommand{\kref}{\ensuremath{k_{\textrm{\scriptsize{ref}}}}}
 \newcommand{\kinf}{\ensuremath{k_{\textrm{\scriptsize{$\infty$}}}}}
+\newcommand{\phiref}{\ensuremath{\phi_{\textrm{\scriptsize{ref}}}}}
+\newcommand{\phirm}{\ensuremath{\phi_{\textrm{\scriptsize{RM}}}}}
 \newcommand{\pf}{\textrm{PPF}}
 \newcommand{\eg}{e.g.,}
 \newcommand{\ie}{i.e.,}
@@ -52,7 +58,8 @@
 \newcommand{\dx}{\Delta}
 \newcommand{\dd}{\delta D}
 \newcommand{\tild}{\tilde{D}}
-
+\newcommand{\tsup}[1]{\textsuperscript{#1}}
+\newcommand{\tsub}[1]{\textsubscript{#1}}
 % about notes and comments from each author
 \newcommand{\erez}[1]{{\color{blue}{\textsuperscript{EREZ:}#1}}}
 \newcommand{\roy}[1]{{\color{blue}{\textsuperscript{ROY:}#1}}}
@@ -64,6 +71,8 @@
 
 \renewcommand{\cite}{\citep}
            
+           
+\graphicspath{ {./figures/} }
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   BEGIN DOCUMENT

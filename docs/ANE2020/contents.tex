@@ -186,7 +186,8 @@ The current by diffusion is distributed on the partial currents in equal parts i
   \label{eq:delta-D-pCMFD}
   \begin{align}
     J^+_{i+\hzi} - \frac{1}{2}\jD_{i+\hzi} &= -\delta D^+_{i+\hzi} \phi_i, \label{eq:delta-D-pCMFDp}\\
-    J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= +\delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm}
+    J^-_{i+\hzi} + \frac{1}{2}\jD_{i+\hzi} &= +\delta D^-_{i+\hzi} \phi_{i+1}, \label{eq:delta-D-pCMFDm} \\
+    J^\pm_{i+\hzi} = \pm \frac{1}{2}\jD_{i+\hzi}& \mp \delta D^{\pm} _{i+\hzi} \phi_{i+(1\mp 1)/2}\label{eq:delta-D-pCMFDpm} \,\,,
   \end{align}
 \end{subequations}
 still for $i=0, \ldots, I-2$.
@@ -264,8 +265,111 @@ In a weakly absorbing medium and several mean free paths away from the boundary 
 % ------------------------------------------
 \section{Results}
 \label{sec:res}
+Two test cases are shown in this section. The first is a one-dimensional (1-D) homogeneous plane, representing a typical fuel assembly~\cite{Tomatis-2011}. The second benchmark include three different cores, which are 1-D representation of a Boiling Water Reactor (BWR) configuration~\cite{Rahnema-1997}. Both test cases are calculated and compared by two-group nodal diffusion code (denoted as $D_0$) and the Ronen method (with the implementation of CMFD and pCMFD), and are verified against a discrete ordinates S$_N$ code, with N=16. For all test cases, isotropic scattering are considered. Therefore, the diffusion coefficients for the homogeneous case, calculated by $D_g = (3\sigma_{tr,g})^{-1} = (3\sigma_g)^{-1}$. Void boundary conditions, which are implemented within the diffusion solver, in terms of extrapolated distance for each energy group, and calculated by $d_{ext,g} = 2.13 D_g$. For sake of clarity, the fast and thermal energy groups are denoted by 1 and 2, respectively.
 
-xy
+\subsection{Homogeneous case}
+\label{sec:homog}
+Considering a bare slab of width 21.5 cm, representing a Pressurized Water Reactor (PWR) fuel assembly, homogenized into two energy groups with corresponding cross sections, which are shown in Table~\ref{tab:xs_hom}. Calculations were performed with $I=400$ (No. of cells).
+
+\begin{table}[!htbp]
+	\centering
+	\caption{Two-group macroscopic cross sections [cm\tsup{-1}] of the homogeneous case~\cite{Tomatis-2011}.}
+	\label{tab:xs_hom}
+	\begin{tabular}{cccccc}
+		%\midrule
+		Group $g$ &  $\sigma_{g}$ & \multicolumn{2}{c}{$\sigma_{s,0,g\leftarrow g'}$} & $\chi_g$ & $\nu\sigma_{f,g}$ \\ 
+		\midrule
+		1 & 5.3115$\times$10\tsup{-1} & 5.04664$\times$10\tsup{-1} & 2.03884$\times$10\tsup{-3} & 1 & 7.15848$\times$10\tsup{-3} \\
+		%\midrule
+		2 & 1.30058$\times$10\tsup{0}& 1.62955$\times$10\tsup{-2} & 1.19134$\times$10\tsup{0}	& 0 & 1.41284$\times$10\tsup{-1} \\
+		%\midrule
+	\end{tabular}
+\end{table}
+
+Fig.~\ref{fig:slab-fluxes} shows the fast and thermal fluxes calculated by diffusion, CMFD, pCMFD and S$_{16}$ of the left half slab. The abscissa's values are the group-dependent neutron mean free path (mfp) $\tau$. One or two mpf's from the boundary towards the center of the slab are enough for diffusion, to match well the reference S$_16$ results. On the other hand, closer to the boundary, the Ronen method shows better results. 
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_I400_RMitr250.pdf}
+	\caption{Comparison of the fluxes as calculated by the reference S$_N$, RM-CMFD - RM-pCMFD codes, and a standard multigroup diffusion without RM correction ($D_0$). The insets show a zoom-in of the fluxes near the boundary. Results shown here after 250 Ronen iterations and 400 cells.}
+	\label{fig:slab-fluxes}		
+\end{figure}
+
+In Fig~\ref{fig:flx_err_homg}, the flux deviation (calculated by $\Delta \phi = \left[\left(\phirm-\phiref\right)/\phiref\right]\times 100$) at the first 40 cells of the left slab has approximately $\sim 20\%$ difference between diffusion and RM calculations. The difference observed closer to the boundary, due to the fact that the major transport effect occur near the boundary of the homogeneous slab. 
+
+\begin{figure}[!hbtp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_I400_RMitr250.pdf}
+	\caption{The spatial flux deviation of the RM-CMFD and RM-pCMFD iterations with respect to the reference S$_{16}$ solution for the left half slab.}
+	\label{fig:flx_err_homg}
+\end{figure}
+
+A comparison of the flux deviation, calculated by the two implementations of the RM, within the left-most (I=0) cell is shown in Fig.~\ref{fig:slab-fluxes-dev-LB}. The deviation of CMFD and pCMFD has very close trend along the 250 iterations, reaching approximately $\sim 2\%$ compared to the reference solution.
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_flx_err_LB_I400_RMitr250.pdf}
+	\caption{Deviation of the fluxes at the left-most cell, calculated by RM-CMFD and RM-pCMFD codes, with respect to the reference solution after 250 Ronen iterations.}
+	\label{fig:slab-fluxes-dev-LB}
+\end{figure}
+
+
+In Fig~\ref{fig:rho_homg}, the behavior of the eigenvalue difference $\Delta\keff$ in pcm, along RM iterations are represented, and calculated by $\Delta\keff = \left(\keff^{-1}-\kref^{-1}\right)\times 10^5$ pcm. The value of the eigenvalues reported by the reference S$_{16}$ solution is  $\kref = 0.74441$,  and by diffusion calculation $\keff = 0.74133$, which gives the value $\Delta\keff \approx 558$ pcm. One RM iteration resulting in tens of pcm, but CMFD perform well than pCMFD at the very first few iterations. After a steep decline of $\Delta\keff$, achieving by 10 iterations, both numerical implementations converging at the same rate, with a typical linear equation, approximated by $\Delta\keff \approx 4.545\cdot 10^-7 \times (\#\text{it}) + 0.744363$, it stands for iteration.
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_dk_I400_RMitr250.pdf}	
+	\caption{Convergence of the reactivity along 250 Ronen iterations, with respect to S$_N$.}
+	\label{fig:rho_homg}
+\end{figure}
+
+The correction factors of CMFD and pCMFD (denoted by $\dd$, $dD^{\pm}$, respectively) are shown in Fig~\ref{fig:slab-RM-dD}. The correction factor $\dd$ calculated by CMFD, are equal to zero within the slab, but have different behavior closer to the boundaries. On the other hand, the current corrections are about $\dd^{\pm} \sim \mp 1/4$ at the center of the slab, and have particular behavior close to the boundaries. The flat steady values of the factors at the center of the slab (or few mfp's away from the boundary) can be explained by the following simple relations.  within the definition of the current $J(x,\mu)^\pm$ as follows
+\begin{equation}
+\label{eq:current_def}
+J^\pm(x,\mu) = \int\limits_0^{\pm 1} d\mu\,\mu\,\varphi(x,\mu)\,\,.
+\end{equation}
+Expanding the angular flux $\phi(x,\mu)$ by $P_1$ approximation
+\begin{equation}
+\label{eq:p1}
+\varphi(x,\mu) = \sum\limits_{l=0}^{L=1}\frac{2l+1}{2}P_l(\mu)\varphi_l(x) = \frac{1}{2}\varphi_0(x) + \frac{3}{2}\mu\varphi_1(x)\,\,,
+\end{equation}
+Substituing into Eq.~\ref{eq:current_def}, and integrating
+\begin{equation}
+	\begin{split}
+		\label{eq:current_p1}
+		J^\pm(x,\mu) &= \int\limits_0^{\pm 1} d\mu\mu\left[\frac{1}{2}\varphi_0(x) + \frac{3}{2}\mu\varphi_1(x)\right] \\
+		J^\pm(x) &= \frac{1}{4}\phi_0(x) \pm \frac{1}{2}\varphi_1(x)\,\,.
+	\end{split}
+\end{equation}
+The descretized form is
+\begin{equation}
+\label{eq:curent_p1_i}
+J^\pm_{i+\hzi} = \frac{1}{4}\phi_{0,i+\hzi} \pm \frac{1}{2}J^{\pm}_{i+\hzi}\,\,.
+\end{equation}
+The first moment of the flux ($\varphi_1$) is the current $J$. Assuming that Fick's law is accurate, i.e. several mfp's away from significant gradients (boundary in a homogeneous slab), and in weakly absorbing medium, 
+by equalizing Eq.~\ref{eq:delta-D-pCMFDpm} and Eq.~\ref{eq:curent_p1_i}, rearranging and segregating the current corrections on one side of the equation, one gets
+\begin{equation}
+	\label{eq:dd_quarter}
+	\begin{split}
+	\pm \frac{1}{2}\jD_{i+\hzi} \mp \delta D^{\pm} _{i+\hzi} \phi_{0,i+(1\mp 1)/2} & = \frac{1}{4}\phi_{0,i+\hzi} \pm \frac{1}{2} J^{\pm}_{D,i+\hzi} \\
+	\dd^\pm_{i+\hzi} \approx \mp \frac{1}{4}\cdot\frac{\phi_{0,i+\hzi}}{\phi_{0,i+(1\mp 1)/2}} & \approx \mp\frac{1}{4}\,\,.
+	\end{split}
+\end{equation}
+
+\begin{figure}[!htbp]
+	\centering
+	\includegraphics[width=0.9\linewidth]{Tomatis2011_dD_I400_RMitr250.pdf}
+	\caption{The Ronen method correction factors ($\delta D$), calculated by CMFD code, and ($dD^{\pm}$), calculated by pCMFD code. Results shown here after 250 Ronen iterations.}
+	\label{fig:slab-RM-dD}
+\end{figure}
+
+\subsection{Heterogeneous case}
+\label{sec:heterog}
+
+
+
+
+
 
 % ------------------------------------------
 \section{Conclusions}
