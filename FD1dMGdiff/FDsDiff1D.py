@@ -165,9 +165,9 @@ class input_data:
         if not isinstance(self.media, list):
             raise TypeError('The input media is not a list.')
         media_set = set(m[0] for m in self.media)
-        if len(self.xs_media) != len(media_set):
-            raise ValueError('xs media dict and list must have the same ' +
-                             'nb. of elements.')
+        xs_media_set = set(self.xs_media.keys())
+        if xs_media_set.union(media_set) != xs_media_set:
+            raise ValueError('xs media dict has missing keys, check media.')
         rbnd = [m[1] for m in self.media]
         if sorted(rbnd) != rbnd:
             raise ValueError('media list must be in order from left to right!')
