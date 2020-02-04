@@ -52,7 +52,7 @@ if __name__ == "__main__":
     from snmg1dslab import solve_sn
 
     flxm, k = solve_sn(Homog2GSlab_data, slvr_opts, qdata)
-    basefilen = "../output/kflx_Tomatis2011_LBC%dRBC%d_I%d_L%d_N%d" % (
+    basefilen = "../output/kflx_Tomatis2011_SN_LBC%dRBC%d_I%d_L%d_N%d" % (
                                                         Homog2GSlab_data.LBC,
                                                         Homog2GSlab_data.RBC,
                                                         Homog2GSlab_data.I,
