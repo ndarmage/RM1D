@@ -32,16 +32,16 @@ qdata = quad_data(N, L)
 if __name__ == "__main__":
 
     import logging as lg
-    lg.info("*** Solve the Ilas 2003 problem ***")
+    lg.info("*** Solve the Rahnema 1997 problem ***")
     from snmg1dslab import solve_sn
 
     flxm, k = solve_sn(Heter2GSlab_data, slvr_opts, qdata)
 
-    basefilen = "../output/CORE%dLBC%dRBC%d_I%d_N%d" % (core_config,
+    basefilen = "../output/kflx_Rahnema1997_SN_CORE%dLBC%dRBC%d_I%d_N%d" % (core_config,
                                                         Heter2GSlab_data.LBC,
                                                         Heter2GSlab_data.RBC,
                                                         Heter2GSlab_data.I,
                                                         qdata.N)
-    np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
+    np.save(basefilen + ".npy", np.array([k, flxm],object), allow_pickle=True)
     #np.savez(basefilen + ".npz", k=k, flxm=flxm)
     
