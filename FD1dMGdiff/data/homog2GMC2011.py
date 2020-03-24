@@ -29,12 +29,22 @@ D = one_third / (st - np.sum(ss1, axis=1))
 G = st.size  # nb of energy groups
 
 
+def calc_flx_inf(st, ss0, chi):
+    return np.dot(np.linalg.inv(np.diag(st) - ss0), chi)
+
+
+def calc_kinf(nsf, st=None, ss0=None, chi=None, flx_inf=None):
+    if flx_inf is None:
+        flx_inf = calc_flx_inf(st, ss0, chi)
+    return np.dot(nsf, flx_inf)
+
+
 if __name__ == "__main__":
 
     lg.info("*** Check homogeneous cross sections data ***")
 
-    flx_inf = np.dot(np.linalg.inv(np.diag(st) - ss0), chi)
-    kinf = np.dot(nsf, flx_inf)
+    flx_inf = calc_flx_inf(st, ss0, chi)
+    kinf = calc_kinf(nsf, flx_inf=flx_inf)
     # np.testing.assert_almost_equal(kinf, 1.1913539017168697, decimal=7,
     #     err_msg="kinf not verified.")
     np.testing.assert_almost_equal(kinf, 1.0783813599102687, decimal=7,

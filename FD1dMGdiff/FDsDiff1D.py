@@ -893,7 +893,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         # (not used later in isotropic problems without CMFD)
         J_diff = compute_diff_currents(flxd, Db, Di, BC)
         if lin_anis:
-            Jd = J_diff + compute_delta_diff_currents(flxd, dD, Di, BC, \
+            Jd = J_diff + compute_delta_diff_currents(flxd, dD, Di, BC,
                                                       slvr_opts.pCMFD)
             Jd = (Jd[:, 1:] + Jd[:, :-1]) / 2.  # simple cell-average
 
@@ -953,11 +953,12 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     lg.info("Initial value of k was %13.6g." % kinit)
     if filename is not None:
         # filename = "output/kflx_LBC%dRBC%d_I%d" % (*BC,I)
-        np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD], allow_pickle=True)
-        # np.save(filename.replace('kflx','err'), [kerr_save, ferr_save], \
-        #          allow_pickle=True)
-        # np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD], \
-        #          allow_pickle=True)
+        np.save(filename + ".npy",
+            [k_save, flx_save, xi, xs[0], dD], allow_pickle=True)
+        # np.save(filename.replace('kflx','err'), [kerr_save, ferr_save],
+        #         allow_pickle=True)
+        # np.save(filename + ".npy", [k_save, flx_save, xi, xs[0], dD],
+        #         allow_pickle=True)
         with open(filename + ".dat", 'w') as f:
             i = 0
             while k_save[i] >= 0:
@@ -992,7 +993,7 @@ def unfold_xs(input_data, diff_calc=True):
         D[:, idx] = np.tile(xs_media[media_name]['D'], (n, 1)).T
         Lmed = xs_media[media_name]['ss'].shape[-1]
         if Lmed > Lssp1:
-            raise ValueError("Media %s has ss with L > %d!" % \
+            raise ValueError("Media %s has ss with L > %d!" %
                              (media_name, Lss))
         tmp = np.tile(xs_media[media_name]['ss'].flatten(), (n, 1)).T
         ss[:, :, :, idx] = tmp.reshape(G, G, Lssp1, n)
