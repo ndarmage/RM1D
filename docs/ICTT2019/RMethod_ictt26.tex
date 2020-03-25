@@ -139,7 +139,7 @@ roygros@post.bgu.ac.il, gilade@bgu.ac.il\\
 \end{center}
 
 \begin{abstract}
-In this work we apply the Ronen method to resolve the neutron transport in simple homogeneous problems. Slab, cylindrical and spherical geometries are studied. This method demands successive resolutions of the diffusion equation, where the local diffusion constants are modified in order to reproduce new estimates of the currents by a transport operator. The diffusion solver employs here finite differences and the transport-corrected currents are forced in the numerical scheme by means of drift terms, like in the CMFD technique. The solution is compared against reference results provided by a discrete ordinate computer code. Boundary conditions are discussed introducing proper approximations to save the particle balance. Slow convergence is reported on the scalar flux, although the results match the reference solutions in the limit of fine meshes.
+In this work we apply the Ronen method to resolve the neutron transport in simple homogeneous problems. Slab, cylindrical and spherical geometries are studied. This method demands successive resolutions of the diffusion equation, where the local diffusion constants are modified in order to reproduce new estimates of the currents by a transport operator. The diffusion solver employs here finite differences and the transport-corrected currents are forced in the numerical scheme by means of drift terms, like in the CMFD technique. The solution is compared against reference results provided by the collision probability method. Boundary conditions are discussed introducing proper approximations to save the particle balance. Slow convergence is reported on the scalar flux, although the results match the reference solutions in the limit of fine meshes and far from the bare boundary.
 %
 %In this work we apply the Ronen method in the slab geometry filled with heterogeneous media. Neutron diffusion is solved by a nodal method on a coarse mesh, while reference solutions of the neutron distribution are provided by a discrete ordinate transport solver. The CMFD technique is used for both the implementation of the nodal solver and for the corrections of the diffusion coefficient given by the Ronen method. The presence of discontinuity factors for equivalencing the diffusion solution is investigated jointly with the Ronen method. Results are presented for different levels of material heterogeneity at the slab interfaces.
 \end{abstract}
@@ -153,7 +153,7 @@ In this work we apply the Ronen method to resolve the neutron transport in simpl
 
 In 2004 Ronen suggested to calculate more accurate currents by means of an integral transport operator still using a neutron flux computed in diffusion theory \cite{ronen2004accurate}. This allowed having new estimates of the diffusion coefficient still using Fick's law. Since these estimates need a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficient in the global calculation. The main reason motivating this method was to overcome the underlying limitation of Fick's law requiring low flux gradients, and so low neutron absorption and high scattering in general. Nevertheless, isotropic scattering remained as a basic postulate.
 
-This idea was later used by Tomatis and Dall'Osso, who provided a numerical demonstration in a simple slab problem \cite{tomatis2011application}. Instead of updating the diffusion coefficient by the ratio of the current exchange and the flux gradient, as in Fick's law, they recurred to the coarse mesh finite differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver.
+This idea was later used by Tomatis and Dall'Osso, who provided a numerical demonstration in a simple slab problem \cite{tomatis2011application}. Instead of updating the diffusion coefficient by the ratio of the current exchange and the flux gradient, as in Fick's law, they recurred to the scheme of the coarse mesh finite differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver.
 %
 %They proposed to update non-linearly the diffusion coefficients at the cell interfaces of the spatial mesh by the coarse mesh finite differences method (CMFD).
 %
@@ -169,7 +169,7 @@ In this work we investigate further the convergence on the first flux moments, a
 \section{IMPLEMENTATION}
 \label{sec:impl}
 
-The cross sections, as well as the diffusion coefficient, are usually available as volume-averaged data per cell in the mesh. Once the scalar flux is known from the finite differences solver using the original diffusion coefficients, the integral expressions derived in section \ref{sec:ce} can be used to get new estimates of the current $J$ at the cell interfaces. %Alternatively, new current estimates can come from the two-nodes problem resolved by the nodal method in section \ref{sec:nd}.
+The cross sections, as well as the diffusion coefficient, are usually available as volume-averaged data per cell in the mesh. A lattice transport computer code can prepare these data by homogenization. Once the scalar flux is known from the finite differences solver using the original diffusion coefficients, the integral expressions derived in section \ref{sec:ce} can be used to get new estimates of the current $J$ at the cell interfaces. %Alternatively, new current estimates can come from the two-nodes problem resolved by the nodal method in section \ref{sec:nd}.
 Instead of computing new diffusion coefficients on the same interfaces straight by Fick's law, $J = -D \partial_x \phi$, we obtain new corrective currents $\delta J = J - \Upsilon$ that are supplied next to the neutron balance in diffusion. Here $\Upsilon$ is the current obtained with the original values of the diffusion coefficient and with the derivative approximated by finite differences. In 1-D %Cartesian
 geometry and using the notation in Fig. \ref{fig:mesh1D}, it is:
 \begin{equation}
@@ -234,11 +234,11 @@ q_g = \sum_{g'=1}^G{\left[
   + \frac{\chi_g}{2\{k\}} \nu\sigma_{f,g'}(x)\phi_{g'}(x)}\right] + S_g
                  },
 \end{equation}
-where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that only the scalar flux $\phi$ being equal to the first moment $\varphi_0$ is retained for the fission term. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1.% Hereafter we consider only isotropic sources.
+where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that only the scalar flux $\phi$ being equal to the first moment $\varphi_0$ is retained for the fission term. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the only trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1, with the second moment $\varphi_1$ equal to the net current $J$.% Hereafter we consider only isotropic sources.
 
 Multiplication of Eq. \ref{eq:NTE} by $\mu$ and the integration over $[-1, 1]$ provides the expression for the current, see \cite{tomatis2011application}. The integration on $\mu$ yields integral exponential functions by a simple change of variable ($\mu = \pm 1/u$, according to the sign of $\mu$) \cite{AS1964handbook}:
 \begin{equation*}
-E_n(\tau) = \int_0^1{d\mu\, e^{-\tau / \mu} \mu^{n-2}} = \int_1^\infty{du\, e^{-\tau u}u^{-n}}.
+E_n(\tau) = \int_0^1{d\mu\, e^{-\tau / \mu} \mu^{n-2}} = \int_1^\infty{du\, e^{-\tau u}u^{-n}}, \: n \geq 0.
 \end{equation*}
 These special functions are then used to compute the current at the cell interfaces for all $i$:
 \begin{equation}
@@ -294,7 +294,7 @@ As well, integration of Eq. \ref{eq:ITE_xy} over the solid angle $d\mathbf{\Omeg
 
 The projections of partial currents on the outward normal $\hat{n}$ to a given surface are obtained from integration of Eq. \ref{eq:ITE_xy} with the weight $| \hat{n} \cdot \mathbf{\Omega} | = \sin \theta | \hat{n} \cdot \mathbf{\Omega}_p |$ on $\hat{n} \cdot \mathbf{\Omega} \lessgtr 0$. Higher moments are obtained by the weights associated to the corresponding spherical harmonics. Integrations along the polar angle are resolved with the introduction of the Bickley-Naylor functions \cite{amos1983uniform}:
 \begin{equation}
-\text{Ki}_n(\tau) = \int_0^{\pi/2}{ d\theta \sin^{n-1} \theta \exp\left(-\frac{\tau}{\sin \theta}\right) }.
+\text{Ki}_n(\tau) = \int_0^{\pi/2}{ d\theta \sin^{n-1} \theta \exp\left(-\frac{\tau}{\sin \theta}\right) },\: n \geq 0.
 \label{eq:Kin}
 \end{equation}
 The properties used for the computation of these functions are available elsewhere \cite{lewis1984computational,hebert2009applied,amos1983algorithm}.
@@ -318,7 +318,7 @@ J^+(\mathbf{r}) = \int_{W^+ \times [0, S]}{
 \end{equation}
 \label{eq:currp_cylinder}
 \end{subequations}
-$J^-$ is obtained with $w \in W^- =  \left\{\omega \mid \hat{n}\cdot \mathbf{\Omega}_p < 0\right\}$ instead.
+$J^-$ is obtained with integration over $w \in W^- =  \left\{\omega \mid \hat{n}\cdot \mathbf{\Omega}_p < 0\right\}$ instead.
 
 Another integration on the total surface $S(r) = 2\pi r$ is necessary to obtain the current in the 1-D frame. For a given angle $\omega$, we have then volume integrals to solve numerically along many parallel lines called tracks, see Fig. \ref{fig:cyltracks}. Furthermore, the tracks are identical for any angle $\omega$ in the 1-D cylindrical geometry simplifying the integrals in Eqs. \ref{eq:currp_cylinder}, which can also be limited to half portion of the cylinder thanks to its symmetry. Finally, the outgoing and incoming currents at $r$ become:
 \begin{equation}
@@ -372,7 +372,7 @@ $L^\pm_j(h) = [-Y,\pm y] \cap V_j$ and where $V_j$ is the ring area. The integra
 \end{equation}
 using the Kronecker function $\delta_{ij} = 1$ only if $i=j$ and null otherwise. $\tau_{ij}$ and $\tau_{ii}$ are respectively the optical lengths between the rings $i$ and $j$, and across the outer diameter of ring $i$. Reciprocity and conservation properties can be applied only after calculating the collision probabilities. The integrals involving the Ki function are solved thanks to the property $d_{\tau}\text{Ki}_n(\tau) = -\text{Ki}_{n-1}(\tau)$.
 
-The corresponding form for the reduced escape probability for the incoming current is $\varepsilon^-_{i+1/2,j}$:
+The corresponding form for the reduced escape probability for the incoming current is:
 \begin{equation}
 \label{eq:esc_prob_cyij-}
   \varepsilon^-_{i+1/2,j} = \frac{2}{r_{i+1/2}}
@@ -382,10 +382,10 @@ The corresponding form for the reduced escape probability for the incoming curre
         }
 	},
 \end{equation}
-for $i<j$, where $\varepsilon^-_{i+1/2,j}\equiv 0$ for $i\geq j$ since in this case a neutron born in volume $j$ (or in volume $j=i$) cannot enter volume $i$ through its outer surface at radius $r_{i+1/2}$ without undergoing a collision. 
+for $i<j$, whereas $\varepsilon^-_{i+1/2,j}\equiv 0$ for $i\geq j$ since in this case a neutron born in volume $j$ (or in volume $j=i$) cannot enter volume $i$ through its outer surface at radius $r_{i+1/2}$ without undergoing a collision. 
 
 Singularity of the integrand for the $h$-integration is noticed in the convex part while computing the collision probabilities \cite{hebert2009applied}; this notably happens at the outer radius of $j$-th ring where $\hat{n}$ is perpendicular to $\mathbf{\Omega}_p$. However, that integral can be regularized by a suitable change of variable. % $\varrho = \sqrt{r - h}$.
-The calculation of the escape probabilities is not affected by this problem because of the factor $y$ that comes from the cosine of the angle described by the normal $\hat{n}$ and $\mathbf{\Omega}_p$, which cancels the endpoint singularity. The integral in $h$ can be resolved numerically with weights and points by the Gauss-Legendre quadrature in absence of endpoint singularities. Gauss-Jacobi quadrature is recommended in that case.
+The calculation of the escape probabilities is not affected by this problem because of the factor $y$ that comes from the cosine of the angle described by the normal $\hat{n}$ and $\mathbf{\Omega}_p$, which cancels the endpoint singularity. The integral in $h$ can be resolved numerically with weights and points by the Gauss-Legendre quadrature in absence of endpoint singularities. Gauss-Jacobi quadrature is recommended otherwise.
 
 \begin{figure}[htbp]
   \centering
