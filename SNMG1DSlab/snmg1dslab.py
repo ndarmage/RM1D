@@ -63,11 +63,9 @@ import warnings as wrn
 import numpy as np
 from scipy.special import roots_legendre, legendre
 
-# INFO: the following makes execution working only when running the
-# module within this same directory
-sys.path.append('..XFD1dMGdiff'.replace('X', os.path.sep))
-# WARNING: before importing snmg1dslab, check the pythonpath for the
-# following import to properly work.
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), '..', 'FD1dMGdiff')
+)
 from FDsDiff1D import input_data, solver_options, unfold_xs
 
 

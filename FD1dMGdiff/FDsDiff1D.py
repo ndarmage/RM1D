@@ -102,14 +102,15 @@ class input_data:
     conditions: 0-vacuum, 1-zero flux and 2-reflection. Units are in cm."""
 
     def __init__(self, xs_media, media, xi, geometry_type='slab',
-                 LBC=0, RBC=0):
-        self.geometry_type, self.xi = geometry_type, xi
+                 LBC=0, RBC=0, per_unit_angle=True):
+        self.geometry_type, self.xi = geometry_type.lower(), xi
         self.LBC, self.RBC = LBC, RBC
         self.xs_media, self.media = xs_media, media
         self.check_input()
         self.compute_cell_width()
         # self.compute_mid_cell_coordinate()
-        self.compute_cell_volumes()
+        self.compute_cell_surfaces(per_unit_angle)
+        self.compute_cell_volumes(per_unit_angle)
 
     @property
     def I(self):
@@ -137,18 +138,24 @@ class input_data:
     def compute_cell_width(self):
         self.Di = self.xi[1:] - self.xi[:-1]
     
-    # def compute_mid_cell_coordinate(self):
-    #     self.xim = xim(self.xi)
+    def compute_mid_cell_coordinate(self):
+        self.xim = xim(self.xi)
     
+    def compute_cell_surfaces(self, per_unit_angle=True):
+        self.Si = compute_cell_surfaces(self.xi, geo=self.geometry_type,
+                                        per_unit_angle=per_unit_angle)
     
-    def compute_cell_volumes(self):
-        self.Vi = compute_cell_volumes(self.xi, geo=self.geometry_type)
+    def compute_cell_volumes(self, per_unit_angle=True):
+        self.Vi = compute_cell_volumes(self.xi, geo=self.geometry_type,
+                                       per_unit_angle=per_unit_angle)
 
     def check_input(self):
         lg.info("Geometry type is " + self.geometry_type)
         if (self.geometry_type != 'slab') and \
+           (self.geometry_type != 'cylinder') and \
            (self.geometry_type != 'cylindrical') and \
-           (self.geometry_type != 'spherical'):
+           (self.geometry_type != 'spherical') and \
+           (self.geometry_type != 'sphere'):
             raise ValueError('Unknown geometry_type ' + self.geometry_type)
         if not isinstance(self.LBC, int):
             raise TypeError('LBC must be integer.')
@@ -190,9 +197,9 @@ class solver_options:
     """Object collecting (input) solver options. INFO: set ritmax to 0 to
     skip Ronen iterations."""
     toll = 1.e-6  # default tolerance
-    itsmax = 100  # default nb. of max iterations (its)
+    nbitsmax = 100  # default nb. of max iterations (its)
 
-    def __init__(self, iitmax=itsmax, oitmax=itsmax, ritmax=10,
+    def __init__(self, iitmax=nbitsmax, oitmax=nbitsmax, ritmax=10,
                  pCMFD=False, otoll=toll, itoll=toll, rtoll=toll,
                  CMFD=True):
         self.ritmax = ritmax  # set to 1 to skip Ronen iterations
@@ -213,8 +220,12 @@ class solver_options:
         else:
             lg.info("Recalculate diff. coeff. by Fick's law in " +
                     "Ronen iterations.")        
-        if (self.ritmax < 0) or (self.oitmax < 0) or (self.iitmax < 0):
-            raise InputError('Negative max nb. of its is not possible.')
+        if self.ritmax < 0:
+            raise InputError('Detected negative max nb. of RM its.')  
+        if self.oitmax < 0:
+            raise InputError('Detected negative max nb. of outer its.')  
+        if self.iitmax < 0:
+            raise InputError('Detected negative max nb. of inner its.')
 
     @property
     def itsmax(self):
@@ -282,21 +293,43 @@ def compute_source(ss0, chi, nsf, flx, k=1.):
     return (qs + compute_fission_source(chi, nsf, flx) / k)
 
 
-def compute_cell_volumes(xi, geo=None):
-    # These volumes are per unit of transversal surface of the slab or
-    # per unit of angle in the other frame (azimuthal angle in the cylinder
-    # or per cone unit in the sphere). The real volumes in the cylinder
-    # must be multiplied by 2*np.pi, 4*np.pi for the sphere.
-    Di = xi[1:] - xi[:-1]
+def compute_cell_volumes(xi, geo=None, per_unit_angle=True):
+    """Compute the volumes of the cells in the mesh xi. These volumes
+    are per unit of transversal surface of the slab or per unit of
+    angle in the other frame (azimuthal angle in the cylinder or
+    per cone unit in the sphere) if per_unit_angle is true. In this case
+    the real volumes in the cylinder must be multiplied by 2*np.pi,
+    or by 4*np.pi for the sphere."""
+    # V = xi[1:] - xi[:-1]  # = Di for the slab as default case
+    V = np.diff(xi)  # same as above, but possible vectorized
     if geo != 'slab':
         xm = xim(xi)
-        if geo == 'cylindrical':
-            Di *= xm
-        elif geo == 'spherical':
-            Di *= (4. * xm**2 - xi[1:] * xi[:-1]) / 3.
+        if 'cylind' in geo:
+            V *= (xm if per_unit_angle else 2 * xm)
+        elif 'spher' in geo:
+            cm = (4. * xm**2 - xi[1:] * xi[:-1]) / 3.
+            V *= (cm if per_unit_angle else 4 * cm)
+            # V *= (r[1:]**2 + r[1:]*r[:-1] + r[:-1]**2) / 3.
         else:
             raise ValueError("Unknown geometry type " + geo)
-    return Di
+        if not per_unit_angle:
+            V *= np.pi
+    return V
+
+
+def compute_cell_surfaces(xi, geo=None, per_unit_angle=True):
+    "Compute the cell outer surfaces with the input 1d mesh xi."
+    S = np.ones(xi.size - 1)
+    if geo != 'slab':
+        if 'cylind' in geo:
+            S = (xi[1:] if per_unit_angle else 2 * xi[1:])
+        elif 'spher' in geo:
+            S = (xi[1:]**2 if per_unit_angle else 4 * xi[1:]**2)
+        else:
+            raise InputError("Unknown geometry type " + geo)
+        if not per_unit_angle:
+            S *= np.pi
+    return S
 
 
 def first_order_coeff_at_interfaces(f, Vi):
@@ -350,11 +383,11 @@ def set_diagonals(st, Db, data, dD=None):
     # compute the coupling coefficients by finite differences
     iDm = 2. / (Di[1:] + Di[:-1])  # 1 / (\Delta_i + \Delta_{i+1}) / 2
     xb0, xba = 1., 1.
-    if geo == 'cylindrical':
+    if geo == 'cylindrical' or geo == 'cylinder':
         iDm *= xi[1:-1]
         dD *= xi
         xb0, xba = xi[0], xi[-1]
-    if geo == 'spherical':
+    if geo == 'spherical' or geo == 'sphere':
         iDm *= xi[1:-1]**2
         dD *= xi**2
         xb0, xba = xi[0]**2, xi[-1]**2
@@ -978,8 +1011,7 @@ def unfold_xs(input_data, diff_calc=True):
     Lssp1 = Lss + 1
     xs_media, media = input_data.xs_media, input_data.media
     xm = xim(input_data.xi)
-    ss = np.zeros((G, G, Lssp1, I),)
-    st = np.zeros((G, I),)
+    ss, st = np.zeros((G, G, Lssp1, I),), np.zeros((G, I),)
     nsf, chi, D = np.zeros_like(st), np.zeros_like(st), np.zeros_like(st)
 
     lbnd = 0.

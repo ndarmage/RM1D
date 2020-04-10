@@ -22,7 +22,7 @@
 \fill (O) circle (2pt);
 \draw[-stealth,->,thick] (O) -- (R) node[midway, anchor=south east] {$r$};
 \draw[thin] (\x,{-\yn}) -- (R);
-\draw[->,thick] (R) -- ++({0,\nw*\R}) node[anchor=east] {$\mathbf{\omega}$};
+\draw[->,thick] (R) -- ++({0,\nw*\R}) node[anchor=east] {$\mathbf{\Omega}$};
 \draw[->,thick] (R) -- (N) node[anchor=west] {$\hat{n}$};
 \draw[thin] (S) arc ({90-\th}:90:{\nw*\R*\nh}) node[anchor=south west] {$\theta$};
 
