@@ -211,6 +211,8 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
     curvilinear frames. The flag wcos allows to get escape probabilities
     weighted with the director cosines."""
     lg.debug("Calculate the reduced escape probabilities.")
+    if wcos == True:
+        raise RuntimeError("Attention, the cosine weight seems mistaken!")
     I = r.size - 1  # nb of rings
     if not np.all(np.diff(r) > 0):
         raise ValueError("Input values in r are not in increasing order")
