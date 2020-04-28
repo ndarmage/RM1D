@@ -486,6 +486,45 @@ def opl(j, i, Ptg):
     return np.sum(Ptg[j:i+1])
 
 
+def calculate_escape_prob_slab(x, st, Di=None):
+    """Calculate the escape probabilities of neutrons emitted isotropically
+    in a cell to collide after the first flight in another one of the slab.
+    """
+    lg.debug("Calculate the reduced escape probabilities in the slab.")
+    I = x.size - 1  # nb of rings
+    if not np.all(np.diff(x) > 0):
+        raise ValueError("Input values in x are not in increasing order")
+    if st.size != I:
+        raise InputError("size mismatch of input sigma_t")
+    if Di is None:
+        Di = calculate_volumes(x, "slab")
+    if len(Di) != I:
+        raise ValueError('Nb. of cells differ from nb. of volumes')
+
+    vareps = np.zeros((I+1, I, 2),)
+    # first index is i (surfaces), second index is j (sources)
+    # references to the main data container
+    varepsp = vareps[:,:,0]  # for positive current
+    varepsm = vareps[:,:,1]  # for negative current (negative quantity)
+    
+    # compute the total removal probability per cell or cell width in unit
+    # of optical length
+    tau = Di * st
+
+    for i in range(I+1):
+        for j in range(i):
+            varepsp[i, j] = (En(3, opl(j+1, i-1, tau))
+                           - En(3, opl( j , i-1, tau)))
+        for j in range(i, I):
+            varepsm[i, j] = (En(3, opl(i,  j , tau))
+                           - En(3, opl(i, j-1, tau)))
+    
+    varepsp /= st
+    varepsm /= st
+    
+    return 0.5 * vareps
+
+
 def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), curr=None):
     """Compute the partial currents given by the integral transport equation
     with the input flux flx. An artificial second moment is used to match

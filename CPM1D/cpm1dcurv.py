@@ -27,8 +27,9 @@ from KinPy.algo609 import dbskin as Ki
 sys.path.append(
     os.path.join(os.path.dirname(__file__), '..', 'FD1dMGdiff')
 )
-from FDsDiff1D import input_data, unfold_xs, compute_cell_volumes, \
-                      compute_cell_surfaces
+from FDsDiff1D import input_data, unfold_xs, \
+                      compute_cell_volumes, compute_cell_surfaces, \
+                      calculate_escape_prob_slab
 
 
 # useful constants
@@ -36,7 +37,7 @@ Ki1_at_0, Ki2_at_0, Ki3_at_0 = Ki(0.,1,1,1)[0], Ki(0.,2,1,1)[0], Ki(0.,3,1,1)[0]
 geometry_type = "cylinder"  # cylinder or sphere only
 max_float = np.finfo(float).max  # float is float64!
 min_float = np.finfo(float).min
-np.set_printoptions(precision=10)
+np.set_printoptions(precision=6)
 
 
 class solver_options:
@@ -59,6 +60,10 @@ class solver_options:
         self.check_input()
 
     def check_input(self):
+        if self.betaL < 0 or self.betaL > 1:
+            raise InputError('left albedo not in [0, 1]')
+        if self.betaR < 0 or self.betaR > 1:
+            raise InputError('right albedo not in [0, 1]')
         if self.ks is None:
             raise InputError('Missing input nb. of quadrature points')
         if self.oitmax < 0:
@@ -78,6 +83,11 @@ class solver_options:
     def tolls(self):
         "pack tolerances on residual errors in outer and inner iterations"
         return self.otoll, self.itoll
+
+    @property
+    def albedos(self):
+        "pack albedos at the left and right boundaries"
+        return self.betaL, self.betaR
 
 
 def equivolume_mesh(I, a=0, b=1, geometry_type="cylinder"):
@@ -265,7 +275,7 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
     # remind that the current vanishes at the center, and likewise the partial
     # currents (assumption, but it shall be enough to say that they're equal!).
     vareps = np.zeros((I, I, 2),)
-    # reference the partial currents to the main data container
+    # references to the main data container
     varepsp = vareps[:,:,0]  # first index is i, second index is j (sources)
     varepsm = vareps[:,:,1]  # (defined as negative!)
     # varepsp is for escape whereas varepsm is for in-scape
@@ -376,7 +386,7 @@ def ep2cp(ep, check=False, Vst=None):
     # positive and negative currents in order. Remind that the reduced
     # escape terms (wrongly called probability sometimes) for the incoming
     # (negative-minus) currents are already stored as negative quantities.
-    G, I = ep.shape[:2]
+    G, I0, I, _ = ep.shape
     cp = np.zeros((G, I, I),)
     for g in range(G):  # check for negative values
         if np.any(abs(ep[g,:,:]) > 1):
@@ -386,9 +396,14 @@ def ep2cp(ep, check=False, Vst=None):
             msg += " ep_plus =\n" + str(ep[g,:,:,0])
             lg.warning(msg)
     ep_minus, ep_plus = ep[:,:,:,1], ep[:,:,:,0]
-    cp[:, 0,:] = - ep_plus[:,0,:] - ep_minus[:,0,:]
-    cp[:,1:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
-               + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
+    if I0 == I:  # this occurs only with curv. frames
+        ep_plus = np.insert(ep_plus, 0, np.zeros(I), axis=1)
+        ep_minus = np.insert(ep_minus, 0, np.zeros(I), axis=1)
+    cp[:,:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
+              + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
+    # cp[:, 0,:] = - ep_plus[:,0,:] - ep_minus[:,0,:]
+    # cp[:,1:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
+               # + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
     for g in range(G):
         cp[g][np.diag_indices(I)] += 1
         if np.any(cp[g] < 0):
@@ -397,21 +412,21 @@ def ep2cp(ep, check=False, Vst=None):
             # raise RuntimeError(msg)
             lg.warning(msg)
     
-    if check:
+    if check or True:
         if Vst is None:
             raise InputError("V times st is needed to check reciprocity")
         for g in range(G):
             pij = cp[g,:,:]
             # check particle conservation on the full domain
             np.testing.assert_allclose(np.ones(I),
-                np.sum(pij, axis=0) + ep_plus[g,-1,:], rtol=1.e-06,
-                err_msg="conservation on the full domain not satisfied" +
-                    " for group %d" % (g + 1))
+                np.sum(pij, axis=0) + ep_plus[g,-1,:] - ep_minus[g,0,:],
+                rtol=1.e-06, err_msg="conservation on the full domain" +
+                    " not satisfied for group %d" % (g + 1))
     
             # check reciprocity
             Vjstj = np.tile(Vst[g, :], (I, 1))
             symm = pij * Vjstj
-            # print('pij * Vjstj = \n' + str(symm) + '\n ---')
+            # print('pij * Vjstj = \n' + str(symm) + '\n ---'); input('wait')
             np.testing.assert_allclose(symm, symm.T, rtol=1.e-06,
                 err_msg="reciprocity of CPs not satisfied" +
                     " for group %d" % (g + 1))
@@ -424,15 +439,21 @@ def calculate_probs(r, st, tr_data=None, Vj=None, geometry_type="cylinder"):
     G, I = st.shape
     if Vj is None:
         Vj = calculate_volumes(r, geometry_type)
-    # reduced escape probabilities for partial currents (not weighted by
-    # director cosines)
-    varepS = np.zeros((G, I, I, 2),)
-    for g in range(G):
-        varepS[g,:,:,:] = calculate_escape_prob(r, st[g,:], tr_data,
-                                                geometry_type, wcos=False)
+    
+    # reduced escape probabilities for partial currents
+    if geometry_type == "slab":
+        varepS = np.zeros((G, I+1, I, 2),)
+        for g in range(G):
+            varepS[g,:,:,:] = calculate_escape_prob_slab(r, st[g,:], Vj)
+    else:
+        varepS = np.zeros((G, I, I, 2),)
+        for g in range(G):
+            varepS[g,:,:,:] = calculate_escape_prob(r, st[g,:], tr_data,
+                                                    geometry_type, wcos=False)
 
     # divide by the volumes of starting cells to get the probabilities
-    eP = varepS / np.moveaxis(np.tile(Vj, (G, 2, I, 1)), 1, -1)
+    nb_faces = varepS.shape[1]  # nb. of surfaces in the 1d problem
+    eP = varepS / np.moveaxis(np.tile(Vj, (G, 2, nb_faces, 1)), 1, -1)
     # derive collision probabilities from escape probabilities and
     # return the f.f. collision probabilities
     return eP, ep2cp(eP, check=True, Vst=st * Vj)
@@ -452,7 +473,7 @@ def check_xs(xs):
     pass
 
 
-def calculate_full_spectrum(xs, cp, ep=None, beta=0, data=None):
+def calculate_full_spectrum(xs, cp, ep=None, betas=(0,0), data=None):
     """Direct solution of the k-eigenvalue problem in integral transport
     by the collision probability method. Input data are the xs list and
     the collision probabilities in cp. Only isotropic scattering is
@@ -461,18 +482,30 @@ def calculate_full_spectrum(xs, cp, ep=None, beta=0, data=None):
     st, ss, chi, nsf = xs
     G, I = nsf.shape
     check_xs(xs)
-    if (beta < 0) or (beta > 1):
-        raise InputError("beta is not in valid range")
+    betaL, betaR = betas
+    
+    if (betaL < 0) or (betaL > 1):
+        raise InputError("betaL (left albedo) is not in valid range")
     else:
         if ep is None:
-            raise InputError("beta > 0, but no input escape probs")
+            raise InputError("betaL > 0, but no input escape probs")
         if data is None:
-            raise InputError("no input VjoSb, input mesh data is needed")
+            raise InputError("input mesh data is needed for VjoSbL")
         else:
-            r, geo, V, Sb = data.xi, data.geometry_type, data.Vi, data.Si[-1]
+            # r, geo, V, Sb = data.xi, data.geometry_type, data.Vi, data.Si[0]
             # V = calculate_volumes(r, geo)
-            # Sb = calculate_surfaces(r, geo)[-1]
-            VjoSb = V / Sb
+            # Sb = calculate_surfaces(r, geo)[0]
+            VjoSbL = data.Vi / data.Si[0]
+    
+    if (betaR < 0) or (betaR > 1):
+        raise InputError("betaR (right albedo) is not in valid range")
+    else:
+        if ep is None:
+            raise InputError("betaR > 0, but no input escape probs")
+        if data is None:
+            raise InputError("input mesh data is needed for VjoSbR")
+        else:
+            VjoSbR = data.Vi / data.Si[-1]
 
     GI = G * I
     PS = np.zeros((GI, GI),)
@@ -482,11 +515,17 @@ def calculate_full_spectrum(xs, cp, ep=None, beta=0, data=None):
     for g in range(G):
         idx = slice(I * g, I * (g + 1))
         pji = np.transpose(cp[g,:,:] / st[g,:])  # reduced CP
-        if beta > 0:
-            ebj = ep[g,-1,:,0]
-            pjb = VjoSb * ebj * 4.  # times is very important!
+        if betaL > 0:
+            ebj = -ep[g,0,:,1]
+            pjb = VjoSbL * ebj * 4.  # times is very important!
             transmission = 1 - np.dot(pjb, st[g,:])
-            coef = beta / (1 - beta * transmission)
+            coef = betaL / (1 - betaL * transmission)
+            pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
+        if betaR > 0:
+            ebj = ep[g,-1,:,0]
+            pjb = VjoSbR * ebj * 4.
+            transmission = 1 - np.dot(pjb, st[g,:])
+            coef = betaR / (1 - betaR * transmission)
             pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
             
         # X[Is + g * I, Is] = chi[g,:]
@@ -514,19 +553,31 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     check_xs(xs)
     if flx is None:
         flx = np.ones(GI)
-    beta = slvr_opts.betaR
-    if (beta < 0) or (beta > 1):
-        raise InputError("beta is not in valid range")
+    
+    betaL, betaR = slvr_opts.albedos
+    
+    if (betaL < 0) or (betaL > 1):
+        raise InputError("betaL (left albedo) is not in valid range")
     else:
         if ep is None:
-            raise InputError("beta > 0, but no input escape probs")
+            raise InputError("betaL > 0, but no input escape probs")
         if data is None:
-            raise InputError("no input VjoSb, input mesh data is needed")
+            raise InputError("input mesh data is needed for VjoSbL")
         else:
-            r, geo, V, Sb = data.xi, data.geometry_type, data.Vi, data.Si[-1]
+            # r, geo, V, Sb = data.xi, data.geometry_type, data.Vi, data.Si[0]
             # V = calculate_volumes(r, geo)
-            # Sb = calculate_surfaces(r, geo)[-1]
-            VjoSb = V / Sb
+            # Sb = calculate_surfaces(r, geo)[0]
+            VjoSbL = data.Vi / data.Si[0]
+    
+    if (betaR < 0) or (betaR > 1):
+        raise InputError("betaR (right albedo) is not in valid range")
+    else:
+        if ep is None:
+            raise InputError("betaR > 0, but no input escape probs")
+        if data is None:
+            raise InputError("input mesh data is needed for VjoSbR")
+        else:
+            VjoSbR = data.Vi / data.Si[-1]
     
     PS, PX = np.zeros((GI, GI),), np.zeros((GI, I),)
     # X, F = np.zeros_like(PX), np.zeros((I, GI),)
@@ -535,11 +586,17 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     for g in range(G):
         idx = slice(I * g, I * (g + 1))
         pji = np.transpose(cp[g,:,:] / st[g,:])  # reduced CP
-        if beta > 0:
-            ebj = ep[g,-1,:,0]
-            pjb = VjoSb * ebj * 4.  # times is very important!
+        if betaL > 0:
+            ebj = -ep[g,0,:,1]
+            pjb = VjoSbL * ebj * 4.  # times is very important!
             transmission = 1 - np.dot(pjb, st[g,:])
-            coef = beta / (1 - beta * transmission)
+            coef = betaL / (1 - betaL * transmission)
+            pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
+        if betaR > 0:
+            ebj = ep[g,-1,:,0]
+            pjb = VjoSbR * ebj * 4.  # times is very important!
+            transmission = 1 - np.dot(pjb, st[g,:])
+            coef = betaR / (1 - betaR * transmission)
             pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
         # X[Is + g * I, Is] = chi[g,:]
         # F[Is, Is + g * I] = nsf[g,:]
@@ -595,12 +652,15 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     return Rq(H, flx), flx.reshape(G, I)
 
 
-def solve_cpm1D(idata, slvr_opts):
+def solve_cpm1D(idata, slvr_opts, vrbs=True):
     '''Run the CPM solver.'''
     lg.info("Prepare input data")
     r, geo = idata.xi, idata.geometry_type
     # xs = [st, ss, chi, nsf]
     xs = unfold_xs(idata, diff_calc=False)
+    if idata.LBC == 2:
+        # quick-fix for curvilinear geometries
+        slvr_opts.betaL = 1 if geo == "slab" else 0
     if idata.RBC == 2:
         slvr_opts.betaR = 1
     if (idata.LBC != 2) and (geo == "sphere" or geo == "cylinder" ):
@@ -608,9 +668,10 @@ def solve_cpm1D(idata, slvr_opts):
     lg.info("-o"*22)
     
     lg.info("Calculate the collision probabilities")
-    tr_data = calculate_tracking_data(r, slvr_opts.ks,
-        sphere=True if "spher" in geo else False, 
-        quadrule=slvr_opts.GaussQuadrature)
+    tr_data = None if (geo == "slab") else \
+        calculate_tracking_data(r, slvr_opts.ks,
+            sphere=True if "spher" in geo else False, 
+            quadrule=slvr_opts.GaussQuadrature)
     V = calculate_volumes(r, geo)
     np.testing.assert_allclose(V, idata.Vi,
         err_msg="Cell volumes in input are not correct")
@@ -620,19 +681,23 @@ def solve_cpm1D(idata, slvr_opts):
     # direct solution for the full spectrum
     chk_sign = lambda x: -x if np.all(x < 0) else x
     lg.info("Call the direct solution by CPM to get the full spectrum.")
-    K, nfss = calculate_full_spectrum(xs, cp, ep, slvr_opts.betaR, data=idata)
+    K, nfss = calculate_full_spectrum(xs, cp, ep, slvr_opts.albedos, idata)
     # ...nfss is nu-fiss rate
     ik = np.argmax(K)
     keff, nfss_rates = K[ik], chk_sign(nfss[:,ik])
-    lg.info("Multiplication factor from the fission matrix is %.6f" % keff)
-    lg.info("Fission rate distribution:\n" + str(nfss_rates))
+    if vrbs:
+        lg.info("Multiplication factor from the fission matrix is" +
+                " %.6f" % keff)
+        lg.info("Fission rate distribution:\n" + str(nfss_rates))
     
     # compute the fundamental eigenpair by the power method
     lg.info("Solve iteratively by the Wielandt-accelerated power\n" +
             " method the CPM transport equation.")
     keff, flx = solve_outers(xs, cp, slvr_opts, ep, data=idata)
-    lg.info("Multiplication factor from the power method is %.6f" % keff)
-    lg.info("Flux distribution (G/I):\n" + str(flx))
+    if vrbs:
+        lg.info("Multiplication factor from the power method is" +
+                " %.6f" % keff)
+        lg.info("Flux distribution (G/I):\n" + str(chk_sign(flx)))
     lg.info("-o"*22)
     lg.info("*** NORMAL END OF CALCULATION ***")
     return keff, chk_sign(flx)

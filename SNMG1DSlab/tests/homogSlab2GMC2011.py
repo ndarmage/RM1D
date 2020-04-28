@@ -42,8 +42,8 @@ Homog2GSlab_data = input_data(xs_media, media, xi, geometry_type, LBC, RBC)
 slvr_opts = solver_options()
 
 # Initiate quadratures object
-N, L = 16, 0
-qdata = quad_data(N, L)
+N = 16
+qdata = quad_data(N, L=0)
 
 if __name__ == "__main__":
 

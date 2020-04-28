@@ -482,7 +482,7 @@ It might not be possible to compute the escape probabilities as derived in this 
 
 A generalized form for the boundary condition of the diffusion equation applying at the left side of the slab follows as $\Upsilon = - D_0 \phi_0 / (\Delta_0 / 2 + \zeta)$, where $\zeta$ is the extrapolation length in case of vacuum. Reflection can be reproduced by $\zeta \rightarrow \infty$, whereas the condition of zero-flux comes with $\zeta = 0$. The boundary $\delta J$ takes the simpler form $\delta J = - \delta D_{-1/2} \phi_0$ without dividing by the spatial width, since no particular extrapolation length is meant for the correction. Indeed, it will be possible to determine the actual extrapolation length only at convergence. The expression for the right boundary is straightforward, implying a non-negative current. Reflection is always reproduced at the center in curvilinear geometries.
 
-About the currents from Eq. \ref{eq:J_tr}, the boundary conditions must be implemented through the first two terms at the right side due to the incoming flux. They are zero by definition only in case of vacuum. The flux expansion on the Legendre polynomials is necessary to reproduce other types of boundary condition. Again, we can only approximate the flux up to the first order, that is $\varphi \approx \phi/2 + 3/2 J \mu$. This approximation may not reproduce a vanishing current with reflection reproducing a symmetric distribution. At the left boundary for instance, the current can be expressed as $J(a) =  J^+ + J^- = 0$ with the entering current $J^+ = \int_0^1 { d\mu \mu \phi(a, \mu) } = - J^-$. $J^-$ takes into account all contributions coming from the right of $a$ up to $b$, see Eq. \ref{eq:J_tr}. In the absence of higher moments, the angular flux at the boundary becomes simply $\phi(a, \mu) \approx \phi_0(a) / 2$, yielding $J^+(x) = \phi_0(a)/2\, E_3 \left(\tau(a, x)\right)$. This approximation does not guarantee to obtain the expected vanishing current at the boundary when computing the same current at the boundary with symmetric flux distributions. However, it is possible to determine the difference between the partial currents (remind that $J^-$ is negative). The higher (even) flux moments are responsible for this residual quantity, but they are not available unfortunately. A possible solution is considering that this quantity comes artificially from the only second moment, like\footnote{The operator $\pluseq$ assigns to $J$ the sum of itself and quantity to the right.}
+About the currents from Eq. \ref{eq:J_tr}, the boundary conditions must be implemented through the first two terms at the right side due to the incoming flux. They are zero by definition only in case of vacuum. The flux expansion on the Legendre polynomials is necessary to reproduce other types of boundary condition. Again, we can only approximate the flux up to the first order, that is $\varphi \approx \phi/2 + 3/2 J \mu$. This approximation may not reproduce a vanishing current with reflection reproducing a symmetric distribution. At the left boundary for instance, the current can be expressed as $J(a) =  J^+ + J^- = 0$ with the entering current $J^+ = \int_0^1 { d\mu \mu \phi(a, \mu) } = - J^-$. $J^-$ takes into account all contributions coming from the right of $a$ up to $b$, see Eq. \ref{eq:J_tr}. In the absence of higher moments, the angular flux at the boundary becomes simply $\phi(a, \mu) \approx \phi_0(a) / 2$, yielding $J^+(x) = E_3 \left(\tau(a, x)\right)\phi_0(a)/2$. This approximation does not guarantee to obtain the expected vanishing current at the boundary when computing the same current at the boundary with symmetric flux distributions. However, it is possible to determine the difference between the partial currents (remind that $J^-$ is negative). The higher (even) flux moments are responsible for this residual quantity, but they are not available unfortunately. A possible solution is considering that this quantity comes artificially from the only second moment, like\footnote{The operator $\pluseq$ assigns to $J$ the sum of itself and quantity to the right.}
 \begin{equation}
 \begin{split}
 J^+(x) &\pluseq \frac{5}{4} \tilde{\phi}_2(a) \left[ 3 E_5(\tau(a, x)) - E_3(\tau(a, x)) \right],\\ &\text{ with } \tilde{\phi}_2(a) = - \frac{16}{5} \left( \frac{1}{4} \phi_0(a) + J^- \right).
@@ -490,49 +490,51 @@ J^+(x) &\pluseq \frac{5}{4} \tilde{\phi}_2(a) \left[ 3 E_5(\tau(a, x)) - E_3(\ta
 \end{equation}
 The flux expansion at the left boundary is then
 \[ \phi(a, \mu) = \frac{1}{2} \phi_0 + \frac{3}{2} \mu \phi_1 + \frac{5}{4} \left( 3 \mu^2 - 1 \right) \tilde{\phi}_2, \]
-with $\phi_1 = J = 0$ with reflection. The derivation of the correction at the other boundary of the slab can easily be derived. Although this correction improves the results, it cannot yield exactly the same results of the unfolded geometry, that is without reproducing the half symmetry by reflection. This occurs because the small current difference is assumed only on the second moment, neglecting the others which may become relevant on case-dependent basis.
+with $\phi_1 = J = 0$ with reflection. The derivation of the correction at the other boundary of the slab can easily be derived. Although this correction definitely improves the results, it cannot yield exactly the same results of the unfolded geometry, that is without reproducing the half symmetry by reflection. This occurs because the small current difference is allotted only to the second moment, neglecting the others which may become relevant on a case-dependent basis.
 
 
 \section{RESULTS}
 \label{sec:res}
 
-We resume here briefly the results of the two-group slab problem from \cite{tomatis2011application}. New results are also available for having new computer codes implemented with Python3. The reference solution is provided by a S$_{16}$ discrete ordinate computer code. Tab. \ref{tab:kconv} shows the differences on the reactivity by refining the mesh when the Ronen method is called with the diffusion solver. The reactivity is simply given as $\rho = 1 - 1/k$, where $k$ is the multiplication factor. The reference $k$ value from S$_{16}$ is 0.744417 ($I = 200$). Differences at $it=0$ correspond to the initial diffusion calculations without any current correction. Equidistant meshes are used in all calculations.
+%We resume here briefly the results of the two-group slab problem from \cite{tomatis2011application}. New results are also available for having new computer codes implemented in Python v3.8.2 with the numerical libraries NumPy v1.18.2 and SciPy v1.3.2. The reference solution is provided by a S$_{16}$ discrete ordinate computer code. Tab. \ref{tab:kconv} shows the differences on the reactivity by refining the mesh when the Ronen method is called with the diffusion solver. The reactivity is simply given as $\rho = 1 - 1/k$, where $k$ is the multiplication factor. The reference $k$ value from S$_{16}$ is 0.744417 ($I = 200$). Differences at $it=0$ correspond to the initial diffusion calculations without any current correction. Equidistant meshes are used in all calculations.
 %
-\begin{table}[htbp]
-\centering
-\caption{Reactivity differences in pcm by refining the mesh.\label{tab:kconv}}
-\begin{tabular}{c|r|r}
-\multirow{2}{*}{$I$} & \multicolumn{2}{|c}{$\Delta \rho$} \\ \cline{2-3}
-     & $it=0$ & $it=100$ \\ \hline
- ~50 & 550.22 & 170.35 \\
- 100 & 556.85 & ~36.08 \\
- 200 & 558.50 & ~~1.72
-\end{tabular}
-\end{table}
-
-The convergence on the flux is rather slow as shown in Fig. \ref{fig:kflx} and Fig. \ref{fig:eflx}. The corrections of the flux become smaller when iterating and a considerable number of iterations is necessary to approach the target results of the S$_{16}$ calculation.
-
-\begin{figure}[htbp]
-  \centering
-  \includegraphics[width=.8\linewidth]{figures/kflxconv.pdf}
-  \caption{Behavior of the convergence on the flux (right) and on the reacitivity (left) for $I = 200$.}
-  \label{fig:kflx}
-\end{figure}
+%\begin{table}[htbp]
+%\centering
+%\caption{Reactivity differences in pcm by refining the mesh.\label{tab:kconv}}
+%\begin{tabular}{c|r|r}
+%\multirow{2}{*}{$I$} & \multicolumn{2}{|c}{$\Delta \rho$} \\ \cline{2-3}
+%     & $it=0$ & $it=100$ \\ \hline
+% ~50 & 550.22 & 170.35 \\
+% 100 & 556.85 & ~36.08 \\
+% 200 & 558.50 & ~~1.72
+%\end{tabular}
+%\end{table}
 %
-\begin{figure}[hbtp]
-  \centering
-  \includegraphics[width=.8\linewidth]{figures/eflxconv.pdf}
-  \caption{Relative variation of the flux though the RM iterations ($I = 200$).}
-  \label{fig:eflx}
-\end{figure}
+%The convergence on the flux is rather slow as shown in Fig. \ref{fig:kflx} and Fig. \ref{fig:eflx}. The corrections of the flux become smaller when iterating and a considerable number of iterations is necessary to approach the target results of the S$_{16}$ calculation.
+%
+%\begin{figure}[htbp]
+%  \centering
+%  \includegraphics[width=.8\linewidth]{figures/kflxconv.pdf}
+%  \caption{Behavior of the convergence on the flux (right) and on the reacitivity (left) for $I = 200$.}
+%  \label{fig:kflx}
+%\end{figure}
+%%
+%\begin{figure}[hbtp]
+%  \centering
+%  \includegraphics[width=.8\linewidth]{figures/eflxconv.pdf}
+%  \caption{Relative variation of the flux though the RM iterations ($I = 200$).}
+%  \label{fig:eflx}
+%\end{figure}
 
-A one-group homogeneous problem is proposed hereafter in order to study the application of the Ronen method with angular redistribution in curvilinear geometries. Reference solutions are provided by collision probability method solvers, whose development take advantage of the implementation for the escape probabilities derived in section~\ref{sec:ce}. This choice is supported by the use of integral operators in the same Ronen method. Again, the implementation follows H\'ebert's textbook. The problems are solved in units of optical length, which means by simply setting the input total cross section equal to 1. The multiplying source becomes then $q = (c + \nu f) \phi_0 / 4\pi$, thus isotropic in angle, and with $c$ and $\nu f$ respectively as positive real numbers of secondaries per scattering and fission events. These numbers can be interpreted as conditional probabilities as well. The multiplicity $\nu$ acts as the eigenvalue of the problem. After the fundamental eigen-pair is known for given values of the constants and for a given size $L$, it is worthless to change $f$ alone to study the problem since only the product $\nu f$ counts for the balance (associated to the same eigenfunction). We choose then $f = 1$, ending up in only two free parameters for our study: $c_s$ and $L$. Even if this choice is unphysical for the assumed value of the total cross section together with $c > 0$, physical meaning is recovered by the fundamental value of $\nu$.
+New computer programs have been developed in Python v3.8.2 with the numerical libraries NumPy v1.18.2 and SciPy v1.3.2 in order to solve the diffusion and the transport problems after calculating the first flight escape probabilities in the three geometries. The programs can treat heterogeneous media and use the multigroup formalism in energy, being intended for educational purposes.
 
-\textcolor{red}{Roy will be able to check these assertions in the coming days.}
+We present in this section a one-group homogeneous problem with isotropic scatterinig to study qualititatively the behavior of the Ronen method with angular redistribution in the curvilinear geometries. The setup of a complete test suite with problems of increasing levels of complexity is planned as future research action. Reference solutions are provided by the collision probability method, whose implementation takes advantage of the escape probabilities derived in section~\ref{sec:ce}, and whose numerical solution is explained in appendix \ref{sec:CPMsolution}.
 
-\textcolor{blue}{The source assumes this form because the integration variables also have to the normalized by the mean free path (i.e. multiplied by the total cross section).}
+The problem is resolved in units of optical length according to the change of variable $x \leftarrow \sigma x$, obtained after dividing the balance equation by the total cross section $\sigma$. The isotropically multiplying source becomes then $q = c \phi_0 / 4\pi$ with the number of secondaries from scattering or fission events $c = (\sigma_s + \nu \sigma_f)/\sigma$. The multiplicity $\nu$ assumes the role of eigenvalue in abscence of external sources. The size of the problem is simply $b$ with $a=0$. $c$ and $b$ are then the free parameters in the problem.
 
-\textcolor{green}{The use of the integral transport eqn. to get reference solutions is motivated by two main reasons. The first is to use again what we're implementing now for the escape probabilities. The second is to get the reference solution by inverting the operator used in the RM. So that we'll really know what is the solution to match. Furthermore, this won't be affected by ray effects of any kind. Lastly, we'll have to be very careful to the endpoint singularity when computing the collision probabilities.}
+%\textcolor{blue}{The source assumes this form because the integration variables also have to the normalized by the mean free path (i.e. multiplied by the total cross section).}
+
+%\textcolor{green}{The use of the integral transport eqn. to get reference solutions is motivated by two main reasons. The first is to use again what we're implementing now for the escape probabilities. The second is to get the reference solution by inverting the operator used in the RM. So that we'll really know what is the solution to match. Furthermore, this won't be affected by ray effects of any kind. Lastly, we'll have to be very careful to the endpoint singularity when computing the collision probabilities.}
 
 \section{CONCLUSION}
 \label{sec:cncls}
