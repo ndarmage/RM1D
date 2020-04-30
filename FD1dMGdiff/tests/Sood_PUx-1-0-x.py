@@ -14,15 +14,16 @@ import sys, os
 import numpy as np
 from scipy import interpolate
 
-sys.path.append(os.path.join(os.getcwd(), ".."))
+sys.path.insert(0, os.path.join("..", "..", "CPM1D"))
 from cpm1dcurv import *
 
-sys.path.insert(0, os.path.join("..", "..", "FD1dMGdiff"))
+sys.path.append(os.path.join(os.getcwd(), ".."))
 from data.SoodPNE2003 import *
 from FDsDiff1D import input_data
 
 
-odir = 'output'
+refdir = os.path.join("..", "..", "CPM1D", "tests", "output")
+
 
 # Table 3
 # Critical Dimensions, rc, for One-Group Bare Pu-239 (c=1.50)
@@ -67,22 +68,31 @@ if __name__ == "__main__":
     geo = "slab"
     case = "%s-1-0-%s" % (m, get_geoid(geo))
     lg.info("Test case: " + case)
+    
+    # load reference results computed by CPM1D
+    k_ref, flx_ref  = np.load(os.path.join(refdir, case + "_ref.npy"),
+                              allow_pickle=True)
 
     I = 20  # number of cells in the spatial mesh
     r = equivolume_mesh(I, 0, L, geo)
     # r = np.array([0, 1 / 8., 1 / 6., 0.9, 1]) * L
-    data = input_data(xs_media, media, r, geo, LBC=0, RBC=0)
+    LBC, RBC = 0, 0
+    data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
     
     # ks is needed anyway when validating the input solver options
-    k, flx = solve_cpm1D(data, solver_options(ks=np.full(I, 0)), False)
-    np.testing.assert_allclose(k, 1, atol=1.e-3, err_msg=case +
-                               ": criticality not verified")
-    np.save(os.path.join(odir, case + '_ref.npy'), [k, flx])
     
+    slvr_opts = solver_options(iitmax=4, oitmax=4, ritmax=10,
+                               CMFD=True, pCMFD=True)
+    filename = case + "_LBC%dRBC%d_I%d_it%d" % (LBC, RBC, I, ritmax)
+    flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
+    
+    
+    
+    
+    sys.exit('stop')
     m = 'PUb'  # only one case in the test suite
-    # critical lengths
-    rc_dict = {'slab': 2.256751, 'cylinder': 4.279960, 'sphere': 6.082547}
-    
+    rc_dict = {'slab': 2.256751, 'cylinder': 4.279960,
+               'sphere': 6.082547}  # critical lengths
     for geo in geoms:
         case = "%s-1-0-%s" % (m, get_geoid(geo))
         lg.info("Test case: " + case)
@@ -120,5 +130,4 @@ if __name__ == "__main__":
         np.testing.assert_array_less(np.nan_to_num(rel_err_pc),
                                      np.ones(4), err_msg=case +
                                      ": flux distribution not verified")
-        np.save(os.path.join(odir, case + '_ref.npy'), [k, flx])
         

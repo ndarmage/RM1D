@@ -19,6 +19,29 @@ Pu-239 (a) 3.24 0.081600 0.019584 0.225216 0.32640 1.50
 Pu-239 (b) 2.84 0.081600 0.019584 0.225216 0.32640 1.40
 H20 (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
 """
+
+
+def get_geoid(geo):
+    if geo == 'slab':
+        g = 'SL'
+    elif 'cylind' in geo:
+        g = 'CY'
+    elif 'spher' in geo:
+        g = 'SP'
+    else:
+        raise ValueError('unknown input geometry type')
+    return g
+
+
+def set_media(m, L, name):
+    xs_media = {name:{  # homogeneous medium
+        'st': m['st'], 'ss': m['ss'], 'nsf': m['nsf'],
+        'chi': m['chi'], 'D': m['D']}
+    }
+    media = [[name, L]]  # i.e. homogeneously filled
+    return xs_media, media
+
+
 def set_xs(dstr):
     d = dict()
     d['nu'], d['sf'], d['sc'], d['ss'], d['st'], d['c'] = \

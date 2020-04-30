@@ -12,8 +12,10 @@ from cpm1dcurv import *
 sys.path.insert(0, os.path.join("..", "..", "FD1dMGdiff"))
 from data.homog2GMC2011 import *
 
+np.set_printoptions(precision=5)
+
 L = 21.5 / 2.  # outer radius, equal to half pitch of a fuel assembly
-I = 4  # number of cells in the spatial mesh
+I = 5  # number of cells in the spatial mesh
     
 ks = np.full(I, 2)  # quadrature order for each spatial cell
 GaussQuadrature = "Gauss-Jacobi"  # type of Gauss quadrature

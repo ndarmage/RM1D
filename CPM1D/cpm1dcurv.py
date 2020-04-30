@@ -20,6 +20,7 @@ import os
 import sys
 import logging as lg
 import numpy as np
+from scipy.optimize import brentq
 from scipy.special import expn as En
 from scipy.special import roots_jacobi
 from KinPy.algo609 import dbskin as Ki
@@ -28,8 +29,7 @@ sys.path.append(
     os.path.join(os.path.dirname(__file__), '..', 'FD1dMGdiff')
 )
 from FDsDiff1D import input_data, unfold_xs, \
-                      compute_cell_volumes, compute_cell_surfaces, \
-                      calculate_escape_prob_slab
+                      compute_cell_volumes, compute_cell_surfaces
 
 
 # useful constants
@@ -111,6 +111,61 @@ def equivolume_mesh(I, a=0, b=1, geometry_type="cylinder"):
         r = np.cbrt(r - a**3)
     
     return np.insert(r, 0, a)
+
+
+def geomprogr_mesh(N=None, a=0, L=None, Delta0=None, ratio=None):
+    """Compute a sequence of values according to a geometric progression.
+    Different options are possible with the input number of intervals in the
+    sequence N, the length of the first interval Delta0, the total length L
+    and the ratio of the sought geometric progression. Three of them are 
+    requested in input to find a valid sequence. The sequence is drawn within
+    the points a and b."""
+    
+    if list(locals().values()).count(None) > 1:
+        raise ValueError('Insufficient number of input data for a sequence')
+    if ratio is not None:
+        if (ratio < 0):
+            raise ValueError('negative ratio is not valid')
+    if L is not None:
+        if (L < 0):
+            raise ValueError('negative total length is not valid')
+    if Delta0 is not None:
+        if (Delta0 < 0):
+            raise ValueError('negative length of the 1st interval is not valid')
+    if N is not None:
+        if (N < 0):
+            raise ValueError('negative number of intervals is not valid')
+    
+    if N is None:
+        if ratio < 1:
+            N = np.log(1 - L / Delta0 * (1 - ratio)) / np.log(ratio)
+        else:
+            N = np.log(1 + L / Delta0 * (ratio - 1)) / np.log(ratio)
+    elif L is None:
+        if ratio < 1:
+            L = Delta0 * (1 - ratio**N) / (1 - ratio)
+        else:
+            L = Delta0 * (ratio**N - 1) / (ratio - 1)
+    elif Delta0 is None:
+        if not np.isclose(ratio, 1):
+            Delta0 = L * (1 - ratio) / (1 - ratio**N)
+        else:
+            Delta0 = L / float(N)
+    elif ratio is None:
+        f = lambda q: q**N - L / Delta0 * q + L / Delta0 - 1
+        x = L / float(N)
+        if Delta0 > x:
+            ratio = brentq(f, 0, 1 - 1.e-6)
+        elif Delta0 < x:
+            ratio = brentq(f, 1 + 1.e-6, 20)
+        else:
+            ratio = 1
+    
+    r = np.full(N, Delta0)
+    for i in range(N-1):
+        r[i+1] = r[i] * ratio
+    
+    return np.insert(np.cumsum(r), 0, 0) + a
 
 
 def calculate_volumes(r, geometry_type="cylinder"):
@@ -227,7 +282,7 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
     if not np.all(np.diff(r) > 0):
         raise ValueError("Input values in r are not in increasing order")
     if st.size != I:
-        raise InputError("size mismatch of input sigma_t")
+        raise ValueError("size mismatch of input sigma_t")
 
     # unpack tracking data
     ks, tracks = tr_data["tracks_in_rings"], tr_data["tracks"]
@@ -300,11 +355,11 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
 
         # escape within (r_i-1/2, r_i+1/2)
         # contribution from the i-th ring through its outer surface
-        idx_0, invsti = ji_allk(0, i), 1. / st[i]
+        idx_0 = ji_allk(0, i)
         tii = 2 * tau[idx_0]  # for all k tracking lines
-        varepsp[i,i] += np.dot(wgts, K_at_0 - K(tii)) * invsti
+        varepsp[i,i] += np.dot(wgts, K_at_0 - K(tii))
         # varepsp[i,i] += np.dot(wgts, 2 * tracks[idx_0])  # * K(0, n=2)=1 !
-        # print('ell', tii * invsti, 'i', i)
+        # print('ell', tii / st[i], 'i', i)
         # print('tracks', tracks[idx_0])
         # print(np.dot(wgts, 4 * tracks[idx_0] * np.pi), varepsp[i,i])
         # print('wgts', wgts)
@@ -312,12 +367,12 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
         # contributions from the rings that are around
         tij = np.zeros_like(wgts)
         for j in range(i+1,I):
-            idx_j, invstj = ji_allk(j-i, i), 1. / st[j]
+            idx_j = ji_allk(j-i, i)
             a = tii + tij
             diffK = K(a) - K(a + tau[idx_j])
-            varepsp[i,j] += np.dot(wgts, diffK) * invstj
+            varepsp[i,j] += np.dot(wgts, diffK)
             diffK = K(tij) - K(tij + tau[idx_j])
-            varepsm[i,j] -= np.dot(wgts, diffK) * invstj
+            varepsm[i,j] -= np.dot(wgts, diffK)
             tij += tau[idx_j]
 
         # escape within (0, r_i-1/2)
@@ -331,34 +386,34 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
             # contribution from the same ring, whose index is still i
             idx_i = ji_allk(ji, j)
             diffK = K_at_0 - K(tau[idx_i])
-            # varepsp[i,i] += np.dot(wgts, diffK) * invsti  # ??
+            # varepsp[i,i] += np.dot(wgts, diffK)
             tii = np.zeros_like(wgts)
             for n in range(ji):
                 tii += tau[ji_allk(n, j)]
             a = tau[idx_i] + 2 * tii
             diffK += K(a) - K(a + tau[idx_i])
-            varepsp[i,i] += np.dot(wgts, diffK) * invsti
+            varepsp[i,i] += np.dot(wgts, diffK)
 
             # contribution from the outer rings (new index n)
             a += tau[idx_i]
             tij = np.zeros_like(wgts)
             for n in range(i+1, I):
-                idx_n, invstn = ji_allk(n - j, j), 1. / st[n]
-                a += tij
+                idx_n = ji_allk(n - j, j)
                 diffK = K(a) - K(a + tau[idx_n])
-                varepsp[i,n] += np.dot(wgts, diffK) * invstn
+                a += tau[idx_n]
+                varepsp[i,n] += np.dot(wgts, diffK)
                 diffK = K(tij) - K(tij + tau[idx_n])
-                varepsm[i,n] -= np.dot(wgts, diffK) * invstn
+                varepsm[i,n] -= np.dot(wgts, diffK)
                 tij += tau[idx_n]
 
             # contribution from the inner rings (again with the new index n)
             tij = np.zeros_like(wgts)
             for n in range(i-1,j-1,-1):
                 # upper quadrant (closest to the outer surface i+1/2)
-                idx_n, invstn = ji_allk(n - j, j), 1. / st[n]
+                idx_n = ji_allk(n - j, j)
                 a = tau[idx_i] + tij
                 diffK = K(a) - K(a + tau[idx_n])
-                # varepsp[i,n] += np.dot(wgts, diffK) * invstn  # ??
+                # varepsp[i,n] += np.dot(wgts, diffK)  # ??
 
                 # lower quadrant (farer to the outer surface i+1/2)
                 tjj = np.zeros_like(wgts)
@@ -366,10 +421,13 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
                     tjj += tau[ji_allk(m, j)]
                 a += tau[idx_n] + 2 * tjj
                 diffK += K(a) - K(a + tau[idx_n])
-                varepsp[i,n] += np.dot(wgts, diffK) * invstn
+                varepsp[i,n] += np.dot(wgts, diffK)
 
                 tij += tau[idx_n]
 
+    varepsp /= st
+    varepsm /= st
+    
     Rinv = np.tile(1. / r[1:], (I, 1)).T
     if "spher" in geometry_type:
         varepsp *= np.pi  # * Rinv
@@ -380,7 +438,54 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
     return vareps * 2
 
 
-def ep2cp(ep, check=False, Vst=None):
+def opl(j, i, tau):
+    """Calculate the (dimensionless) optical length between j-1/2 and i+1/2 in
+    the slab."""
+    # if j > i, the slicing returns an empty array, and np.sum returns zero.
+    return np.sum(tau[j:i+1])
+
+
+def calculate_escape_prob_slab(x, st, Di=None):
+    """Calculate the escape probabilities of neutrons emitted isotropically
+    in a cell to collide after the first flight in another one of the slab.
+    """
+    lg.debug("Calculate the reduced escape probabilities in the slab.")
+    I = x.size - 1  # nb of rings
+    if not np.all(np.diff(x) > 0):
+        raise ValueError("Input values in x are not in increasing order")
+    if st.size != I:
+        raise ValueError("size mismatch of input sigma_t")
+    if Di is None:
+        Di = calculate_volumes(x, "slab")
+    if len(Di) != I:
+        raise ValueError('Nb. of cells differ from nb. of volumes')
+
+    vareps = np.zeros((I+1, I, 2),)
+    # first index is i (surfaces), second index is j (sources)
+    # references to the main data container
+    varepsp = vareps[:,:,0]  # for positive current
+    varepsm = vareps[:,:,1]  # for negative current (negative quantity)
+    
+    # compute the total removal probability per cell or cell width in unit
+    # of optical length
+    tau = Di * st
+
+    for i in range(I+1):
+        for j in range(i):
+            varepsp[i, j] = (En(3, opl(j+1, i-1, tau))
+                           - En(3, opl( j , i-1, tau)))
+        for j in range(i, I):
+            varepsm[i, j] = (En(3, opl(i,  j , tau))
+                           - En(3, opl(i, j-1, tau)))
+    
+    varepsp /= st
+    varepsm /= st
+    
+    return 0.5 * vareps
+
+
+def ep2cp(ep, check=False, Vst=None,
+          eps=np.get_printoptions()['precision']):
     "Derive first flight collision probabilities by input escape ones."
     # ep are organized as (G, I, I, 2) where the last index is used for
     # positive and negative currents in order. Remind that the reduced
@@ -389,7 +494,7 @@ def ep2cp(ep, check=False, Vst=None):
     G, I0, I, _ = ep.shape
     cp = np.zeros((G, I, I),)
     for g in range(G):  # check for negative values
-        if np.any(abs(ep[g,:,:]) > 1):
+        if np.any(abs(ep[g,:,:]) > 1 + 10**(-eps)):
             msg = ("Detected escape probabilities greater than 1 " + 
                    "in group %d!\n" % (g + 1))
             msg += "ep_minus =\n" + str(ep[g,:,:,1]) + '\n'
@@ -406,7 +511,7 @@ def ep2cp(ep, check=False, Vst=None):
                # + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
     for g in range(G):
         cp[g][np.diag_indices(I)] += 1
-        if np.any(cp[g] < 0):
+        if np.any(cp[g] < -10**(1 - eps)):
             msg = ("Detected negative collision probabilities " +
                    "in group %d:\n" % (g + 1) + str(cp[g]))
             # raise RuntimeError(msg)
@@ -414,7 +519,7 @@ def ep2cp(ep, check=False, Vst=None):
     
     if check or True:
         if Vst is None:
-            raise InputError("V times st is needed to check reciprocity")
+            raise ValueError("V times st is needed to check reciprocity")
         for g in range(G):
             pij = cp[g,:,:]
             # check particle conservation on the full domain
@@ -463,13 +568,13 @@ def check_xs(xs):
     st, ss, chi, nsf = xs
     G, I = nsf.shape
     if st.shape != nsf.shape:
-        raise InputError("st and nsf shapes mismatch")
+        raise ValueError("st and nsf shapes mismatch")
     if chi.shape != nsf.shape:
-        raise InputError("nsf and chi shapes mismatch")
+        raise ValueError("nsf and chi shapes mismatch")
     if ss.shape[:2] != (G, G):
-        raise InputError("expected ss with G=%d" % G)
+        raise ValueError("expected ss with G=%d" % G)
     if ss.shape[-1] != I:
-        raise InputError("expected ss with I=%d" % I)
+        raise ValueError("expected ss with I=%d" % I)
     pass
 
 
@@ -485,12 +590,12 @@ def calculate_full_spectrum(xs, cp, ep=None, betas=(0,0), data=None):
     betaL, betaR = betas
     
     if (betaL < 0) or (betaL > 1):
-        raise InputError("betaL (left albedo) is not in valid range")
+        raise ValueError("betaL (left albedo) is not in valid range")
     else:
         if ep is None:
-            raise InputError("betaL > 0, but no input escape probs")
+            raise ValueError("betaL > 0, but no input escape probs")
         if data is None:
-            raise InputError("input mesh data is needed for VjoSbL")
+            raise ValueError("input mesh data is needed for VjoSbL")
         else:
             # r, geo, V, Sb = data.xi, data.geometry_type, data.Vi, data.Si[0]
             # V = calculate_volumes(r, geo)
@@ -498,12 +603,12 @@ def calculate_full_spectrum(xs, cp, ep=None, betas=(0,0), data=None):
             VjoSbL = data.Vi / data.Si[0]
     
     if (betaR < 0) or (betaR > 1):
-        raise InputError("betaR (right albedo) is not in valid range")
+        raise ValueError("betaR (right albedo) is not in valid range")
     else:
         if ep is None:
-            raise InputError("betaR > 0, but no input escape probs")
+            raise ValueError("betaR > 0, but no input escape probs")
         if data is None:
-            raise InputError("input mesh data is needed for VjoSbR")
+            raise ValueError("input mesh data is needed for VjoSbR")
         else:
             VjoSbR = data.Vi / data.Si[-1]
 
@@ -557,12 +662,12 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     betaL, betaR = slvr_opts.albedos
     
     if (betaL < 0) or (betaL > 1):
-        raise InputError("betaL (left albedo) is not in valid range")
+        raise ValueError("betaL (left albedo) is not in valid range")
     else:
         if ep is None:
-            raise InputError("betaL > 0, but no input escape probs")
+            raise ValueError("betaL > 0, but no input escape probs")
         if data is None:
-            raise InputError("input mesh data is needed for VjoSbL")
+            raise ValueError("input mesh data is needed for VjoSbL")
         else:
             # r, geo, V, Sb = data.xi, data.geometry_type, data.Vi, data.Si[0]
             # V = calculate_volumes(r, geo)
@@ -570,12 +675,12 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
             VjoSbL = data.Vi / data.Si[0]
     
     if (betaR < 0) or (betaR > 1):
-        raise InputError("betaR (right albedo) is not in valid range")
+        raise ValueError("betaR (right albedo) is not in valid range")
     else:
         if ep is None:
-            raise InputError("betaR > 0, but no input escape probs")
+            raise ValueError("betaR > 0, but no input escape probs")
         if data is None:
-            raise InputError("input mesh data is needed for VjoSbR")
+            raise ValueError("input mesh data is needed for VjoSbR")
         else:
             VjoSbR = data.Vi / data.Si[-1]
     
@@ -652,7 +757,7 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     return Rq(H, flx), flx.reshape(G, I)
 
 
-def solve_cpm1D(idata, slvr_opts, vrbs=True):
+def solve_cpm1D(idata, slvr_opts, full_spectrum=True, vrbs=True):
     '''Run the CPM solver.'''
     lg.info("Prepare input data")
     r, geo = idata.xi, idata.geometry_type
@@ -664,7 +769,7 @@ def solve_cpm1D(idata, slvr_opts, vrbs=True):
     if idata.RBC == 2:
         slvr_opts.betaR = 1
     if (idata.LBC != 2) and (geo == "sphere" or geo == "cylinder" ):
-        raise InputError("Reflection at L(eft)BC is requested in " + geo)
+        raise ValueError("Reflection at L(eft)BC is requested in " + geo)
     lg.info("-o"*22)
     
     lg.info("Calculate the collision probabilities")
@@ -680,15 +785,16 @@ def solve_cpm1D(idata, slvr_opts, vrbs=True):
 
     # direct solution for the full spectrum
     chk_sign = lambda x: -x if np.all(x < 0) else x
-    lg.info("Call the direct solution by CPM to get the full spectrum.")
-    K, nfss = calculate_full_spectrum(xs, cp, ep, slvr_opts.albedos, idata)
-    # ...nfss is nu-fiss rate
-    ik = np.argmax(K)
-    keff, nfss_rates = K[ik], chk_sign(nfss[:,ik])
-    if vrbs:
-        lg.info("Multiplication factor from the fission matrix is" +
-                " %.6f" % keff)
-        lg.info("Fission rate distribution:\n" + str(nfss_rates))
+    if full_spectrum:
+        lg.info("Call the direct solution by CPM to get the full spectrum.")
+        K, nfss = calculate_full_spectrum(xs, cp, ep, slvr_opts.albedos, idata)
+        # ...nfss is nu-fiss rate
+        ik = np.argmax(K)
+        keff, nfss_rates = K[ik], chk_sign(nfss[:,ik])
+        if vrbs:
+            lg.info("Multiplication factor from the fission matrix is" +
+                    " %.6f" % keff)
+            lg.info("Fission rate distribution:\n" + str(nfss_rates))
     
     # compute the fundamental eigenpair by the power method
     lg.info("Solve iteratively by the Wielandt-accelerated power\n" +
