@@ -47,6 +47,13 @@ media = [
 ]
 where by definition it is always x_left_medium_1 = 0, and
 x_right_medium_(i) = x_left_medium_(i+1) for all i < N.
+
+.. note:: Ronen iterations are accelerated by Anderson's method as shown by
+          Walker and Ni [Walker2011]_. 
+
+.. [Walker2011] Walker, H. F., & Ni, P. (2011). Anderson acceleration for
+                fixed-point iterations. SIAM Journal on Numerical Analysis,
+                49(4), 1715-1735.
 """
 import os
 import sys
@@ -201,7 +208,8 @@ class solver_options:
 
     def __init__(self, iitmax=nbitsmax, oitmax=nbitsmax, ritmax=10,
                  pCMFD=False, otoll=toll, itoll=toll, rtoll=toll,
-                 CMFD=True):
+                 CMFD=True, wSOR=None, Aitken=False, Anderson_depth=6,
+                 noacc_rit=0):
         self.ritmax = ritmax  # set to 1 to skip Ronen iterations
         self.oitmax = oitmax  # max nb of outer iterations
         self.iitmax = iitmax  # max nb of inner iterations
@@ -210,6 +218,10 @@ class solver_options:
         self.rtoll = rtoll  # tolerance on flx at RM its.
         self.CMFD = CMFD  # use CMFD, new D by Fick's law is False
         self.pCMFD = pCMFD  # classic CMFD is False
+        self.noacc_rit = noacc_rit
+        self.wSOR = wSOR  # SOR relaxation parameter (opt 1.7 -- 2^-)
+        self.Aitken = Aitken  # poor performance noted
+        self.Anderson_depth = Anderson_depth  # Anderson acceleration
         self.check_input()
 
     def check_input(self):
@@ -904,7 +916,19 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         lg.warning('You called RM its, but they were disabled at input.')
     elif data.geometry_type != 'slab':
         raise RuntimeError('RM has not been ported to curv. geoms.')
-
+    
+    if slvr_opts.Anderson_depth is not None:
+        Anderson = True
+        m, noacc_rit = slvr_opts.Anderson_depth, slvr_opts.noacc_rit
+        # version (a)
+        Xk = np.zeros((flx.size, m),)
+        Fk = np.zeros_like(Xk)
+        # # version (b)
+        # Fmk, alphas = np.zeros((flx.size, m),), np.zeros(m + 1)
+        # flxmk, betak = np.zeros_like(Fmk), 0.75
+    else:
+        Anderson, noacc_rit = False, np.iinfo(np.int32).max
+    
     # # load reference currents
     # ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
     # k_SN, flxm_SN = load_refSN_solutions(ref_flx_file, G, Di, Dbnd=D[:,-1])
@@ -949,18 +973,74 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         flxold, kold = np.array(flx, copy=True), k
         lg.info("Start the diffusion solver (<- outer its. / -> inner its.)")
         flx, k = solve_outers(flx, k, data, xs, slvr_opts, dD)
-        # check_current_solutions()
-
-        # try Aitken delta squared extrapolation
-        # if (itr > 10) and (err < rtoll * 100):
-        #     lg.info("<-- Apply Aitken extrapolation on the flux -->")
-        #     flx -=  (Dflxm1**2 / (Dflxm1 - Dflxm2))
-
-        # evaluate the flux differences through successive iterations
         Dflxm2 = np.array(Dflxm1, copy=True)
-        Dflxm1 = flx - flxold
-        ferr = np.where(flx > 0., 1. - flxold / flx, Dflxm1)
+        Dflxm1 = flxres = flx - flxold  # flux residual
+        # check_current_solutions()
+        # print('--- it %d ---' % itr)
+        # print(flxold[0, -6:])
+        # print(flx[0, -6:])
 
+        # possible techniques to accelerate the convergence rate
+        itr0 = itr - noacc_rit
+        if (itr0 >= 0) and (err < rtoll * 100) and slvr_opts.Aitken:
+            lg.info("<-- Apply Aitken extrapolation on the flux -->")
+            flx -=  (Dflxm1**2 / (Dflxm1 - Dflxm2))
+        if (itr0 >= 0) and (slvr_opts.wSOR is not None):
+            lg.info("<-- Apply SOR on the flux -->")
+            flx = slvr_opts.wSOR * flx + (1 - slvr_opts.wSOR) * flxold
+        if (itr0 >= 0) and Anderson:
+            fk, xk = flxres.flatten(), flxold.flatten()
+            mk = min(itr0 + 1, slvr_opts.Anderson_depth)
+            if itr0 < slvr_opts.Anderson_depth:
+                # version (b)
+                Fk[:, itr0], Xk[:, itr0] = fk, xk
+                # version (a)
+                # Fmk[:, itr0], flxmk[:, itr0] = fk, flx.flatten()
+            else:
+                # # version (a)
+                # Fmr = Fmk - np.tile(flxres, (mk, 1)).T
+                # # alphas[:-1] = np.dot(np.linalg.inv(np.dot(Fmr.T, Fmr))
+                                     # # + 0.05 * I * np.eye(mk)  # regularization
+                                    # # , np.dot(Fmr.T, -fk))
+                # alphas[:-1] = np.linalg.lstsq(Fmr, -fk)[0]
+                # alphas[-1] = 1 - np.sum(alphas[:-1])
+                # flx = (1 - betak) * (alphas[-1] * flxold
+                       # + np.dot(flxmk - Fmk, alphas[:-1]).reshape(flx.shape)) \
+                          # + betak * (alphas[-1] * flx
+                       # + np.dot(flxmk, alphas[:-1]).reshape(flx.shape))
+                # Fmk = np.roll(Fmk, -1, axis=1)
+                # Fmk[:, -1] = fk
+                # flxmk = np.roll(flxmk, -1, axis=1)
+                # flxmk[:, -1] = flx.flatten()
+                # print(alphas)
+                # version (b)
+                Fkp1 = np.concatenate([Fk[:, 1:],
+                                       np.expand_dims(fk, axis=1)], axis=1)
+                DFk = (Fkp1 - Fk) # [:, -mk:]  # to start earlier for k < m
+                # Anderson Type I
+                # gams = np.dot(np.linalg.inv(np.dot(DXk.T, DFk)
+                #              + 0.05 * np.eye(mk)  # regularization
+                #              ), np.dot(DXk.T, fk))
+                # Anderson Type II
+                gams = np.dot(np.linalg.inv(np.dot(DFk.T, DFk)
+                              # + 1e-13 * np.eye(mk)  # regularization
+                              ), np.dot(DFk.T, fk))
+                # from scipy.optimize import nnls, lsq_linear
+                # gams = nnls(DFk, fk)[0]
+                # gams = lsq_linear(DFk, fk, bounds=(0, np.inf),
+                                  # lsq_solver='exact', verbose=1).x
+                Xkp1 = np.concatenate([Xk[:, 1:],
+                                       np.expand_dims(xk, axis=1)], axis=1)
+                DXk = (Xkp1 - Xk) # [:, -mk:]  # to start earlier for k < m
+                flx -= np.dot(DXk + DFk, gams).reshape(flx.shape)
+                Xk, Fk = Xkp1, Fkp1
+                # print('gammas', gams)
+                # print(flx[0, -6:])
+                # input(flx.shape)
+        
+        # evaluate the flux differences through successive iterations
+        ferr = np.where(flx > 0., 1. - flxold / flx, flxres)
+        
         err = abs(ferr[np.unravel_index(abs(ferr).argmax(), (G, I))])
         itr += 1
         lg.info("+RM+ it={:^4d}, k={:<13.6g}, err={:<+13.6e}".format(

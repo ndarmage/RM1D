@@ -14,14 +14,16 @@ import sys, os
 import numpy as np
 from scipy import interpolate
 
-sys.path.insert(0, os.path.join("..", "..", "CPM1D"))
-from cpm1dcurv import *
-
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from data.SoodPNE2003 import *
-from FDsDiff1D import input_data
+from FDsDiff1D import input_data, solver_options, run_calc_with_RM_its
 
+sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", "CPM1D"))
+# sys.path.insert(0, os.path.join(os.getcwd(), "..", "..", "CPM1D", "KinPy"))
+# import algo609
+from cpm1dcurv import equivolume_mesh
 
+odir = "output"
 refdir = os.path.join("..", "..", "CPM1D", "tests", "output")
 
 
@@ -80,10 +82,11 @@ if __name__ == "__main__":
     data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
     
     # ks is needed anyway when validating the input solver options
-    
-    slvr_opts = solver_options(iitmax=4, oitmax=4, ritmax=10,
-                               CMFD=True, pCMFD=True)
-    filename = case + "_LBC%dRBC%d_I%d_it%d" % (LBC, RBC, I, ritmax)
+    ritmax = 100
+    slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=ritmax,
+                               CMFD=True, pCMFD=False)
+    filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d_it%d" %
+                            (LBC, RBC, I, ritmax))
     flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
     
     
