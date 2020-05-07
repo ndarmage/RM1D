@@ -260,6 +260,82 @@ class solver_options:
     def tolls(self):
         "pack tolerances on residual errors in outer and inner iterations"
         return self.otoll, self.itoll
+    
+    @property
+    def Anderson(self):
+        return True if self.Anderson_depth is not None else False
+
+    @property
+    def SOR(self):
+        return True if self.wSOR is not None else False
+
+
+class AndersonAcceleration:
+    "Object storing data for Anderson Acceleration (AA)."
+    
+    def __init__(self, opts=None, m=-1, betak=-1., size=0):
+        if isinstance(opts, solver_options):
+            self.m, self.betak = opts.Anderson_depth, opts.Anderson_relaxation
+        else:
+            self.m, self.betak = m, betak
+        self.check_input()
+        self.Fk = np.zeros((size, self.m),)
+        self.Xk = np.zeros_like(self.Fk)
+    
+    def check_input(self):
+        if self.m < 0:
+            raise ValueError('Detected negative dim of Anderson subspace.')
+        if not (0 < self.betak <= 1):
+            raise ValueError('relaxation for Anderson out of allowed bounds.')
+
+    def __call__(self, k, fk, xk, xkp1, constrainedLS=False):
+        """Call AA with fk, xk, xkp1 = flxres, flxold, flx to be flattened by
+        (*).flatten(); k is the iteration index decreased of noacc_rit."""
+        mk, orig_shape = min(k, self.m), xkp1.shape
+        fk, xk, xkp1 = map(np.ravel, [fk, xk, xkp1])
+        Fk, Xk, betak = self.Fk, self.Xk, self.betak  # reference to obj attrs
+        # ------------------------------------------------------------------
+        if constrainedLS:  # version (a) - constrained L2 minimization
+            if k > 0:
+                Fr = Fk[:, -mk:] - np.tile(fk, (mk, 1)).T
+                # alphm1 = np.dot(np.linalg.inv(np.dot(Fr.T, Fr)
+                                # # + 0.05 * np.eye(mk)  # regularization
+                                # ), np.dot(Fr.T, -fk))
+                alphm1 = np.linalg.lstsq(Fr, -fk, rcond=None)[0]
+                # from scipy.optimize import nnls, lsq_linear
+                # gams = nnls(DFk, fk)[0]  # non-negative LS, or bounded as:
+                # gams = lsq_linear(DFk, fk, bounds=(0, np.inf),
+                                  # lsq_solver='exact', verbose=1).x
+                alphmk = 1 - np.sum(alphm1)
+                Gk = (Fk + Xk)[:, -mk:]
+                xkp1 = betak * (alphmk * xkp1 + np.dot(Gk, alphm1)) \
+                     + (1 - betak) * (alphmk * xk + np.dot(Xk[:, -mk:], alphm1))
+                # print(mk, np.insert(alphm1, -1, alphmk))
+            self.Fk, self.Xk = roll_matrix(Fk, fk), roll_matrix(Xk, xk)
+        # ------------------------------------------------------------------
+        else:  # version (b) - unconstrained L2 minimization
+            Fkp1, Xkp1 = roll_matrix(Fk, fk), roll_matrix(Xk, xk)
+            if k > 0:
+                DFk = (Fkp1 - Fk)[:, -mk:]  # to start earlier for k < m
+                # Anderson Type I
+                # gams = np.dot(np.linalg.inv(np.dot(DXk.T, DFk)
+                #              + 0.05 * np.eye(mk)  # regularization
+                #              ), np.dot(DXk.T, fk))
+                # Anderson Type II
+                gams = np.dot(np.linalg.inv(np.dot(DFk.T, DFk)
+                              # + 1e-13 * np.eye(mk)  # regularization
+                              ), np.dot(DFk.T, fk))
+                DXk = (Xkp1 - Xk)[:, -mk:]  # to start earlier for k < m
+                # Walker2011 - no relaxation
+                # xkp1 -= np.dot(DXk + DFk, gams).reshape(xkp1.shape)
+                # Henderson2019 - betak is the relaxation parameter
+                # (no significant improvement noticed)                
+                xkp1 = betak * (xkp1 - np.dot(DXk + DFk, gams)) \
+                     + (1 - betak) * (xk - np.dot(DXk, gams))
+                # print('gammas', gams)
+            self.Xk, self.Fk = Xkp1, Fkp1
+        # ------------------------------------------------------------------
+        return xkp1.reshape(orig_shape)
 
 
 def get_zeta(bc=0):
@@ -935,15 +1011,10 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     elif data.geometry_type != 'slab':
         raise RuntimeError('RM has not been ported to curv. geoms.')
     
-    if slvr_opts.Anderson_depth is not None:
-        Anderson = True
-        m, betak = slvr_opts.Anderson_depth, slvr_opts.Anderson_relaxation
-        Fk = np.zeros((flx.size, m),)
-        Xk = np.zeros_like(Fk)
+    if slvr_opts.Anderson:
+        AA = AndersonAcceleration(opts=slvr_opts, size=flx.size)
         lg.info("Reset the number of unaccelerated rits to m - 1.")
-        noacc_rit = m - 1  # noticed optimal performance
-    else:
-        Anderson = False
+        noacc_rit = slvr_opts.Anderson_depth - 1  # noticed optimal performance
     
     # # load reference currents
     # ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
@@ -1003,58 +1074,12 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
             lg.info("<-- Apply Aitken extrapolation on the flux -->")
             flx -=  (Dflxm1**2 / (Dflxm1 - Dflxm2))
         # Successive Over-Relaxation (SOR)
-        if (itr0 >= 0) and (slvr_opts.wSOR is not None):
+        if (itr0 >= 0) and slvr_opts.SOR:
             lg.info("<-- Apply SOR on the flux -->")
             flx = slvr_opts.wSOR * flx + (1 - slvr_opts.wSOR) * flxold
         # Anderson implementation to accelerate yet for k < m
-        if Anderson:
-            fk, xk = flxres.flatten(), flxold.flatten()
-            # ------------------------------------------------------------------
-            # ---------- (uncomment only one version in the following) ---------
-            # ------------------------------------------------------------------
-            # # version (a) - constrained minimization
-            # if itr0 >= 0:
-                # mk = min(itr0 + 1, slvr_opts.Anderson_depth)
-                # Fr = Fk[:, -mk:] - np.tile(fk, (mk, 1)).T
-                # # alphm1 = np.dot(np.linalg.inv(np.dot(Fr.T, Fr)
-                                # # # + 0.05 * np.eye(mk)  # regularization
-                                # # ), np.dot(Fr.T, -fk))
-                # alphm1 = np.linalg.lstsq(Fr, -fk, rcond=None)[0]
-                # # from scipy.optimize import nnls, lsq_linear
-                # # gams = nnls(DFk, fk)[0]  # non-negative LS, or bounded as:
-                # # gams = lsq_linear(DFk, fk, bounds=(0, np.inf),
-                                  # # lsq_solver='exact', verbose=1).x
-                # alphmk = 1 - np.sum(alphm1)
-                # Gk = (Fk + Xk)[:, -mk:]
-                # flx = (1 - betak) * (alphmk * xk
-                       # + np.dot(Xk[:, -mk:], alphm1)).reshape(flx.shape) \
-                          # + betak * (alphmk * flx
-                       # + np.dot(Gk, alphm1).reshape(flx.shape))
-                # print(mk, np.insert(alphm1, -1, alphmk))
-            # Fk, Xk = roll_matrix(Fk, fk), roll_matrix(Xk, xk)
-            # ------------------------------------------------------------------
-            # version (b) - unconstrained minimization
-            Fkp1, Xkp1 = roll_matrix(Fk, fk), roll_matrix(Xk, xk)
-            if itr0 >= 0:
-                mk = min(itr0 + 1, slvr_opts.Anderson_depth)
-                DFk = (Fkp1 - Fk)[:, -mk:]  # to start earlier for k < m
-                # Anderson Type I
-                # gams = np.dot(np.linalg.inv(np.dot(DXk.T, DFk)
-                #              + 0.05 * np.eye(mk)  # regularization
-                #              ), np.dot(DXk.T, fk))
-                # Anderson Type II
-                gams = np.dot(np.linalg.inv(np.dot(DFk.T, DFk)
-                              # + 1e-13 * np.eye(mk)  # regularization
-                              ), np.dot(DFk.T, fk))
-                DXk = (Xkp1 - Xk)[:, -mk:]  # to start earlier for k < m
-                # Walker2011 - no relaxation
-                # flx -= np.dot(DXk + DFk, gams).reshape(flx.shape)
-                # Henderson2019 - betak is the relaxation parameter
-                # (no significant improvement noticed)                
-                flx = betak * (flx - np.dot(DXk + DFk, gams).reshape(flx.shape))
-                flx += (1 - betak) * (xk - np.dot(DXk, gams)).reshape(flx.shape)
-                # print('gammas', gams)
-            Xk, Fk = Xkp1, Fkp1
+        if slvr_opts.Anderson:
+            flx = AA(itr0 + 1, flxres, flxold, flx)
             # input(flx[0, -6:])  # debug
         
         # evaluate the flux differences through successive iterations
