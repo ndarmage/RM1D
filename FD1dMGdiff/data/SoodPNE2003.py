@@ -47,12 +47,33 @@ def set_xs(dstr):
     d['nu'], d['sf'], d['sc'], d['ss'], d['st'], d['c'] = \
         [np.array([float(v)]) for v in dstr.split()[2:]]
     d['chi'], d['nsf'] = np.ones(1), d['nu'] * d['sf']
+    d['sa'] = d['sc'] + d['sf']  # = d['st'] - d['ss']
     d['ss'] = np.ones((1,1,1),) * d['ss']
+    d['kinf'] = (d['nsf'] / d['sa'])[0]
     # definition of the (P1) diff coefficient with isotropic scat.
     # for k, v in d.items():
         # v /= d['st']
     d['D'] = one_third / d['st']
     return d
+
+
+def BM2(m, k=1):
+    "return the material buckling in the 1g homogeneous problem"
+    nsf, sa, D = m['nsf'][0], m['sa'][0], m['D'][0]
+    if (nsf.size != sa.size) or (nsf.size != D.size):
+        raise ValueError('Input data have different size')
+    if nsf.size != 1:
+        raise ValueError('One-group data are needed')
+    return (nsf/k - sa) / D
+
+
+def diffk_ref(BG2, m):
+    "Return the multiplication factor provided the geometrical buckling"
+    nsf, sa, D = m['nsf'][0], m['sa'][0], m['D'][0]
+    L2, kinf = D / sa, nsf / sa
+    PNL = 1 / (1 + L2 * BG2)  # non leakage probability
+    return kinf * PNL
+    
 
 tlines = [l for l in Table2.split('\n')[1:-1] if not l.startswith('#')]
 get_line = lambda lines, key: [l for l in lines if key in l][0]

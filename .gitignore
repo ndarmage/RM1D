@@ -22,3 +22,6 @@ docs/ANE2020/*.out
 docs/ANE2020/*.spl
 docs/ANE2020/*.fdb_latexmk
 docs/ANE2020/**/*.pdf
+
+FD1dMGdiff/tests/output/*.npy
+FD1dMGdiff/tests/output/*.dat

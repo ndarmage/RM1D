@@ -11,6 +11,7 @@ from cpm1dcurv import *
 
 sys.path.insert(0, os.path.join("..", "..", "FD1dMGdiff"))
 from data.homog2GMC2011 import *
+from GeoMatTools import equivolume_mesh, geomprogr_mesh
 
 L = 21.5 / 2.  # outer radius, equal to half pitch of a fuel assembly
 
@@ -45,17 +46,16 @@ if __name__ == "__main__":
                                err_msg="flx-inf not verified")
     np.testing.assert_allclose(k, kinf, atol=1.e-7,
                                err_msg="k-inf not verified")
-
     # solve the MC2011 problem
     lg.info("Solve the MC2011 problem by CPM in the " + geometry_type)
-    # L *= 2
-    # media = [['HM', L]]
+    # L *= 2; media = [['HM', L]]
     I = 100  # number of cells in the spatial mesh
     r = equivolume_mesh(I, 0, L, geometry_type)
+    # r = geomprogr_mesh(I, 0, L, ratio=1.005)
     # warning: remind that the solution in half slab use white reflection
     # at the center, introducing some error!
     Homog2GSlab_data = input_data(xs_media, media, r,
-                                  geometry_type, LBC=2, RBC=0)
+                                  geometry_type, LBC=0, RBC=2)
     
     # ks is needed anyway when validating the input solver options
     k, flx = solve_cpm1D(Homog2GSlab_data,

@@ -60,16 +60,25 @@ x_right_medium_(i) = x_left_medium_(i+1) for all i < N.
                    accelerating EM and EM-like algorithms. Journal of
                    Computational and Graphical Statistics, 1-13.
 """
+# Owned
+__title__ = "Multigroup diffusion and RM in 1D geometries by finite differences"
+__author__ = "D. Tomatis"
+__date__ = "15/11/2019"
+__version__ = "1.4.0"
+
 import os
 import sys
 import logging as lg
 import numpy as np
 from scipy.special import expn as En
+from scipy.optimize import brentq
+from GeoMatTools import *
 
-__title__ = "Multigroup diffusion in 1D slab by finite differences"
-__author__ = "D. Tomatis"
-__date__ = "15/11/2019"
-__version__ = "1.3.0"
+sys.path.append(
+    os.path.join(os.getcwd(), os.path.dirname(__file__), '..', 'CPM1D')
+)
+from cpm1dcurv import calculate_tracking_data, calculate_sprobs, \
+                      calculate_eprobs, calculate_tprobs
 
 max_float = np.finfo(float).max  # float is float64!
 min_float = np.finfo(float).min
@@ -103,106 +112,9 @@ def opt_theta(tau):
     return t
 
 
-# get the mid-points of cells defined in the input spatial mesh x
-def xim(x):
-    return (x[1:] + x[:-1]) / 2.
-
-
-class input_data:
-    """Geometry and material input data of the 1D problem. Possible options
-    of geometry_type are slab, cylindrical and spherical. Allowed boundary
-    conditions: 0-vacuum, 1-zero flux and 2-reflection. Units are in cm."""
-
-    def __init__(self, xs_media, media, xi, geometry_type='slab',
-                 LBC=0, RBC=0, per_unit_angle=True):
-        self.geometry_type, self.xi = geometry_type.lower(), xi
-        self.LBC, self.RBC = LBC, RBC
-        self.xs_media, self.media = xs_media, media
-        self.check_input()
-        self.compute_cell_width()
-        self.compute_mid_cell_coordinate()
-        self.compute_cell_surfaces(per_unit_angle)
-        self.compute_cell_volumes(per_unit_angle)
-
-    @property
-    def I(self):
-        return self.xi.size - 1
-
-    @property
-    def L(self):
-        return self.xi[-1]
-
-    @property
-    def BC(self):
-        return self.LBC, self.RBC
-
-    @property
-    def G(self):
-        return self.xs_media[next(iter(self.xs_media))]['st'].size
-
-    @property
-    def Lss(self):
-        random_ss, L = self.xs_media[next(iter(self.xs_media))]['ss'], 1
-        if random_ss.ndim == 3:
-            L = max([self.xs_media[m]['ss'].shape[-1] for m in self.xs_media])
-        return L - 1
-    
-    def compute_cell_width(self):
-        self.Di = self.xi[1:] - self.xi[:-1]
-    
-    def compute_mid_cell_coordinate(self):
-        self.xim = xim(self.xi)
-    
-    def compute_cell_surfaces(self, per_unit_angle=True):
-        self.Si = compute_cell_surfaces(self.xi, geo=self.geometry_type,
-                                        per_unit_angle=per_unit_angle)
-    
-    def compute_cell_volumes(self, per_unit_angle=True):
-        self.Vi = compute_cell_volumes(self.xi, geo=self.geometry_type,
-                                       per_unit_angle=per_unit_angle)
-
-    def check_input(self):
-        lg.info("Geometry type is " + self.geometry_type)
-        if (self.geometry_type != 'slab') and \
-           (self.geometry_type != 'cylinder') and \
-           (self.geometry_type != 'cylindrical') and \
-           (self.geometry_type != 'spherical') and \
-           (self.geometry_type != 'sphere'):
-            raise ValueError('Unknown geometry_type ' + self.geometry_type)
-        if not isinstance(self.LBC, int):
-            raise TypeError('LBC must be integer.')
-        if (self.LBC < 0) and (self.LBC > 2):
-            raise ValueError('Check LBC, allowed options ')
-        if not isinstance(self.RBC, int):
-            raise TypeError('RBC must be integer.')
-        if (self.RBC < 0) and (self.RBC > 2):
-            raise ValueError('Check RBC, allowed options ')
-        if (self.geometry_type != 'slab') and (self.LBC != 2):
-            raise ValueError('Curvilinear geometries need LBC = 2.')
-        if not isinstance(self.xs_media, dict):
-            raise TypeError('The input xs_media is not a dictionary.')
-        if not isinstance(self.media, list):
-            raise TypeError('The input media is not a list.')
-        media_set = set(m[0] for m in self.media)
-        xs_media_set = set(self.xs_media.keys())
-        if xs_media_set.union(media_set) != xs_media_set:
-            raise ValueError('xs media dict has missing keys, check media.')
-        rbnd = [m[1] for m in self.media]
-        if sorted(rbnd) != rbnd:
-            raise ValueError('media list must be in order from left to right!')
-        if not np.isclose(max(rbnd), self.L):
-            raise ValueError('Please check the right bounds of media (>L?)')
-
-    def __str__(self):
-        print("Geometry type is " + self.geometry_type)
-        print("Boundary conditions: (left) LBC=%d and (right) RBC=%d." %
-              (self.LBC, self.RBC))
-        print("B.C. legend: 0-vacuum, 1-zero flux and 2-reflection.")
-        print("Number of energy groups: %d" % self.G)
-        print("Number of spatial cells: %d" % self.I)
-        print("Spatial mesh xi\n" + str(self.xi))
-        print("Media list:\n" + str(self.media))
-        print(" with xs:\n" + str(self.xs_media))
+def roll_matrix(M, c):
+    return np.concatenate([M[:, 1:],
+                           np.expand_dims(c, axis=1)], axis=1)
 
 
 class solver_options:
@@ -214,7 +126,7 @@ class solver_options:
     def __init__(self, iitmax=nbitsmax, oitmax=nbitsmax, ritmax=10,
                  pCMFD=False, otoll=toll, itoll=toll, rtoll=toll,
                  CMFD=True, wSOR=None, Aitken=False, Anderson_depth=5,
-                 Anderson_relaxation=1, noacc_rit=0):
+                 Anderson_relaxation=1, noacc_rit=0, ks=0, GQ="Gauss-Jacobi"):
         self.ritmax = ritmax  # set to 1 to skip Ronen iterations
         self.oitmax = oitmax  # max nb of outer iterations
         self.iitmax = iitmax  # max nb of inner iterations
@@ -227,7 +139,12 @@ class solver_options:
         self.wSOR = wSOR  # SOR relaxation parameter (opt 1.7 -- 2^-)
         self.Aitken = Aitken  # poor performance noticed
         self.Anderson_depth = Anderson_depth  # dim of subspace for residuals
+                                              # 0 to disable, not None
         self.Anderson_relaxation = Anderson_relaxation  # set to 1 to disable
+        # opts for escape and collision probabilities in curv coords.
+        self.ks = ks  # nb. of quadrature point per cell
+        self.GaussQuadrature = GQ  # type of Guass quadrature along
+                                   # the h axis in curvilinear coords.
         self.check_input()
 
     def check_input(self):
@@ -246,10 +163,17 @@ class solver_options:
             raise ValueError('Detected negative max nb. of inner its.')
         if self.noacc_rit < 0:
             raise ValueError('Detected negative nb. of unaccelerated rits.')
-        if self.Anderson_depth < 0:
-            raise ValueError('Detected negative dim of Anderson subspace.')
+        if isinstance(self.Anderson_depth, (int, float)):
+            if self.Anderson_depth < 0:
+                raise ValueError('Detected negative dim of Anderson subspace.')
         if not (0 < self.Anderson_relaxation <= 1):
             raise ValueError('relaxation for Anderson out of allowed bounds.')
+        if np.any(self.ks < 0):
+            raise ValueError('Detected negative nb. of quadrature points' +
+                             ' (set 0 with slab)')
+        if self.GaussQuadrature != "Gauss-Jacobi" and \
+           self.GaussQuadrature != "Gauss-Legendre":
+            raise ValueError('Unsupported type of Gauss quadrature')
 
     @property
     def itsmax(self):
@@ -263,7 +187,11 @@ class solver_options:
     
     @property
     def Anderson(self):
-        return True if self.Anderson_depth is not None else False
+        if isinstance(self.Anderson_depth, str):
+            r = 'auto' in self.Anderson_depth
+        else:
+            r = self.Anderson_depth > 0
+        return r
 
     @property
     def SOR(self):
@@ -273,11 +201,27 @@ class solver_options:
 class AndersonAcceleration:
     "Object storing data for Anderson Acceleration (AA)."
     
+    # DAAREM parameters
+    alpha = 1.2
+    kappa = 30  # "half-life" of relative dumping (25 by Henderson2019)
+    sk = 0  # used in the relative damping parameter deltak
+    
+    @property
+    def Anderson_depth(self):
+        return self.m
+    
+    @classmethod
+    def delta(cls, sk):
+        e = max(0, cls.kappa - sk)
+        return 1 / (1 + cls.alpha**e)
+    
     def __init__(self, opts=None, m=-1, betak=-1., size=0):
         if isinstance(opts, solver_options):
             self.m, self.betak = opts.Anderson_depth, opts.Anderson_relaxation
         else:
             self.m, self.betak = m, betak
+        if self.m == 'auto':
+            self.set_automatic_depth(size)
         self.check_input()
         self.Fk = np.zeros((size, self.m),)
         self.Xk = np.zeros_like(self.Fk)
@@ -287,11 +231,24 @@ class AndersonAcceleration:
             raise ValueError('Detected negative dim of Anderson subspace.')
         if not (0 < self.betak <= 1):
             raise ValueError('relaxation for Anderson out of allowed bounds.')
+        if self.alpha <= 1:
+            raise ValueError('DAAREM alpha parameter must be > 1')
+        if self.kappa < 0:
+            raise ValueError('DAAREM kappa parameter must be >= 0')
 
-    def __call__(self, k, fk, xk, xkp1, constrainedLS=False):
+    def set_automatic_depth(self, size, check=False):
+        self.m = min(int(size / 2), 10)
+        if check and hasattr(self, 'Fk'):
+            if self.Fk.shape[0] != size:
+                lg.warning("Fk and Xk must be redefined")
+                self.Fk = np.zeros((size, self.m),)
+                self.Xk = np.zeros_like(self.Fk)
+
+    def __call__(self, k, fk, xk, xkp1, constrainedLS=False, k_restart=1):
         """Call AA with fk, xk, xkp1 = flxres, flxold, flx to be flattened by
-        (*).flatten(); k is the iteration index decreased of noacc_rit."""
-        mk, orig_shape = min(k, self.m), xkp1.shape
+        (*).flatten(); k is the iteration index decreased of noacc_rit. A
+        restart can be enabled with k_restart > depth."""
+        mk, orig_shape = min(np.mod(k - 1, k_restart) + 1, self.m), xkp1.shape
         fk, xk, xkp1 = map(np.ravel, [fk, xk, xkp1])
         Fk, Xk, betak = self.Fk, self.Xk, self.betak  # reference to obj attrs
         # ------------------------------------------------------------------
@@ -317,22 +274,38 @@ class AndersonAcceleration:
             Fkp1, Xkp1 = roll_matrix(Fk, fk), roll_matrix(Xk, xk)
             if k > 0:
                 DFk = (Fkp1 - Fk)[:, -mk:]  # to start earlier for k < m
-                # Anderson Type I
-                # gams = np.dot(np.linalg.inv(np.dot(DXk.T, DFk)
-                #              + 0.05 * np.eye(mk)  # regularization
-                #              ), np.dot(DXk.T, fk))
-                # Anderson Type II
-                gams = np.dot(np.linalg.inv(np.dot(DFk.T, DFk)
-                              # + 1e-13 * np.eye(mk)  # regularization
-                              ), np.dot(DFk.T, fk))
-                DXk = (Xkp1 - Xk)[:, -mk:]  # to start earlier for k < m
+                DXk = (Xkp1 - Xk)[:, -mk:]
+                # # Anderson Type I
+                # # gams = np.dot(np.linalg.inv(np.dot(DXk.T, DFk)
+                # #             # + 0.05 * np.eye(mk)  # regularization
+                # #              ), np.dot(DXk.T, fk))
+                # # Anderson Type II
+                # gams = np.dot(np.linalg.inv(np.dot(DFk.T, DFk)
+                               # # + 1e-13 * np.eye(mk)  # regularization
+                              # ), np.dot(DFk.T, fk))
+                # N.B.: regularization in previous schemes does not lead to
+                # successful iterations
+                # Implementation of DAAREM without merit function of interest
+                Uk, dk, Vk = np.linalg.svd(DFk)
+                # find lambdak
+                uf = np.dot(fk, Uk[:, :mk])
+                s = lambda lmbda: np.dot(np.dot(Vk.T,
+                    np.diag(dk / (dk**2 + lmbda))), uf)
+                self.sk += 1
+                self.sk = min(self.sk, type(self).kappa - mk)
+                deltak = self.delta(self.sk)
+                vk = np.sqrt(deltak) * np.linalg.norm(s(0))
+                phi = lambda lmbda: np.linalg.norm(s(lmbda)) - vk
+                lmbdak = brentq(phi, 0, 1e+3)
+                gams = s(lmbdak)
                 # Walker2011 - no relaxation
                 # xkp1 -= np.dot(DXk + DFk, gams).reshape(xkp1.shape)
                 # Henderson2019 - betak is the relaxation parameter
                 # (no significant improvement noticed)                
                 xkp1 = betak * (xkp1 - np.dot(DXk + DFk, gams)) \
                      + (1 - betak) * (xk - np.dot(DXk, gams))
-                # print('gammas', gams)
+                # print('lmbdak:', lmbdak, '\ngammas:', gams)
+                # input('wait')
             self.Xk, self.Fk = Xkp1, Fkp1
         # ------------------------------------------------------------------
         return xkp1.reshape(orig_shape)
@@ -393,45 +366,6 @@ def compute_source(ss0, chi, nsf, flx, k=1.):
     return (qs + compute_fission_source(chi, nsf, flx) / k)
 
 
-def compute_cell_volumes(xi, geo=None, per_unit_angle=True):
-    """Compute the volumes of the cells in the mesh xi. These volumes
-    are per unit of transversal surface of the slab or per unit of
-    angle in the other frame (azimuthal angle in the cylinder or
-    per cone unit in the sphere) if per_unit_angle is true. In this case
-    the real volumes in the cylinder must be multiplied by 2*np.pi,
-    or by 4*np.pi for the sphere."""
-    # V = xi[1:] - xi[:-1]  # = Di for the slab as default case
-    V = np.diff(xi)  # same as above, but possible vectorized
-    if geo != 'slab':
-        xm = xim(xi)
-        if 'cylind' in geo:
-            V *= (xm if per_unit_angle else 2 * xm)
-        elif 'spher' in geo:
-            cm = (4. * xm**2 - xi[1:] * xi[:-1]) / 3.
-            V *= (cm if per_unit_angle else 4 * cm)
-            # V *= (r[1:]**2 + r[1:]*r[:-1] + r[:-1]**2) / 3.
-        else:
-            raise ValueError("Unknown geometry type " + geo)
-        if not per_unit_angle:
-            V *= np.pi
-    return V
-
-
-def compute_cell_surfaces(xi, geo=None, per_unit_angle=True):
-    "Compute the cell outer surfaces with the input 1d mesh xi."
-    S = np.ones(xi.size - 1)
-    if geo != 'slab':
-        if 'cylind' in geo:
-            S = (xi[1:] if per_unit_angle else 2 * xi[1:])
-        elif 'spher' in geo:
-            S = (xi[1:]**2 if per_unit_angle else 4 * xi[1:]**2)
-        else:
-            raise InputError("Unknown geometry type " + geo)
-        if not per_unit_angle:
-            S *= np.pi
-    return S
-
-
 def first_order_coeff_at_interfaces(f, Vi):
     """Compute the diffusion coefficient by 1st order finite-difference
     currents determined at both sides of an interface."""
@@ -441,17 +375,6 @@ def first_order_coeff_at_interfaces(f, Vi):
     fb = 2 * f[:, 1:] * f[:, :-1]
     return fb / (f[:, 1: ] * np.tile(Vi[:-1], G).reshape(G, Im1) +
                  f[:, :-1] * np.tile(Vi[1: ], G).reshape(G, Im1))
-
-
-def vol_averaged_at_interface(f, Vi):
-    "Compute surface quantities by volume averaging (slab geometry)."
-    G, I = f.shape
-    Im1 = I - 1
-
-    # fb, volume-average quantity on cell borders
-    fb = (f[:, 1: ] * np.tile(Vi[1: ], G).reshape(G, Im1) +
-          f[:, :-1] * np.tile(Vi[:-1], G).reshape(G, Im1))
-    return fb / np.tile(Vi[1:] + Vi[:-1], G).reshape(G, Im1)
 
 
 def set_diagonals(st, Db, data, dD=None):
@@ -513,16 +436,22 @@ def set_diagonals(st, Db, data, dD=None):
         b[idx+1] += coefp
         c[idx] = -coefp / Vi[1:]
 
-        # add b.c.
-        # # force the extrap. lengths estimated by the reference solution
-        # zetar = np.array([0.67291, 0.33227])[g]
-        b[id0] += Db[g, 0] * xb0 / (0.5 * Di[ 0] + zetal * Db[g, 0]) + dDm[g, 0]
-        b[ida] += Db[g,-1] * xba / (0.5 * Di[-1] + zetar * Db[g,-1]) - dDp[g,-1]
+        # add b.c. (remind to be consistent with compute_diff_currents)
+        # option (a) - attempt to get higher order accuracy
+        # option (b) is 1st order
+        if zetal < max_float:
+            # b[id0] += xb0 / zetal  # (a)
+            b[id0] += Db[g,0] * xb0 / (0.5 * Di[0] + zetal * Db[g, 0])  # (b)
+        b[id0] += dDm[g, 0]
+        if zetar < max_float:
+            # b[ida] += xba / zetar  # (a)
+            b[ida] += Db[g,-1] * xba / (0.5 * Di[-1] + zetar * Db[g,-1])  # (b)
+        b[ida] -= dDp[g,-1]
         # N.B.: the division by Vi are needed because we solve for the
         # volume-integrated flux
         idx = np.append(idx, ida)
         b[idx] /= Vi
-        b[idx] += np.full(I, st[g, :])
+        b[idx] += st[g, :]
 
     return a, b, c
 
@@ -580,13 +509,128 @@ def quadratic_extrapolation_0(flx, Di):
     return bflx
 
 
-def opl(j, i, Ptg):
-    "Calculate the (dimensionless) optical length between j-1/2 and i+1/2."
-    # if j > i, the slicing returns an empty array, and np.sum returns zero.
-    return np.sum(Ptg[j:i+1])
+def compute_tran_currents(flx, k, Di, xs, PP, BC=(0, 0), curr=None,
+                          isSlab=False):
+    """Compute the partial currents given by the integral transport equation
+    with the input flux flx and using the reduced f.f. escape probabilities
+    veP and the transmission probabilities needed in case of reflection at the
+    boundary (both packed in PP = veP, tP). An artificial second moment is 
+    used to match vanishing current at the boundary in case of reflection.
+    When the current curr is provided in input, the linearly anisotropic term
+    is accounted in the source if anisotropic scattering cross section data
+    are available (currently only available for the slab)."""
+    LBC, RBC = BC
+    st, ss, chi, nsf, Db = xs
+    G, I = st.shape
+    veP, tP = PP
+
+    if isSlab:
+        # compute the total removal probability per cell
+        Pt = np.tile(Di, G).reshape(G, I) * st
+
+    ss0 = ss[:, :, 0, :]
+    q0 = compute_source(ss0, chi, nsf, flx, k).reshape(G, I)
+    # remind that the source must not be volume-integrated
+    # q /= np.tile(Di, G).reshape(G, I)
+    if curr is not None:
+        # the following will raise IndexError if ss1 is not available
+        # and the program will stop to inform the user of missing data
+        ss1 = ss[:, :, 1, :]
+        # mind that coeffs are already in escape probs!
+        q1 = 1.5 * compute_scattering_source(ss1, curr)
+
+    # J = np.zeros((G,I+1),)  # currents at the cell bounds
+    Jp = np.zeros((G, I+1),)  # plus partial currents at the cell bounds
+    Jm = np.zeros_like(Jp)  # minus partial currents at the cell bounds
+
+    for g in range(G):
+        # unpack red. e-probs
+        vePp = veP[g, :,:,0]  # 2nd index is i-surface, 3rd index is j-sources
+        vePm = veP[g, :,:,1]  # (defined as negative!)
+        
+        Jp[g, :] = np.dot(vePp, q0[g, :])
+        Jm[g, :] = np.dot(-vePm, q0[g, :])  # return a positive Jm
+        
+        if curr is not None:
+            if not isSlab:
+                raise RuntimeError('Anisotropic sources are not yet ' +
+                                   'supported in 1d curv. geoms.')
+            for i in range(I+1):
+                for j in range(i):
+                    Ajigp[j, i] = (En(4, opl(j+1, i-1, Pt[g, :]))
+                                 - En(4, opl( j , i-1, Pt[g, :])))
+                for j in range(i, I):
+                    Ajigm[j, i] = (En(4, opl(i,  j , Pt[g, :]))
+                                 - En(4, opl(i, j-1, Pt[g, :])))
+            Jp[g, :] += np.dot(q1[g, :], Ajigp)
+            Jm[g, :] += np.dot(q1[g, :], Ajigm)  # check the sign!
+
+        # add bnd. cnds.
+        # Zero flux and vacuum have zero incoming current; a boundary term is
+        # needed only in case of reflection. Please note that limiting the
+        # flux expansion to P1, that is having the flux equal to half the
+        # scalar flux plus 3/2 of the current times the mu polar angle, does
+        # not reproduce a vanishing total current on the reflected boundary.
+        # Therefore, we obtain the second moment to enforce the vanishing of
+        # the current. This must be intended as a pure numerical correction,
+        # since the real one remains unknown.
+
+        # Apply the boundary terms acting on the 0-th moment (scalar flux)
+        # Note: the version quadratic_extrapolation_0 is not used because
+        # overshoots the flux estimates
+        if LBC == 2 and isSlab:
+            # N.B.: reflection at left is used only for the slab geometry,
+            # since escape probabilities take already into account ot the
+            # geometry effect in the 1d curv. geoms.
+            bflx = quadratic_extrapolation(flx[g, :3], Di[:3])
+            # bflx = flx[g,0]  # accurate only to 1st order
+            # print ('L',g,bflx, flx[g,:3])
+            # get the 'corrective' 2-nd moment
+            # bflx2_5o8 = -J[g, 0] - 0.25 * bflx  ## it may be negative!
+            # ...commented for considering also the contributions from the
+            #    right below
+            trL = lambda n: np.array([En(n, opl(0, i-1, Pt[g, :]))
+                                      for i in range(I+1)])
+            # # J[g, :] += 0.5 * np.tile(flx[g,0] / Di[0], I+1) * trL(3)
+            # # J[g, :] += 0.5 * bflx * trL(3)
+            # Jp[g, :] += 0.5 * bflx * trL(3)
+            Jp[g, :] += 0.25 * bflx * tP[g, 0, :]
+        if RBC == 2:
+            bflx = quadratic_extrapolation(flx[g, -3:][::-1], Di[-3:][::-1])
+            # bflx = flx[g,-1]  # accurate only to 1st order
+            # print ('R',g, bflx, flx[g,-3:], flx[g,-1])
+            trR = lambda n: np.array([En(n, opl(i, I-1, Pt[g, :]))
+                                      for i in range(I+1)])
+            # # J[g, :] -= 0.5 * np.tile(flx[g,-1] / Di[-1], I+1) * trR(3)
+            # # J[g, :] -= 0.5 * bflx * trR(3)
+            # Jm[g, :] += 0.5 * bflx * trR(3)
+            Jm[g, :] += 0.25 * bflx * tP[g, 1, :]
+
+        # Fix the non-vanishing current at the boundary by propagating the
+        # error through the second moments. This is done after transmitting
+        # the terms on the 0-th moment to account for possible contributions
+        # coming from the opposite boundary. The second moment is already
+        # multiplied by 5/8, and it will be multiplied by 5/2 in the equation
+        # for the current (and so see below 8 / 5 * 5 / 2 = 4). This 2nd moment
+        # may be negative (and unphysical), but we use it only as a numerical
+        # correction.
+        if isSlab:
+            if LBC == 2 and fix_reflection_by_flx2:
+                # bflx2_5o16 = -J[g, 0]  # for total curr
+                # J[g,:] += 4. * bflx2_5o16 * (3 * trL(5) - trL(3))
+                bflx2_5o16 = Jm[g, 0] - Jp[g, 0]  # for partial curr
+                Jp[g, :] += 4 * bflx2_5o16 * (3 * trL(5) - trL(3))
+            if RBC == 2 and fix_reflection_by_flx2:
+                # bflx2_5o16 = J[g, -1]  # for total curr
+                # J[g, :] -= 4. * bflx2_5o16 * (3 * trR(5) - trR(3))
+                bflx2_5o16 = Jp[g, -1] - Jm[g, -1]  # for partial curr
+                Jm[g, :] += 4. * bflx2_5o16 * (3 * trR(5) - trR(3))
+
+        # and here one can check that J[g, :] = Jp[g, :] - Jm[g, :]
+    return Jp, Jm
 
 
-def compute_tran_currents(flx, k, Di, xs, BC=(0, 0), curr=None):
+def compute_tran_currents_old(flx, k, Di, xs, BC=(0, 0), curr=None):
     """Compute the partial currents given by the integral transport equation
     with the input flux flx. An artificial second moment is used to match
     vanishing current at the boundary in case of reflection. When the input
@@ -728,11 +772,19 @@ def compute_diff_currents(flx, Db, Di, BC=(0, 0)):
     J /= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1)
     # add b.c.
     zetal, zetar = get_zeta(LBC), get_zeta(RBC)
-    JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])
-    JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])
+    if zetal < max_float:
+        # JL = -flx[:, 0] / zetal  # (a)
+        JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])  # (b)
+    else:
+        JL = np.zeros_like(flx[:, 0])
+    if zetar < max_float:
+        # JR = flx[:,-1] / zetar  # (a)
+        JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])  # (b)
+    else:
+        JR = np.zeros_like(flx[:, -1])
     # avoid possible numerical issues
-    if LBC == 2: JL.fill(0)
-    if RBC == 2: JR.fill(0)
+    # if LBC == 2: JL.fill(0)  # not needed anymore
+    # if RBC == 2: JR.fill(0)  # not needed anymore
     J = np.insert(J, 0, JL, axis=1)
     J = np.insert(J, I, JR, axis=1)
     return J
@@ -944,13 +996,9 @@ def load_refSN_solutions(ref_flx_file, G, Di, Dbnd=0.):
     return k_SN, flxm_SN
 
 
-def to_str(v, fmt='%.13g'):
-    return ', '.join([fmt % i for i in v]) + '\n'
-
-
 def check_current_solutions():
     # compute the corrective currents (determined only for debug)
-    J_corr = compute_delta_diff_currents(flxd, dD, Di, BC, pCMFD)
+    J_corr = compute_delta_diff_currents(flxd, dD, Di, BC, slvr_opts.pCMFD)
     print("F_ref ", flxm_SN[0, 0, -6:] / Di[-6:])
     print("F_diff", flx_save[:, :, itr][0, -6:] / Di[-6:])
     print("F_dif*", flx[0, -6:] / Di[-6:])
@@ -984,11 +1032,6 @@ def plot_fluxes(xm, flx, L):
     plt.show()
 
 
-def roll_matrix(M, c):
-    return np.concatenate([M[:, 1:],
-                           np.expand_dims(c, axis=1)], axis=1)
-
-
 def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     """Solve the Ronen Method by non-linear iterations based on CMFD and
     diffusion."""
@@ -1001,20 +1044,34 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
             lin_anis = True
     except:
         pass  # continue without raising an error
-    xi, Di, Vi = data.xi, data.Di, data.Vi
-    G, I, BC = data.G, data.I, data.BC
+    xi, Di, Vi, Si = data.xi, data.Di, data.Vi, data.Si
+    G, I, BC, geo = data.G, data.I, data.BC, data.geometry_type
     itsmax, tolls = slvr_opts.itsmax, slvr_opts.tolls
     ritmax, rtoll = slvr_opts.ritmax, slvr_opts.rtoll
     noacc_rit = slvr_opts.noacc_rit
     if slvr_opts.ritmax == 0:
         lg.warning('You called RM its, but they were disabled at input.')
-    elif data.geometry_type != 'slab':
-        raise RuntimeError('RM has not been ported to curv. geoms.')
     
     if slvr_opts.Anderson:
         AA = AndersonAcceleration(opts=slvr_opts, size=flx.size)
         lg.info("Reset the number of unaccelerated rits to m - 1.")
-        noacc_rit = slvr_opts.Anderson_depth - 1  # noticed optimal performance
+        noacc_rit = AA.Anderson_depth - 1  # noticed optimal performance
+    
+    lg.info("Calculate the first flight escape and transmission probabilities")
+    tr_data = None if (geo == "slab") else \
+        calculate_tracking_data(xi, slvr_opts.ks,
+            sphere=True if "spher" in geo else False, 
+            quadrule=slvr_opts.GaussQuadrature)
+    # N.B.: Remind that volumes are per unit angle in diffusion calculations,
+    # but full ones are needed to compute the escape and transfer probabilities
+    # -> compute_cell_volumes(xi, geo, per_unit_angle=False) != Vi
+    vareps = calculate_eprobs(xi, xs[0], tr_data, geometry_type=geo)
+        # , Vj=compute_cell_volumes(xi, geo, per_unit_angle=False))
+    Sf = compute_cell_surfaces(xi, geo, per_unit_angle=False)  # != Si
+    rps = calculate_sprobs(vareps, Sf)
+    tp = calculate_tprobs(vareps, xs[0], Sf)
+    PP = rps, tp  # pack probs-related data
+    lg.info("-o"*22)
     
     # # load reference currents
     # ref_flx_file = "../SNMG1DSlab/LBC1RBC0_I%d_N%d.npz" % (I, 64)
@@ -1025,7 +1082,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     k_save = np.full(ritmax + 1, -1.)
 
     err, itr, kinit = 1.e+20, 0, k
-    Dflxm1 = np.zeros_like(flx)
+    Dflxm1, dD = np.zeros_like(flx), None
     while (err > rtoll) and (itr < ritmax):
         k_save[itr], flx_save[:, :, itr] = k, flx
 
@@ -1045,8 +1102,14 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         # #lg.warning("USE THE REFERENCE SN FLUX IN THE TRANSPORT OPERATOR")
         # # rflx = flxm_SN[:, 0, :] / Vi
         # # J_tran = compute_tran_currents(rflx, k_SN, Di, xs, BC)
-        pJ_tran = compute_tran_currents(flxd, k, Di, xs, BC, Jd)
+        # pJ_tran = compute_tran_currents_old(flxd, k, Di, xs, BC, Jd)
+        # print('Jp',pJ_tran[0][0,:],'\n','Jm',pJ_tran[1][0,:],'\n ---')
         # Remind that Jp, Jm = *pJ_tran, J = Jp - Jm
+        pJ_tran = compute_tran_currents(flxd, k, Di, xs, PP, BC, Jd,
+                                        isSlab=(geo=='slab'))
+        # print('flxd', flxd)
+        # print("J_diff", J_diff)
+        # print('Jp',pJ_tran[0][0,:],'\nJm',pJ_tran[1][0,:],'\n ---')
 
         if slvr_opts.CMFD:
             # compute the corrective delta-diffusion-coefficients
@@ -1064,23 +1127,24 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
         Dflxm1 = flxres = flx - flxold  # flux residual
         # check_current_solutions()
         # print('--- it %d ---' % itr)
-        # print(flxold[0, -6:])
-        # print(flx[0, -6:])
+        # print(flxold[0, :])
+        # print(flx[0, ])
 
         # possible techniques to accelerate the convergence rate
-        itr0 = itr - noacc_rit
+        itr0 = itr + 1 - noacc_rit
         # Aitken extrapolation
-        if (itr0 >= 0) and (err < rtoll * 100) and slvr_opts.Aitken:
+        if (itr0 > 0) and (err < rtoll * 100) and slvr_opts.Aitken:
             lg.info("<-- Apply Aitken extrapolation on the flux -->")
             flx -=  (Dflxm1**2 / (Dflxm1 - Dflxm2))
         # Successive Over-Relaxation (SOR)
-        if (itr0 >= 0) and slvr_opts.SOR:
+        if (itr0 > 0) and slvr_opts.SOR:
             lg.info("<-- Apply SOR on the flux -->")
             flx = slvr_opts.wSOR * flx + (1 - slvr_opts.wSOR) * flxold
         # Anderson implementation to accelerate yet for k < m
         if slvr_opts.Anderson:
-            flx = AA(itr0 + 1, flxres, flxold, flx)
-            # input(flx[0, -6:])  # debug
+            flx = AA(itr0, flxres, flxold, flx, k_restart=AA.m)
+            # print(flx[0, :])
+            # input('wait')  # debug
         
         # evaluate the flux differences through successive iterations
         ferr = np.where(flx > 0., 1. - flxold / flx, flxres)
@@ -1105,6 +1169,8 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     # plot_fluxes(xim(xi),flx,L)
     # save fluces
     # save_fluxes('diffusion_fluxes_DT.dat',xm,flx)
+    if itr == ritmax:
+        lg.warning(' ---> !!! MAX NB. of R.ITS attained !!!')
 
     k_save[itr], flx_save[:, :, itr] = k, flx  # store final values
     lg.info("Initial value of k was %13.6g." % kinit)
@@ -1126,54 +1192,6 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
                     break
 
     return flx, k
-
-
-def unfold_xs(input_data, diff_calc=True):
-    """Set up the spatial mesh with cross sections data. Scattering xs ss can
-    be limited to the only isotropic term for diffusion calculations."""
-    I, G, Lss = input_data.I, input_data.G, input_data.Lss
-    Lssp1 = Lss + 1
-    xs_media, media = input_data.xs_media, input_data.media
-    xm = xim(input_data.xi)
-    ss, st = np.zeros((G, G, Lssp1, I),), np.zeros((G, I),)
-    nsf, chi, D = np.zeros_like(st), np.zeros_like(st), np.zeros_like(st)
-
-    lbnd = 0.
-    for m in media:
-        media_name, rbnd = m
-        idx = (lbnd < xm) & (xm < rbnd)
-        n = sum(idx)  # nb. of True values or non-zero elements
-        st[:, idx] = np.tile(xs_media[media_name]['st'], (n, 1)).T
-        nsf[:, idx] = np.tile(xs_media[media_name]['nsf'], (n, 1)).T
-        chi[:, idx] = np.tile(xs_media[media_name]['chi'], (n, 1)).T
-        D[:, idx] = np.tile(xs_media[media_name]['D'], (n, 1)).T
-        Lmed = xs_media[media_name]['ss'].shape[-1]
-        if Lmed > Lssp1:
-            raise ValueError("Media %s has ss with L > %d!" %
-                             (media_name, Lss))
-        tmp = np.tile(xs_media[media_name]['ss'].flatten(), (n, 1)).T
-        ss[:, :, :, idx] = tmp.reshape(G, G, Lssp1, n)
-        lbnd = rbnd
-
-    # determine the diffusion coefficient on the cell borders (w/o boundaries)
-    Db = vol_averaged_at_interface(D, input_data.Vi)
-    # Db at the boundaries is considered equal to the one of the nearest cell
-    Db = np.insert(Db, 0, D[:, 0], axis=1)
-    Db = np.insert(Db, I, D[:,-1], axis=1)
-#    # test odCMFD
-#    Vm = np.insert(xim(input_data.Vi), 0, input_data.Vi[0])
-#    Vm = np.insert(Vm, -1, input_data.Vi[-1])
-#    tau_max = np.max(input_data.Vi * st)
-#    opt_theta_by_Zhu = opt_theta(tau_max)
-#    # NOTE: our max_tau values are much smaller than what is used in MOC 
-#    # transport calculations and so opt_theta is almost always zero.
-#    lg.info("Optimal theta for odCMFD = %.3f with max(tau) = %.5f" % \
-#        (opt_theta_by_Zhu, tau_max))
-#    Db += opt_theta_by_Zhu * np.tile(Vm, (G, 1))
-    xs = [st, ss, chi, nsf]
-    if diff_calc:
-        xs.append(Db)
-    return xs
 
 
 def run_calc_with_RM_its(idata, slvr_opts, filename=None):

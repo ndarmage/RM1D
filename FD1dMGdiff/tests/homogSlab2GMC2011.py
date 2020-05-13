@@ -19,7 +19,7 @@ def MyWho():
 
 # definition of the spatial mesh
 L = 21.5 / 2.  # slab width, equal to half pitch of a fuel assembly
-I = 20  # nb of spatial cells
+I = 80  # nb of spatial cells
 xi = np.linspace(0, L, I+1)  # equidistant mesh
 
 geometry_type = 'slab'
@@ -42,8 +42,13 @@ if __name__ == "__main__":
     lg.info("*** Solve the M&C 2011 problem ***")
     from FDsDiff1D import run_calc_with_RM_its, solver_options
 
-    ritmax = 10
+    ritmax = 100
     CMFD, pCMFD = True, False
     slvr_opts = solver_options(ritmax=ritmax, CMFD=CMFD, pCMFD=pCMFD)
     filename = "./kflx_LBC%dRBC%d_I%d_it%d" % (LBC, RBC, I, ritmax)
     flx, k = run_calc_with_RM_its(Homog2GSlab_data, slvr_opts, filename)
+    kS16, kCPM = 0.744417, 0.743978
+    lg.info("Reference k from S16 is %.6f" % kS16)
+    np.testing.assert_allclose(k, kCPM, atol=1.e-4,
+                               err_msg="ref k of MC2011 not verified")
+    

@@ -28,8 +28,7 @@ from KinPy.algo609 import dbskin as Ki
 sys.path.append(
     os.path.join(os.path.dirname(__file__), '..', 'FD1dMGdiff')
 )
-from FDsDiff1D import input_data, unfold_xs, \
-                      compute_cell_volumes, compute_cell_surfaces
+from GeoMatTools import *
 
 
 # useful constants
@@ -46,7 +45,8 @@ class solver_options:
     nbitsmax = 100  # default nb. of max iterations (its)
 
     def __init__(self, iitmax=nbitsmax, oitmax=nbitsmax,
-                 otoll=toll, itoll=toll, ks=None, GQ="Gauss-Jacobi"):
+                 otoll=toll, itoll=toll, ks=None, GQ="Gauss-Jacobi",
+                 betaL=0, betaR=0):
         self.oitmax = oitmax  # max nb of outer iterations
         self.iitmax = iitmax  # max nb of inner iterations
         self.otoll = otoll  # tolerance on fiss. rates at outer its.
@@ -54,9 +54,9 @@ class solver_options:
         self.ks = ks  # nb. of quadrature point per cell
         self.GaussQuadrature = GQ  # type of Guass quadrature along
                                    # the h axis in curvilinear coords.
-        self.betaL = 0  # partial current albedo left
-                        # (not used in curv. geoms)
-        self.betaR = 0  # must be <= 1, see RBC in input_data
+        self.betaL = betaL  # partial current albedo left
+                            # (not used in curv. geoms)
+        self.betaR = betaR  # must be <= 1, see RBC in input_data
         self.check_input()
 
     def check_input(self):
@@ -64,15 +64,15 @@ class solver_options:
             raise InputError('left albedo not in [0, 1]')
         if self.betaR < 0 or self.betaR > 1:
             raise InputError('right albedo not in [0, 1]')
-        if self.ks is None:
-            raise InputError('Missing input nb. of quadrature points')
         if self.oitmax < 0:
             raise InputError('Detected negative max nb. of outer its.')  
         if self.iitmax < 0:
             raise InputError('Detected negative max nb. of inner its.')
+        if self.ks is None:
+            raise InputError('Missing input nb. of quadrature points')
         if self.GaussQuadrature != "Gauss-Jacobi" and \
            self.GaussQuadrature != "Gauss-Legendre":
-            raise InputError('Unsupported type of Gauss quadrature')           
+            raise InputError('Unsupported type of Gauss quadrature')
 
     @property
     def itsmax(self):
@@ -88,84 +88,6 @@ class solver_options:
     def albedos(self):
         "pack albedos at the left and right boundaries"
         return self.betaL, self.betaR
-
-
-def equivolume_mesh(I, a=0, b=1, geometry_type="cylinder"):
-    "Make an equivolume mesh of I elements within [a, b]."
-    if I <= 0:
-        raise InputError("Invalid nb. of mesh elements")
-    if a >= b:
-        raise InputError("Invalid input bounds.")
-    Vi = (b - a) / float(I)
-    if "cylind" in geometry_type:
-        Vi *= b + a
-    elif "spher" in geometry_type:
-        Vi *= b**2 + a * b + a**2
-    elif geometry_type != "slab":
-        raise InputError("Unsupported geometry type")
-    
-    r = np.cumsum(Vi * np.ones(I))
-    if "cylind" in geometry_type:
-        r = np.sqrt(r - a**2)
-    elif "spher" in geometry_type:
-        r = np.cbrt(r - a**3)
-    
-    return np.insert(r, 0, a)
-
-
-def geomprogr_mesh(N=None, a=0, L=None, Delta0=None, ratio=None):
-    """Compute a sequence of values according to a geometric progression.
-    Different options are possible with the input number of intervals in the
-    sequence N, the length of the first interval Delta0, the total length L
-    and the ratio of the sought geometric progression. Three of them are 
-    requested in input to find a valid sequence. The sequence is drawn within
-    the points a and b."""
-    
-    if list(locals().values()).count(None) > 1:
-        raise ValueError('Insufficient number of input data for a sequence')
-    if ratio is not None:
-        if (ratio < 0):
-            raise ValueError('negative ratio is not valid')
-    if L is not None:
-        if (L < 0):
-            raise ValueError('negative total length is not valid')
-    if Delta0 is not None:
-        if (Delta0 < 0):
-            raise ValueError('negative length of the 1st interval is not valid')
-    if N is not None:
-        if (N < 0):
-            raise ValueError('negative number of intervals is not valid')
-    
-    if N is None:
-        if ratio < 1:
-            N = np.log(1 - L / Delta0 * (1 - ratio)) / np.log(ratio)
-        else:
-            N = np.log(1 + L / Delta0 * (ratio - 1)) / np.log(ratio)
-    elif L is None:
-        if ratio < 1:
-            L = Delta0 * (1 - ratio**N) / (1 - ratio)
-        else:
-            L = Delta0 * (ratio**N - 1) / (ratio - 1)
-    elif Delta0 is None:
-        if not np.isclose(ratio, 1):
-            Delta0 = L * (1 - ratio) / (1 - ratio**N)
-        else:
-            Delta0 = L / float(N)
-    elif ratio is None:
-        f = lambda q: q**N - L / Delta0 * q + L / Delta0 - 1
-        x = L / float(N)
-        if Delta0 > x:
-            ratio = brentq(f, 0, 1 - 1.e-6)
-        elif Delta0 < x:
-            ratio = brentq(f, 1 + 1.e-6, 20)
-        else:
-            ratio = 1
-    
-    r = np.full(N, Delta0)
-    for i in range(N-1):
-        r[i+1] = r[i] * ratio
-    
-    return np.insert(np.cumsum(r), 0, 0) + a
 
 
 def calculate_volumes(r, geometry_type="cylinder"):
@@ -329,10 +251,12 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
     # calculate the recuced escape probabilities varepsilon (times the volume)
     # remind that the current vanishes at the center, and likewise the partial
     # currents (assumption, but it shall be enough to say that they're equal!).
-    vareps = np.zeros((I, I, 2),)
-    # references to the main data container
-    varepsp = vareps[:,:,0]  # first index is i, second index is j (sources)
-    varepsm = vareps[:,:,1]  # (defined as negative!)
+    vareps = np.zeros((I + 1, I, 2),)
+    # references to the main data container; the initial zero row is left to
+    # have a unique format with the slab (vanishing partial currents assumed
+    # at the center!)
+    varepsp = vareps[1:,:,0]  # first index is i, second index is j (sources)
+    varepsm = vareps[1:,:,1]  # (defined as negative!)
     # varepsp is for escape whereas varepsm is for in-scape
 
     # local functions
@@ -435,14 +359,8 @@ def calculate_escape_prob(r, st, tr_data, geometry_type="cylinder",
     if wcos:
         varepsp *= Rinv
         varepsm *= Rinv
+    
     return vareps * 2
-
-
-def opl(j, i, tau):
-    """Calculate the (dimensionless) optical length between j-1/2 and i+1/2 in
-    the slab."""
-    # if j > i, the slicing returns an empty array, and np.sum returns zero.
-    return np.sum(tau[j:i+1])
 
 
 def calculate_escape_prob_slab(x, st, Di=None):
@@ -501,12 +419,9 @@ def ep2cp(ep, check=False, Vst=None,
             msg += " ep_plus =\n" + str(ep[g,:,:,0])
             lg.warning(msg)
     ep_minus, ep_plus = ep[:,:,:,1], ep[:,:,:,0]
-    if I0 == I:  # this occurs only with curv. frames
-        ep_plus = np.insert(ep_plus, 0, np.zeros(I), axis=1)
-        ep_minus = np.insert(ep_minus, 0, np.zeros(I), axis=1)
     cp[:,:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
               + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
-    # cp[:, 0,:] = - ep_plus[:,0,:] - ep_minus[:,0,:]
+    # cp[:, 0,:] = - ep_plus[:,0,:] - ep_minus[:,0,:]  # in cylinder and sphere
     # cp[:,1:,:] = ep_plus[:,:-1,:] - ep_plus[:,1:,:] \
                # + ep_minus[:,:-1,:] - ep_minus[:,1:,:]
     for g in range(G):
@@ -538,27 +453,118 @@ def ep2cp(ep, check=False, Vst=None,
     return cp
 
 
-def calculate_probs(r, st, tr_data=None, Vj=None, geometry_type="cylinder"):
-    """Calculate first flight escape and collision probabilities in the
-    input geometry_type."""
+def calculate_sprobs(ep, S=None, V=None):
+    """Calculate first flight collision probabilities of neutrons crossing a
+    surface according to a cosine current and having the first collision in a
+    cell. Input escape probabilities are considered as reduced if V is None.
+    Input surfaces are mandatory. Output collision probabilities are reduced,
+    that is divided by the total cross section of the impinging region, and
+    divided by 4."""
+    G, J, I, _ = ep.shape  # nb. of groups, surfaces, volumes
+    if J != I + 1:
+        raise ValueError('nb. surfaces and volumes mismatch')
+    if V is not None:
+        if len(V) != I:
+            raise ValueError('Input volumes do not match cell nb.')
+        ep *= np.moveaxis(np.tile(V, (G, 2, J, 1)), 1, -1)  # = reduced eP!
+    if len(S) != J:
+        raise ValueError('Input surfaces do not match surface nb.')
+    
+    epp, epm = ep[:,:,:,0], ep[:,:,:,1]
+    
+    # *** WARNING ***
+    # A zero surface is assigned to the inner-most interface in curv. geoms.
+    # Therein, partial currents are considered as vanishing. Caution is needed
+    # compute_tran_currents (FD1dMGdiff).
+    S[S == 0] = 1  # prevent division by zero
+
+    return ep / np.moveaxis(np.tile(S, (G, 2, I, 1)).swapaxes(2,-1), 1, -1)
+
+
+def calculate_tprobs(ep, st, S, V=None, reduced=True):
+    """Calculate the first flight transmission probabilities for the incoming
+    currents at the boundaries to cross uncollided each surface of the 1D
+    problem. Reduced escape probs are expected when V is None. Only white
+    boundaries are considered. If reduce is True, the probabilities will
+    be scaled by the ratio of the starting and arrival surface."""
+    G, J, I, _ = ep.shape  # nb. of groups, surfaces, volumes
+    if J != I + 1:
+        raise ValueError('nb. surfaces and volumes mismatch')
+    if V is not None:
+        if len(V) != I:
+            raise ValueError('Input volumes do not match cell nb.')
+        ep *= np.moveaxis(np.tile(V, (G, 2, J, 1)), 1, -1)  # = reduced eP!
+    if len(S) != J:
+        raise ValueError('Input surfaces do not match surface nb.')
+
+    tp = np.ones((G, 2, J),)
+    for g in range(G):
+        # forward transmission from the left boundary
+        eaj = -ep[g,0,:,1]
+        if S[0] > 0:
+            pja = 4 * eaj * st[g,:] / S[0]
+            tp[g,0,1:] = 1 - np.cumsum(pja)
+        else:
+            tp[g,0,1:] = 0
+        
+        # backward transmission from the right boundary
+        ebj = ep[g,-1,:,0]
+        if S[-1] > 0:
+            pjb = 4 * ebj * st[g,:] / S[-1]
+            tp[g,1,:-1] = 1 - np.cumsum(pjb[::-1])[::-1]
+        else:
+            tp[g,1,:-1] = 0
+    
+    if np.any(tp < 0):
+        raise RuntimeError('Detected negative transmission probabilities\n' +
+                           str(tp))
+    if np.any(tp > 1):
+        raise RuntimeError('Detected transmission probabilities > 1!\n' +
+                           str(tp))
+    if reduced:
+        # *** WARNING ***
+        # A zero surface is assigned to the inner-most interface in curv. geoms.
+        # Therein, partial currents are considered as vanishing. Caution is needed
+        # compute_tran_currents (FD1dMGdiff).
+        S[S == 0] = 1  # prevent division by zero
+        tp[g, 0, :] *= S[0] / S[-1]
+        tp[g, 1, :] *= S[-1] / S[0]
+    return tp
+
+
+def calculate_eprobs(r, st, tr_data=None, Vj=None, geometry_type="cylinder",
+                     reduced=True):
+    """Calculate first flight escape probabilities in the input geometry_type;
+    reduced probs can also be selected in input."""
     G, I = st.shape
     if Vj is None:
         Vj = calculate_volumes(r, geometry_type)
     
     # reduced escape probabilities for partial currents
+    varepS = np.zeros((G, I+1, I, 2),)
     if geometry_type == "slab":
-        varepS = np.zeros((G, I+1, I, 2),)
         for g in range(G):
             varepS[g,:,:,:] = calculate_escape_prob_slab(r, st[g,:], Vj)
     else:
-        varepS = np.zeros((G, I, I, 2),)
         for g in range(G):
             varepS[g,:,:,:] = calculate_escape_prob(r, st[g,:], tr_data,
                                                     geometry_type, wcos=False)
 
-    # divide by the volumes of starting cells to get the probabilities
-    nb_faces = varepS.shape[1]  # nb. of surfaces in the 1d problem
-    eP = varepS / np.moveaxis(np.tile(Vj, (G, 2, nb_faces, 1)), 1, -1)
+    if not reduced:
+        # divide by the volumes of starting cells to get the probabilities
+        varepS /= np.moveaxis(np.tile(Vj, (G, 2, I + 1, 1)), 1, -1)  # = eP!
+    return varepS
+
+
+def calculate_probs(r, st, tr_data=None, Vj=None, geometry_type="cylinder"):
+    """Calculate first flight escape and collision probabilities in the
+    input geometry_type."""
+    if Vj is None:
+        Vj = calculate_volumes(r, geometry_type)
+    
+    # calculate the first flight escape probabilities
+    eP = calculate_eprobs(r, st, tr_data, Vj, geometry_type, reduced=False)
+    
     # derive collision probabilities from escape probabilities and
     # return the f.f. collision probabilities
     return eP, ep2cp(eP, check=True, Vst=st * Vj)
@@ -591,7 +597,7 @@ def calculate_full_spectrum(xs, cp, ep=None, betas=(0,0), data=None):
     
     if (betaL < 0) or (betaL > 1):
         raise ValueError("betaL (left albedo) is not in valid range")
-    else:
+    elif betaL > 0:
         if ep is None:
             raise ValueError("betaL > 0, but no input escape probs")
         if data is None:
@@ -604,13 +610,21 @@ def calculate_full_spectrum(xs, cp, ep=None, betas=(0,0), data=None):
     
     if (betaR < 0) or (betaR > 1):
         raise ValueError("betaR (right albedo) is not in valid range")
-    else:
+    elif betaR > 0:
         if ep is None:
             raise ValueError("betaR > 0, but no input escape probs")
         if data is None:
             raise ValueError("input mesh data is needed for VjoSbR")
         else:
             VjoSbR = data.Vi / data.Si[-1]
+    
+    def get_rt(rpjx, st):
+        total_collision = np.dot(rpjx, st)
+        if data.geometry_type != 'slab':
+            reflection, transmission = 1 - total_collision, 0
+        else:
+            reflection, transmission = 0, 1 - total_collision
+        return reflection, transmission
 
     GI = G * I
     PS = np.zeros((GI, GI),)
@@ -620,18 +634,27 @@ def calculate_full_spectrum(xs, cp, ep=None, betas=(0,0), data=None):
     for g in range(G):
         idx = slice(I * g, I * (g + 1))
         pji = np.transpose(cp[g,:,:] / st[g,:])  # reduced CP
-        if betaL > 0:
-            ebj = -ep[g,0,:,1]
-            pjb = VjoSbL * ebj * 4.  # times is very important!
-            transmission = 1 - np.dot(pjb, st[g,:])
-            coef = betaL / (1 - betaL * transmission)
-            pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
+    
+        # apply b.c.    
+        eaj, ebj = -ep[g,0,:,1], ep[g,-1,:,0]
+        if betaL > 0:  # pja and pjb are both needed if refl at both sides
+            pja = 4 * VjoSbL * eaj
         if betaR > 0:
-            ebj = ep[g,-1,:,0]
-            pjb = VjoSbR * ebj * 4.
-            transmission = 1 - np.dot(pjb, st[g,:])
-            coef = betaR / (1 - betaR * transmission)
+            pjb = 4 * VjoSbR * ebj
+        if betaL > 0:
+            r, t = get_rt(pja, st[g,:])
+            coef = betaL / (1 - betaL * (r + t**2 * betaR / (1 - betaR * r)))
+            pji += coef * np.dot(np.diag(eaj), np.tile(pja, (I, 1)))
+            if betaR > 0:
+                coef *= betaR * t
+                pji += coef * np.dot(np.diag(eaj), np.tile(pjb, (I, 1)))
+        if betaR > 0:
+            r, t = get_rt(pjb, st[g,:])
+            coef = betaR / (1 - betaR * (r + t**2 * betaL / (1 - betaL * r)))
             pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
+            if betaL > 0:
+                coef *= betaL * t
+                pji += coef * np.dot(np.diag(ebj), np.tile(pja, (I, 1)))
             
         # X[Is + g * I, Is] = chi[g,:]
         F[Is, Is + g * I] = nsf[g,:]
@@ -663,7 +686,7 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     
     if (betaL < 0) or (betaL > 1):
         raise ValueError("betaL (left albedo) is not in valid range")
-    else:
+    elif betaL > 0:
         if ep is None:
             raise ValueError("betaL > 0, but no input escape probs")
         if data is None:
@@ -676,7 +699,7 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
     
     if (betaR < 0) or (betaR > 1):
         raise ValueError("betaR (right albedo) is not in valid range")
-    else:
+    elif betaR > 0:
         if ep is None:
             raise ValueError("betaR > 0, but no input escape probs")
         if data is None:
@@ -684,25 +707,44 @@ def solve_outers(xs, cp, slvr_opts, ep=None, flx=None, k=1, kappa=1.5,
         else:
             VjoSbR = data.Vi / data.Si[-1]
     
+    def get_rt(rpjx, st):
+        total_collision = np.dot(rpjx, st)
+        if data.geometry_type != 'slab':
+            reflection, transmission = 1 - total_collision, 0
+        else:
+            reflection, transmission = 0, 1 - total_collision
+        return reflection, transmission
+    
     PS, PX = np.zeros((GI, GI),), np.zeros((GI, I),)
     # X, F = np.zeros_like(PX), np.zeros((I, GI),)
     PXF = np.zeros_like(PS)
-    Is = np.arange(I)
+    # Is = np.arange(I)
+    # pjbnd = lambda exj, V, S: 4 * exj * V / S 
     for g in range(G):
         idx = slice(I * g, I * (g + 1))
         pji = np.transpose(cp[g,:,:] / st[g,:])  # reduced CP
-        if betaL > 0:
-            ebj = -ep[g,0,:,1]
-            pjb = VjoSbL * ebj * 4.  # times is very important!
-            transmission = 1 - np.dot(pjb, st[g,:])
-            coef = betaL / (1 - betaL * transmission)
-            pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
+    
+        # apply b.c.    
+        eaj, ebj = -ep[g,0,:,1], ep[g,-1,:,0]
+        if betaL > 0:  # pja and pjb are both needed if refl at both sides
+            pja = 4 * VjoSbL * eaj
         if betaR > 0:
-            ebj = ep[g,-1,:,0]
-            pjb = VjoSbR * ebj * 4.  # times is very important!
-            transmission = 1 - np.dot(pjb, st[g,:])
-            coef = betaR / (1 - betaR * transmission)
+            pjb = 4 * VjoSbR * ebj
+        if betaL > 0:
+            r, t = get_rt(pja, st[g,:])
+            coef = betaL / (1 - betaL * (r + t**2 * betaR / (1 - betaR * r)))
+            pji += coef * np.dot(np.diag(eaj), np.tile(pja, (I, 1)))
+            if betaR > 0:
+                coef *= betaR * t
+                pji += coef * np.dot(np.diag(eaj), np.tile(pjb, (I, 1)))
+        if betaR > 0:
+            r, t = get_rt(pjb, st[g,:])
+            coef = betaR / (1 - betaR * (r + t**2 * betaL / (1 - betaL * r)))
             pji += coef * np.dot(np.diag(ebj), np.tile(pjb, (I, 1)))
+            if betaL > 0:
+                coef *= betaL * t
+                pji += coef * np.dot(np.diag(ebj), np.tile(pja, (I, 1)))
+        
         # X[Is + g * I, Is] = chi[g,:]
         # F[Is, Is + g * I] = nsf[g,:]
         PX[idx,:] = pji * chi[g,:]

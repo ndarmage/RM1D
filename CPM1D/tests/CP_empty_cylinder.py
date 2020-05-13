@@ -47,8 +47,7 @@ if __name__ == "__main__":
     lg.info('EP+:\n' + str(eP[0, :, :, 0]))
     lg.info('EP-:\n' + str(eP[0, :, :, 1]))
     
-    ePp, ePm = np.ones((I, I),), np.zeros((I, I),)
     np.testing.assert_allclose(np.zeros((I, I),), cP[0, :, :],
         atol=1.e-6, rtol=np.inf, err_msg="CP should be all zeros!")
-    np.testing.assert_allclose(-np.triu(eP[0, :, :, 0], k=1),
-        eP[0, :, :, 1], atol=1.e-7, err_msg="- triu(EP+) != EP-")
+    np.testing.assert_allclose(-np.triu(eP[0, 1:, :, 0], k=1),
+        eP[0, 1:, :, 1], atol=1.e-7, err_msg="- triu(EP+) != EP-")
