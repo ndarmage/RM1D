@@ -212,7 +212,7 @@ def unfold_xs(input_data, diff_calc=True):
     Db = vol_averaged_at_interface(D, input_data.Vi)
     # --------------------------------------------------------------------------
     # # option 2.
-    # # use the definition of the diffusion coefficient at the boundary given
+    # # use the definition of the diffusion coefficient at the boundary with
     # # the current approximated by 1st order finite differences at both sides
     # # an interface
     # DioD = 1 / (D / input_data.Di)  # to exploit element-wise division
@@ -329,3 +329,150 @@ def opl(j, i, tau):
     # "Calculate the (dimensionless) optical length between j-1/2 and i+1/2."
     # # if j > i, the slicing returns an empty array, and np.sum returns zero.
     # return np.sum(Ptg[j:i+1])
+
+
+def estimate_derivative(flx, Di):
+    """Fit flx by quadratic interpolation at the cell centers and return the
+    value of its derivative at the initial point."""
+    if len(Di) != 3:
+        raise ValueError("invalid input cell-width vector Di")
+    if flx.size % 3 != 0:
+        raise ValueError("invalid input flux flx")
+    r = Di[1] / Di[0]
+    a1 = 2. + r
+    b1 = a1 + r + Di[2] / Di[0]
+    c = 4. / Di[0]**2 / (1. - b1) * ((flx[1] - flx[0]) / (a1 - 1.) -
+                                     (flx[2] - flx[1]) / (b1 - 1.))
+    b = 2. / Di[0] * (flx[1] - flx[0]) / (a1 - 1.) - c * Di[0] / 2. * (a1 + 1.)
+    return b
+
+
+def quadratic_extrapolation(flx, Di):
+    """Extrapolate the flux at the boundary by a quadratic polynomial which
+    interpolates the flux at the mid of the input three cells. This assumption
+    is consistent with the centered finite differences used in the diffusion
+    solver."""
+    if len(Di) != 3:
+        raise ValueError("invalid input cell-width vector Di")
+    if flx.size % 3 != 0:
+        raise ValueError("invalid input flux flx")
+    r = Di[1] / Di[0]
+    a = 2. + r
+    b = a + r + Di[2] / Di[0]
+    df1, df2 = (flx[1] - flx[0]) / (a - 1.), (flx[2] - flx[1]) / (b - a)
+    bflx = flx[0] - df1 + a / (1. - b) * (df1 - df2)
+    return bflx
+
+
+def quadratic_extrapolation_0(flx, Di):
+    """Extrapolate the flux at the boundary by a quadratic polynomial whose
+    integral over the first three cells at the boundary yields the volume-
+    integrated flux (given by flx_i * Di_i thanks to the theorem of the mean).
+    """
+    if len(Di) != 3:
+        raise ValueError("invalid input cell-width vector Di")
+    if flx.size % 3 != 0:
+        raise ValueError("invalid input flux flx")
+    x0, x1, x2 = np.cumsum(Di) - Di[0] / 2.
+    xA, xB, xC, xD = 0., Di[0], Di[0] + Di[1], np.sum(Di[:3])
+    g0 = xB**2 + xA * xB + xA**2
+    g1 = xC**2 + xB * xC + xB**2
+    g2 = xD**2 + xC * xD + xC**2
+    df1, df2 = (flx[1] - flx[0]) / (x1 - x0), (flx[2] - flx[1]) / (x2 - x1)
+    a = (g2 - g1) / (g1 - g0) * (x1 - x0) / (x2 - x1) - 1.
+    bflx = flx[0] - df1 + (df1 - df2) / a
+    return bflx
+
+
+def quadratic_fit_3p(r, rs):
+    """
+    Interpolate a function after fitting by quadratic polynomial passing
+    for three points.
+
+    f(r) = (
+      f0*(r**2*r1 - r**2*r2 - r*r1**2 + r*r2**2 + r1**2*r2 - r1*r2**2)
+    - f1*(r**2*r0 - r**2*r2 - r*r0**2 + r*r2**2 + r0**2*r2 - r0*r2**2)
+    + f2*(r**2*r0 - r**2*r1 - r*r0**2 + r*r1**2 + r0**2*r1 - r0*r1**2)
+    ) / ((r0 - r1)*(r0 - r2)*(r1 - r2))
+    """
+    r0, r1, r2 = rs
+    f0, f1, f2 = fs
+    rp2 = r**2
+    r0p2, r1p2, r2p2 = r0**2, r1**2, r2**2
+    d = (r0 - r1)*(r0 - r2)*(r1 - r2)
+     
+    # f(r) = (
+    #   f0*((rp2 + r1*r2)*(r1 - r2) - r*(r1p2 + r2p2))
+    # - f1*((rp2 + r0*r2)*(r0 - r2) - r*(r0p2 + r2p2))
+    # + f2*((rp2 + r0*r1)*(r0 - r1) - r*(r0p2 + r1p2))
+    # ) / ((r0 - r1)*(r0 - r2)*(r1 - r2))
+    
+    # f(r) = c0(r) * f0 + c1(r) * f1 + c2(r) * f2
+     
+    # coefficients to use in the system eqs.
+    c0 = ((rp2 + r1*r2)*(r1 - r2) - r*(r1p2 + r2p2)) / d
+    c1 = ((rp2 + r0*r2)*(r0 - r2) - r*(r0p2 + r2p2)) / -d
+    c2 = ((rp2 + r0*r1)*(r0 - r1) - r*(r0p2 + r1p2)) / d
+    return c0, c1, c2
+
+
+def quadratic_fit_zD(r, rs, zD, order=1):
+    """
+    Interpolate a function or its derivative according to the input order,
+    after fitting it by quadratic polynomial passing for two points and with
+    prescribed derivative in a distinct point, as in the following.
+    >>> f  = a*r**2 + b*r + c  # use sympy
+    >>> fp = 2*a*r + b
+    >>> zD = symbols('zD')
+    >>> syseqs = [Eq(f.subs(r, r0), zD * fp.subs(r, r0)), Eq(f.subs(r, r1), f1),
+    ... Eq(f.subs(r, r2), f2)]
+    >>> sol = solve(syseqs, (a, b, c))
+    >>> g = sol[a]*r**2 + sol[b]*r + sol[c]
+    """
+    r0, r1, r2 = rs
+    r0p2, r1p2, r2p2 = r0**2, r1**2, r2**2
+    d = (r1 - r2)*(r0*(r0 - r1 - r2) + r1*r2 + (r1 - 2*r0 + r2)*zD)
+
+    # f(r) = (
+    # - f1*(r**2*r0 - r**2*r2 - r**2*zD - r*r0**2 + 2*r*r0*zD + r*r2**2
+    #       + r0**2*r2 - r0*r2**2 - 2*r0*r2*zD + r2**2*zD)
+    # + f2*(r**2*r0 - r**2*r1 - r**2*zD - r*r0**2 + 2*r*r0*zD + r*r1**2
+    #       + r0**2*r1 - r0*r1**2 - 2*r0*r1*zD + r1**2*zD)
+    # ) / ((r1 - r2)*(r0**2 - r0*r1 - r0*r2 - 2*r0*zD + r1*r2
+    #                                         + r1*zD + r2*zD))
+
+    # f(r) = (
+    # - f1*(rp2*(r0 - r2 - zD) - r*(r0*(r0 + 2*zD) + r2p2)
+    #       + r2*(r0*(r0 - r2 - 2*zD) + r2*zD))
+    # + f2*(rp2*(r0 - r1 - zD) - r*(r0*(r0 + 2*zD) + r1p2)
+    #       + r1*(r0*(r0 - r1 - 2*zD) + r1*zD))
+    # ) / ((r1 - r2)*(r0**2 - r0*r1 - r0*r2 - 2*r0*zD + r1*r2
+    #                                         + r1*zD + r2*zD))
+    # f(r) = c1(r) * f1 + c2(r) * f2
+    # coefficients to use in the system eqs.
+    if order == 0:
+        rp2 = r**2
+        c1 =-(rp2*(r0 - r2 - zD) - r*(r0*(r0 + 2*zD) + r2p2)
+              + r2*(r0*(r0 - r2 - 2*zD) + r2*zD))
+        c2 = (rp2*(r0 - r1 - zD) - r*(r0*(r0 + 2*zD) + r1p2)
+              + r1*(r0*(r0 - r1 - 2*zD) + r1*zD))
+
+    # fprime(r) = (  # fp, first derivative
+    #    f1*(-2*r*r0 + 2*r*r2 + 2*r*zD + r0**2 - 2*r0*zD - r2**2)
+    #  + f2*(2*r*r0 - 2*r*r1 - 2*r*zD - r0**2 + 2*r0*zD + r1**2)
+    # ) / ((r1 - r2)*(r0**2 - r0*r1 - r0*r2 - 2*r0*zD + r1*r2
+    #                                         + r1*zD + r2*zD))
+
+    # fprime(r) = (  # fp, first derivative
+    #    f1*(2*r*(r2 - r0 + zD) + r0p2 - 2*r0*zD - r2p2)
+    #  + f2*(2*r*(r0 - r1 - zD) - r0p2 + 2*r0*zD + r1p2)
+    # ) / ((r1 - r2)*(r0**2 - r0*r1 - r0*r2 - 2*r0*zD + r1*r2
+    #                                         + r1*zD + r2*zD))
+    # fp(r) = c1(r) * f1 + c2(r) * f2
+    # coefficients to use in the system eqs.
+    elif order == 1:
+        c1 = (2*r*(r2 - r0 + zD) + r0p2 - 2*r0*zD - r2p2)
+        c2 = (2*r*(r0 - r1 - zD) - r0p2 + 2*r0*zD + r1p2)
+    else:
+        raise ValueError('order > 1 is not supported.')
+    return c1 / d, c2 / d

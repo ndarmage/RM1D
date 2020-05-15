@@ -291,8 +291,7 @@ class AndersonAcceleration:
                 uf = np.dot(fk, Uk[:, :mk])
                 s = lambda lmbda: np.dot(np.dot(Vk.T,
                     np.diag(dk / (dk**2 + lmbda))), uf)
-                self.sk += 1
-                self.sk = min(self.sk, type(self).kappa - mk)
+                self.sk = min(self.sk + 1, type(self).kappa - mk)
                 deltak = self.delta(self.sk)
                 vk = np.sqrt(deltak) * np.linalg.norm(s(0))
                 phi = lambda lmbda: np.linalg.norm(s(lmbda)) - vk
@@ -423,6 +422,15 @@ def set_diagonals(st, Db, data, dD=None):
     # print(dDp, dDm)
     # get extrapolated length
     zetal, zetar = get_zeta(LBC), get_zeta(RBC)
+    c1l = c2l = c1r = c2r = 0.
+    if zetal < max_float:
+        c1l, c2l = quadratic_fit_zD(xi[0],
+                                    np.insert(data.xim[:2], 0, xi[0]),
+                                    zetal)
+    if zetar < max_float:
+        c1r, c2r = quadratic_fit_zD(xi[-1],
+                                    np.insert(data.xim[-2:][::-1], 0, xi[-1]),
+                                    -zetar)
     for g in range(G):
         # d contains only I-1 elements, flattened G times
         idd = np.arange(g*(I-1), (g+1)*(I-1))
@@ -439,13 +447,18 @@ def set_diagonals(st, Db, data, dD=None):
         # add b.c. (remind to be consistent with compute_diff_currents)
         # option (a) - attempt to get higher order accuracy
         # option (b) is 1st order
+        # option (c) fit by 2nd order polynomial
         if zetal < max_float:
-            # b[id0] += xb0 / zetal  # (a)
-            b[id0] += Db[g,0] * xb0 / (0.5 * Di[0] + zetal * Db[g, 0])  # (b)
+            # b[id0] -= xb0 / zetal  # (a)
+            # b[id0] += xb0 * Db[g,0] / (0.5 * Di[0] + zetal * Db[g, 0])  # (b)
+            b[id0] += xb0 * Db[g,0] *c1l # (c)
+            c[id0] += xb0 * Db[g,0] *c2l / Vi[1] # (c)
         b[id0] += dDm[g, 0]
         if zetar < max_float:
-            # b[ida] += xba / zetar  # (a)
-            b[ida] += Db[g,-1] * xba / (0.5 * Di[-1] + zetar * Db[g,-1])  # (b)
+            # b[ida] -= xba / zetar  # (a)
+            # b[ida] += xba * Db[g,-1] / (0.5 * Di[-1] + zetar * Db[g,-1])  # (b)
+            b[ida] -= xba * Db[g,-1] *c1r # (c)
+            a[ida-1] -= xba * Db[g,-1] *c2r / Vi[-2] # (c)
         b[ida] -= dDp[g,-1]
         # N.B.: the division by Vi are needed because we solve for the
         # volume-integrated flux
@@ -454,59 +467,6 @@ def set_diagonals(st, Db, data, dD=None):
         b[idx] += st[g, :]
 
     return a, b, c
-
-
-def estimate_derivative(flx, Di):
-    """Fit flx by quadratic interpolation at the cell centers and return the
-    value of its derivative at the initial point."""
-    if len(Di) != 3:
-        raise ValueError("invalid input cell-width vector Di")
-    if flx.size % 3 != 0:
-        raise ValueError("invalid input flux flx")
-    r = Di[1] / Di[0]
-    a1 = 2. + r
-    b1 = a1 + r + Di[2] / Di[0]
-    c = 4. / Di[0]**2 / (1. - b1) * ((flx[1] - flx[0]) / (a1 - 1.) -
-                                     (flx[2] - flx[1]) / (b1 - 1.))
-    b = 2. / Di[0] * (flx[1] - flx[0]) / (a1 - 1.) - c * Di[0] / 2. * (a1 + 1.)
-    return b
-
-
-def quadratic_extrapolation(flx, Di):
-    """Extrapolate the flux at the boundary by a quadratic polynomial which
-    interpolates the flux at the mid of the input three cells. This assumption
-    is consistent with the centered fintite differences used in the diffusion
-    solver."""
-    if len(Di) != 3:
-        raise ValueError("invalid input cell-width vector Di")
-    if flx.size % 3 != 0:
-        raise ValueError("invalid input flux flx")
-    r = Di[1] / Di[0]
-    a = 2. + r
-    b = a + r + Di[2] / Di[0]
-    df1, df2 = (flx[1] - flx[0]) / (a - 1.), (flx[2] - flx[1]) / (b - a)
-    bflx = flx[0] - df1 + a / (1. - b) * (df1 - df2)
-    return bflx
-
-
-def quadratic_extrapolation_0(flx, Di):
-    """Extrapolate the flux at the boundary by a quadratic polynomial whose
-    integral over the first three cells at the boundary yields the volume-
-    integrated flux (given by flx_i * Di_i thanks to the theorem of the mean).
-    """
-    if len(Di) != 3:
-        raise ValueError("invalid input cell-width vector Di")
-    if flx.size % 3 != 0:
-        raise ValueError("invalid input flux flx")
-    x0, x1, x2 = np.cumsum(Di) - Di[0] / 2.
-    xA, xB, xC, xD = 0., Di[0], Di[0] + Di[1], np.sum(Di[:3])
-    g0 = xB**2 + xA * xB + xA**2
-    g1 = xC**2 + xB * xC + xB**2
-    g2 = xD**2 + xC * xD + xC**2
-    df1, df2 = (flx[1] - flx[0]) / (x1 - x0), (flx[2] - flx[1]) / (x2 - x1)
-    a = (g2 - g1) / (g1 - g0) * (x1 - x0) / (x2 - x1) - 1.
-    bflx = flx[0] - df1 + (df1 - df2) / a
-    return bflx
 
 
 def compute_tran_currents(flx, k, Di, xs, PP, BC=(0, 0), curr=None,
@@ -762,7 +722,7 @@ def compute_tran_currents_old(flx, k, Di, xs, BC=(0, 0), curr=None):
     return Jp, Jm
 
 
-def compute_diff_currents(flx, Db, Di, BC=(0, 0)):
+def compute_diff_currents(flx, Db, Di, BC=(0, 0), xi=None):
     """Compute the currents by Fick's law using the volume-averaged input
     diffusion cofficients."""
     LBC, RBC = BC
@@ -773,13 +733,21 @@ def compute_diff_currents(flx, Db, Di, BC=(0, 0)):
     # add b.c.
     zetal, zetar = get_zeta(LBC), get_zeta(RBC)
     if zetal < max_float:
-        # JL = -flx[:, 0] / zetal  # (a)
-        JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])  # (b)
+        # JL = flx[:, 0] / zetal  # (a)
+        # JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])  # (b)
+        c1l, c2l = quadratic_fit_zD(xi[0],
+                                    np.insert(xim(xi[:3]), 0, xi[0]),
+                                    zetal)  # (c)
+        JL = -Db[:, 0] * (c1l * flx[:, 0] + c2l * flx[:, 1])  # (c)
     else:
         JL = np.zeros_like(flx[:, 0])
     if zetar < max_float:
-        # JR = flx[:,-1] / zetar  # (a)
-        JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])  # (b)
+        # JR = -flx[:,-1] / zetar  # (a)
+        # JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])  # (b)
+        c1r, c2r = quadratic_fit_zD(xi[-1],
+                                    np.insert(xim(xi[-3:])[::-1], 0, xi[-1]),
+                                    -zetar)  # (c)
+        JR = -Db[:, -1] * (c1r * flx[:,-1] + c2r * flx[:,-2])  # (c)
     else:
         JR = np.zeros_like(flx[:, -1])
     # avoid possible numerical issues
@@ -933,6 +901,8 @@ def solve_outers(flx, k, data, xs, slvr_opts, dD=None):
     otoll, itoll = tolls
 
     # setup the tri-diagonal matrix and the source s
+    # MEMO: the setup of the system eqs is made many times where only dD
+    # changes - a re-code would be needed to avoid redundant setup
     diags = set_diagonals(st, Db, data, dD)
 
     # start outer iterations
@@ -1092,7 +1062,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
         # compute the currents by diffusion and finite differences
         # (not used later in isotropic problems without CMFD)
-        J_diff = compute_diff_currents(flxd, Db, Di, BC)
+        J_diff = compute_diff_currents(flxd, Db, Di, BC, xi)
         if lin_anis:
             Jd = J_diff + compute_delta_diff_currents(flxd, dD, Di, BC,
                                                       slvr_opts.pCMFD)
