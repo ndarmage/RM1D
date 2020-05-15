@@ -13,8 +13,11 @@ accuracy, being in order, in the slab, in the cylinder and in the sphere.
 import sys, os
 import numpy as np
 from scipy import interpolate
+from scipy.optimize import brentq
 from scipy.special import jv as Jv  # Bessel function of teh first kind
-J0 = lambda z: Jv(0, z)
+# from scipy.special import sici  # sine and cosine integrals
+# from scipy.special import struve  # Struve function
+J0, J1 = lambda z: Jv(0, z), lambda z: Jv(1, z)
 
 sys.path.append(os.path.join(os.getcwd(), ".."))
 from data.SoodPNE2003 import *
@@ -81,27 +84,40 @@ if __name__ == "__main__":
     k_ref, flx_ref  = np.load(os.path.join(refdir, case + "_ref.npy"),
                               allow_pickle=True)
 
-    I = 40  # number of cells in the spatial mesh (20 in complete slab)
+    I = 25  # number of cells in the spatial mesh (20 in complete slab)
     r = equivolume_mesh(I, 0, L, geo)
     # r = np.array([0, 1 / 8., 1 / 6., 0.9, 1]) * L
-    LBC, RBC = 0, 2
+    LBC, RBC = 2, 0
     data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
     lg.info(' -o-'*15)
     lg.info('analytical solution of the diffusion equation')
-    BG = np.pi / L_e / 2
+    BG = brentq(lambda b: np.tan(b*L) - 1 / extrap_len / b,
+                1.e-5, .5 * np.pi / L - 1.e-5)
     diffsol_ref = lambda x: np.cos(BG * x)
-    # ansol = diffsol_ref(data.xim)
-    # lg.info('fund. flx\n' + str(ansol / np.sum(ansol * data.Vi) * G * I))
+    ansol, DFkref = diffsol_ref(data.xim), diffk_ref(BG**2, materials[m])
+    lg.info('fund. flx\n' + str(ansol / np.sum(ansol * data.Vi) * G * I))
     lg.info('kinf = {:.6}, k_DIFF = {:.6f}, BG2 = {:.6f}'.format(
-        materials[m]['kinf'], diffk_ref(BG**2, materials[m]), BG**2))
+        materials[m]['kinf'], DFkref, BG**2))
     lg.info(' -o-'*15)
     # ks is needed anyway when validating the input solver options
+    # diffusion problem
+    slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=0)
+    filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d_diff" %
+                            (LBC, RBC, I))
+    flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
+    np.testing.assert_allclose(k, DFkref, atol=1.e-4, err_msg=case +
+        ": criticality against diffusion analytically solved not verified")
+    flx *= np.sin(BG * L) / BG / np.sum(flx) / data.Vi
+    np.testing.assert_allclose(flx[0, :], ansol, rtol=1.e-4, err_msg=case +
+        ": numerical vs analytical (diffusion) fund. flux not verified")
+    
+    # transport problem
     slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=100,
                                CMFD=True, pCMFD=False, Anderson_depth='auto')
     filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
                             (LBC, RBC, I))
     flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-    # input('wait')
+    
     np.testing.assert_allclose(k, 1.007, atol=1.e-2, err_msg=case +
                                ": criticality not verified")
     input('press a key to continue...')
@@ -118,24 +134,45 @@ if __name__ == "__main__":
         lg.info("Test case: " + case)
         L = rc_dict[geo]
         rs = rf * L
-        L_e = L + extrap_len
+        # L_e = L + extrap_len
         # if geo == 'slab' or geo == 'cylinder': continue
         if geo == 'slab':
             I, nks, LBC = 60, 0, 0
+            BG = brentq(lambda b: np.tan(b*L) - 1 / extrap_len / b,
+                1.e-5, .5 * np.pi / L - 1.e-5)
             rs += L
             L *= 2; L_e *= 2
-            BG = np.pi / L_e
-            diffsol_ref = lambda x: np.sin(BG * (x + extrap_len))
+            coef = 1 / np.tan(BG * L / 2) 
+            diffsol_ref = lambda x: np.sin(BG * x) + coef * np.cos(BG * x)
             # diffsol_ref = lambda x: np.cos(BG * (x - L/2))
+            anorm = (1 - np.cos(BG * L) + coef * np.sin(BG * L)) / BG
+            Dktol, Dftol = 5e-4, 1e-3  # tolerances for k and flx (diffusion)
         else:
             nks, LBC = 4, 2
             if 'cylind' in geo:
-                I, BG = 25, 2.4048255577 / L_e
+                I = 40
+                BG = brentq(lambda b: J0(b*L) - extrap_len * b * J1(b*L),
+                    0, 2.4048255577 / L)
                 diffsol_ref = lambda x: J0(BG * x)
+                # primitive of indefinite \int{J_0(z)dz}
+                primitive = lambda z: 0.5 * z * (
+                    np.pi * J1(z) * struve(0, z)
+                    + J0(z) * (2 - np.pi * struve(1, z)))
+                # anorm = primitive(BG*L) / BG  # ... primitive(0) = 0!
+                # integration of (r J0(BG*r) dr) between 0 and L:
+                anorm = L / BG * J1(BG*L)
+                Dktol, Dftol = 5e-4, 5e-3
             else:
+                I = 50
                 flx_tolerance *= 2
-                I, BG = 40, np.pi / L_e
+                BG = brentq(lambda b: b*L - (1 - L / extrap_len) * np.tan(b*L),
+                    .5 * np.pi / L, np.pi / L)
                 diffsol_ref = lambda x: np.sin(BG * x) / x
+                # integration of sin(x)/x yields 'sine integral func'
+                # anorm, _ = sici(BG * L)
+                # integration of (sin(BG*r)/r) r**2 dr yields
+                anorm = (np.sin(BG*L) - BG*L * np.cos(BG*L)) / BG**2
+                Dktol, Dftol = 2e-3, 2e-2
         # r = geomprogr_mesh(N=I, L=L, ratio=0.95)
         r = equivolume_mesh(I, 0, L, geo)
         
@@ -152,11 +189,23 @@ if __name__ == "__main__":
         # considered).
         lg.info(' -o-'*15)
         lg.info('analytical solution of the diffusion equation')
-        # ansol = diffsol_ref(data.xim)
+        ansol, DFkref = diffsol_ref(data.xim), diffk_ref(BG**2, materials[m])
         # lg.info('fund. flx\n' + str(ansol / np.sum(ansol * data.Vi) * G * I))
         lg.info('kinf = {:.6}, k_DIFF = {:.6f}, BG2 = {:.6f}'.format(
             materials[m]['kinf'], diffk_ref(BG**2, materials[m]), BG**2))
         lg.info(' -o-'*15)
+        # diffusion problem
+        slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=0,
+                                   ks=np.full(I, nks))
+        filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" % (LBC, 0, I))
+        flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
+        np.testing.assert_allclose(k, DFkref, atol=Dktol, err_msg=case +
+            ": criticality against diffusion analytically solved not verified")
+        flx *= anorm / np.sum(flx) / data.Vi
+        np.testing.assert_allclose(flx[0, :], ansol, rtol=Dftol, err_msg=case +
+            ": numerical vs analytical (diffusion) fund. flux not verified")
+        
+        # transport problem
         slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=150,
                                    CMFD=True, pCMFD=False, 
                                    Anderson_depth='auto', ks=np.full(I, nks))

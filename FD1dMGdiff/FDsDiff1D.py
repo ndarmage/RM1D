@@ -422,15 +422,12 @@ def set_diagonals(st, Db, data, dD=None):
     # print(dDp, dDm)
     # get extrapolated length
     zetal, zetar = get_zeta(LBC), get_zeta(RBC)
-    c1l = c2l = c1r = c2r = 0.
-    if zetal < max_float:
-        c1l, c2l = quadratic_fit_zD(xi[0],
-                                    np.insert(data.xim[:2], 0, xi[0]),
-                                    zetal)
-    if zetar < max_float:
-        c1r, c2r = quadratic_fit_zD(xi[-1],
-                                    np.insert(data.xim[-2:][::-1], 0, xi[-1]),
-                                    -zetar)
+    # c1l, c2l = quadratic_fit_zD(xi[0],  # option (c), see below
+                                # np.insert(data.xim[:2], 0, xi[0]),
+                                # zetal) if zetal < max_float else (0, 0)
+    # c1r, c2r = quadratic_fit_zD(xi[-1],  # option (c), see below
+                                # np.insert(data.xim[-2:][::-1], 0, xi[-1]),
+                                # -zetar) if zetar < max_float else (0, 0)
     for g in range(G):
         # d contains only I-1 elements, flattened G times
         idd = np.arange(g*(I-1), (g+1)*(I-1))
@@ -445,20 +442,21 @@ def set_diagonals(st, Db, data, dD=None):
         c[idx] = -coefp / Vi[1:]
 
         # add b.c. (remind to be consistent with compute_diff_currents)
-        # option (a) - attempt to get higher order accuracy
-        # option (b) is 1st order
+        # different attempts to get higher order accuracy
+        # option (a) use J_b = \pm flx_b / zeta, with flx_b = flx_0 (1st order) 
+        # option (b) central fin. diff. with extrap distance, at 2nd order
         # option (c) fit by 2nd order polynomial
         if zetal < max_float:
-            # b[id0] -= xb0 / zetal  # (a)
-            # b[id0] += xb0 * Db[g,0] / (0.5 * Di[0] + zetal * Db[g, 0])  # (b)
-            b[id0] += xb0 * Db[g,0] *c1l # (c)
-            c[id0] += xb0 * Db[g,0] *c2l / Vi[1] # (c)
+            # b[id0] += xb0 / zetal  # (a)
+            b[id0] += xb0 * Db[g,0] / (0.5 * Di[0] + zetal * Db[g, 0])  # (b)
+            # b[id0] += xb0 * Db[g,0] * c1l  # (c)
+            # c[id0] += xb0 * Db[g,0] * c2l / Vi[1]  # (c)
         b[id0] += dDm[g, 0]
         if zetar < max_float:
-            # b[ida] -= xba / zetar  # (a)
-            # b[ida] += xba * Db[g,-1] / (0.5 * Di[-1] + zetar * Db[g,-1])  # (b)
-            b[ida] -= xba * Db[g,-1] *c1r # (c)
-            a[ida-1] -= xba * Db[g,-1] *c2r / Vi[-2] # (c)
+            # b[ida] += xba / zetar  # (a)
+            b[ida] += xba * Db[g,-1] / (0.5 * Di[-1] + zetar * Db[g,-1])  # (b)
+            # b[ida] -= xba * Db[g,-1] * c1r  # (c)
+            # a[ida-1] -= xba * Db[g,-1] * c2r / Vi[-2]  # (c)
         b[ida] -= dDp[g,-1]
         # N.B.: the division by Vi are needed because we solve for the
         # volume-integrated flux
@@ -734,20 +732,20 @@ def compute_diff_currents(flx, Db, Di, BC=(0, 0), xi=None):
     zetal, zetar = get_zeta(LBC), get_zeta(RBC)
     if zetal < max_float:
         # JL = flx[:, 0] / zetal  # (a)
-        # JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])  # (b)
-        c1l, c2l = quadratic_fit_zD(xi[0],
-                                    np.insert(xim(xi[:3]), 0, xi[0]),
-                                    zetal)  # (c)
-        JL = -Db[:, 0] * (c1l * flx[:, 0] + c2l * flx[:, 1])  # (c)
+        JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])  # (b)
+        # c1l, c2l = quadratic_fit_zD(xi[0],
+                                    # np.insert(xim(xi[:3]), 0, xi[0]),
+                                    # zetal)  # (c)
+        # JL = -Db[:, 0] * (c1l * flx[:, 0] + c2l * flx[:, 1])  # (c)
     else:
         JL = np.zeros_like(flx[:, 0])
     if zetar < max_float:
         # JR = -flx[:,-1] / zetar  # (a)
-        # JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])  # (b)
-        c1r, c2r = quadratic_fit_zD(xi[-1],
-                                    np.insert(xim(xi[-3:])[::-1], 0, xi[-1]),
-                                    -zetar)  # (c)
-        JR = -Db[:, -1] * (c1r * flx[:,-1] + c2r * flx[:,-2])  # (c)
+        JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])  # (b)
+        # c1r, c2r = quadratic_fit_zD(xi[-1],
+                                    # np.insert(xim(xi[-3:])[::-1], 0, xi[-1]),
+                                    # -zetar)  # (c)
+        # JR = -Db[:, -1] * (c1r * flx[:,-1] + c2r * flx[:,-2])  # (c)
     else:
         JR = np.zeros_like(flx[:, -1])
     # avoid possible numerical issues
@@ -1139,7 +1137,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
     # plot_fluxes(xim(xi),flx,L)
     # save fluces
     # save_fluxes('diffusion_fluxes_DT.dat',xm,flx)
-    if itr == ritmax:
+    if itr == ritmax != 0:
         lg.warning(' ---> !!! MAX NB. of R.ITS attained !!!')
 
     k_save[itr], flx_save[:, :, itr] = k, flx  # store final values
@@ -1177,11 +1175,12 @@ def run_calc_with_RM_its(idata, slvr_opts, filename=None):
     lg.info("-o"*22)
 
     # start Ronen iterations
-    lg.info("Start the Ronen Method by CMFD iterations")
-    flx, k = solve_RMits(idata, xs,  # input data
-                         flx, k,  # initial values
-                         slvr_opts,  # for its opts
-                         filename)
+    if slvr_opts.ritmax > 0:
+        lg.info("Start the Ronen Method by CMFD iterations")
+        flx, k = solve_RMits(idata, xs,  # input data
+                             flx, k,  # initial values
+                             slvr_opts,  # for its opts
+                             filename)
     lg.info("-o"*22)
     lg.info("*** NORMAL END OF CALCULATION ***")
     return flx, k
