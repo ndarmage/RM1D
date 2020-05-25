@@ -20,6 +20,11 @@ Pu-239 (b) 2.84 0.081600 0.019584 0.225216 0.32640 1.40
 H20 (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
 """
 
+Lc = {'PUa-1-0-SL': 1.853722,
+      'PUb-1-0-SL': 2.256751,
+      'PUb-1-0-CY': 4.279960,
+      'PUb-1-0-SP': 6.082547}  # critical lengths
+
 
 def get_geoid(geo):
     if geo == 'slab':
@@ -74,6 +79,30 @@ def diffk_ref(BG2, m):
     PNL = 1 / (1 + L2 * BG2)  # non leakage probability
     return kinf * PNL
     
+
+def analytical_sol(geo, L):
+    # only problems with vacuum boundary condition!
+    if geo == 'centered-slab':
+        BG = brentq(lambda b: np.tan(b*L) - 1 / extrap_len / b,
+                    1.e-5, .5 * np.pi / L - 1.e-5)
+        diffsol_ref = lambda x: np.cos(BG * x)
+    elif geo == 'full-slab' or geo == 'slab':
+        BG = brentq(lambda b: np.tan(b*L) - 1 / extrap_len / b,
+            1.e-5, .5 * np.pi / L - 1.e-5)
+        coef = 1 / np.tan(BG * L)  # for symmetric distribution 
+        diffsol_ref = lambda x: np.sin(BG * x) + coef * np.cos(BG * x)
+    elif geo == 'cylinder':
+        BG = brentq(lambda b: J0(b*L) - extrap_len * b * J1(b*L),
+            0, 2.4048255577 / L)
+        diffsol_ref = lambda x: J0(BG * x)
+    elif geo == 'sphere':
+        BG = brentq(lambda b: b*L - (1 - L / extrap_len) * np.tan(b*L),
+            .5 * np.pi / L, np.pi / L)
+        diffsol_ref = lambda x: np.sin(BG * x) / x
+    else:
+        raise ValueError(geo + ' is not supported yet.')
+    return diffsol_ref, BG
+
 
 tlines = [l for l in Table2.split('\n')[1:-1] if not l.startswith('#')]
 get_line = lambda lines, key: [l for l in lines if key in l][0]

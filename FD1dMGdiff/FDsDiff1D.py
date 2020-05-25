@@ -445,6 +445,7 @@ def set_diagonals(st, Db, data, dD=None):
         # different attempts to get higher order accuracy
         # option (a) use J_b = \pm flx_b / zeta, with flx_b = flx_0 (1st order) 
         # option (b) central fin. diff. with extrap distance, at 2nd order
+        #  *** (case b must be debugged because it doesn't work)
         # option (c) fit by 2nd order polynomial
         if zetal < max_float:
             # b[id0] += xb0 / zetal  # (a)
@@ -1163,7 +1164,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
 
 
 def run_calc_with_RM_its(idata, slvr_opts, filename=None):
-    lg.info("Prepare input xs data")
+    lg.info("Prepare input xs data")            
     xs = unfold_xs(idata)
     lg.info("-o"*22)
 

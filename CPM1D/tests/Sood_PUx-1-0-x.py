@@ -59,66 +59,73 @@ if __name__ == "__main__":
     # positions (fractions r/rc) to verify the flux results
     rf = np.linspace(0, 1, 5)
     
-    m = 'PUa'  # only one case in the test suite
-    L = rc = 1.853722 * 2 # cm, critical length
-    # L = rc = 0.605055  # mfp
-    xs_media, media = set_media(materials[m], L, m)
-        
-    geo = "slab"
-    case = "%s-1-0-%s" % (m, get_geoid(geo))
-    lg.info("Test case: " + case)
-
-    I = 20  # number of cells in the spatial mesh
-    r = equivolume_mesh(I, 0, L, geo)
-    # r = np.array([0, 1 / 8., 1 / 6., 0.9, 1]) * L
-    data = input_data(xs_media, media, r, geo, LBC=0, RBC=0)
+    # cases for the ictt26 article:
+    # [2, 3, 4, 5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 75, 100]
+    for I0 in [40]:
     
-    # ks is needed anyway when validating the input solver options
-    k, flx = solve_cpm1D(data, solver_options(ks=np.full(I, 0)), False)
-    np.testing.assert_allclose(k, 1, atol=1.e-3, err_msg=case +
-                               ": criticality not verified")
-    np.save(os.path.join(odir, case + '_ref.npy'), [k, flx])
-    
-    m = 'PUb'  # only one case in the test suite
-    # critical lengths
-    rc_dict = {'slab': 2.256751, 'cylinder': 4.279960, 'sphere': 6.082547}
-    
-    for geo in geoms:
-        case = "%s-1-0-%s" % (m, get_geoid(geo))
-        lg.info("Test case: " + case)
-        L = rc_dict[geo]
-        rs = rf * L
-        if geo == 'slab':
-            I, nks, LBC, ratio0 = 40, 0, 0, .975
-            rs += L
-            L *= 2
-        else:
-            nks, LBC = 4, 2
-            if 'cylind' in geo:
-                I, ratio = 40, .95
-            else:
-                I, ratio = 50, .9
-        # r = equivolume_mesh(I, 0, L, geo)
-        r = geomprogr_mesh(N=I, L=L, ratio=.95)
+        m = 'PUa'  # only one case in the test suite
+        L = rc = 1.853722 * 2 # cm, critical length
+        # L = rc = 0.605055  # mfp
         xs_media, media = set_media(materials[m], L, m)
-        data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=0,
-                          per_unit_angle=False)
-        k, flx = solve_cpm1D(data, solver_options(ks=np.full(I, nks)),
-                             full_spectrum=False, vrbs=False)
+            
+        geo = "slab"
+        case = "%s-1-0-%s" % (m, get_geoid(geo)) # + 'h'
+        lg.info("Test case: " + case)
+
+        # I = I0 #* 2 # number of cells in the spatial mesh
+        I = 25
+        r = equivolume_mesh(I, 0, L, geo)
+        # r = np.array([0, 1 / 8., 1 / 6., 0.9, 1]) * L
+        data = input_data(xs_media, media, r, geo, LBC=0, RBC=0)
+        
+        # ks is needed anyway when validating the input solver options
+        k, flx = solve_cpm1D(data, solver_options(ks=np.full(I, 0)), False)
         np.testing.assert_allclose(k, 1, atol=1.e-3, err_msg=case +
                                    ": criticality not verified")
+        np.save(os.path.join(odir, case + '_ref_I%d.npy' % I), [k, flx, None])
         
-        # get the values of the flux at the positions requested by the
-        # benchmark by piecewise linear interpolation
-        # flx /= np.dot(data.Vi, flx[0,:])
-        f = interpolate.interp1d(data.xim, flx[0,:], fill_value="extrapolate")
-        flxs = f(rs)
-        # normalize the flux to be unitary at the center
-        flxs /= flxs[0]
-        rel_err_pc = (1 - flxs[1:] / refflx[case]) * 100
-        # print(('{:6.3f} '*4).format(*rel_err_pc))
-        np.testing.assert_array_less(np.nan_to_num(rel_err_pc),
-                                     np.ones(4), err_msg=case +
-                                     ": flux distribution not verified")
-        np.save(os.path.join(odir, case + '_ref.npy'), [k, flx])
+        m = 'PUb'  # only one case in the test suite
+        # critical lengths
+        rc_dict = {'slab': 2.256751, 'cylinder': 4.279960, 'sphere': 6.082547}
+        
+        for geo in geoms:
+            case = "%s-1-0-%s" % (m, get_geoid(geo))
+            lg.info("Test case: " + case)
+            L = rc_dict[geo]
+            rs = rf * L
+            if geo == 'slab':
+                I, nks, LBC, ratio0 = I0*2, 0, 0, .975  # 25
+                rs += L
+                L *= 2
+            else:
+                nks, LBC = 4, 2
+                if 'cylind' in geo:
+                    I, ratio = I0, .95  # 25
+                else:
+                    I, ratio = I0, .9  # 40
+            # r = equivolume_mesh(I, 0, L, geo)  # used for all calcs of ictt26
+            
+            # info: mesh by geometric progression can get higher accuracy
+            r = geomprogr_mesh(N=I, L=L, ratio=.95)
+            xs_media, media = set_media(materials[m], L, m)
+            data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=0,
+                              per_unit_angle=False)
+            k, flx = solve_cpm1D(data, solver_options(ks=np.full(I, nks)),
+                                 full_spectrum=False, vrbs=False)
+            np.testing.assert_allclose(k, 1, atol=1.e-3, err_msg=case +
+                                       ": criticality not verified")
+            
+            # get the values of the flux at the positions requested by the
+            # benchmark by piecewise linear interpolation
+            # flx /= np.dot(data.Vi, flx[0,:])
+            f = interpolate.interp1d(data.xim, flx[0,:], fill_value="extrapolate")
+            flxs = f(rs)
+            # normalize the flux to be unitary at the center
+            flxs /= flxs[0]
+            rel_err_pc = (1 - flxs[1:] / refflx[case]) * 100
+            # print(('{:6.3f} '*4).format(*rel_err_pc))
+            np.testing.assert_array_less(np.nan_to_num(rel_err_pc),
+                                         np.ones(4), err_msg=case +
+                                         ": flux distribution not verified")
+            np.save(os.path.join(odir, case + '_ref_I%d.npy' % I), [k, flx, rel_err_pc])
         

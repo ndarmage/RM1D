@@ -42,7 +42,7 @@ np.set_printoptions(precision=6)
 class solver_options:
     """Object collecting (input) solver options."""
     toll = 1.e-6  # default tolerance
-    nbitsmax = 100  # default nb. of max iterations (its)
+    nbitsmax = 500  # default nb. of max iterations (its)
 
     def __init__(self, iitmax=nbitsmax, oitmax=nbitsmax,
                  otoll=toll, itoll=toll, ks=None, GQ="Gauss-Jacobi",

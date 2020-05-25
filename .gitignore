@@ -25,3 +25,4 @@ docs/ANE2020/**/*.pdf
 
 FD1dMGdiff/tests/output/*.npy
 FD1dMGdiff/tests/output/*.dat
+CPM1D/tests/output/*.npy
