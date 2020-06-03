@@ -87,6 +87,13 @@
 \providecommand{\keywords}[1]{\textbf{\textit{Keywords ---}} #1}
 
 \graphicspath{{figures/}}
+
+% The lineno packages adds line numbers. Start line numbering with
+% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it
+% on for the whole article with \linenumbers.
+\usepackage[modulo]{lineno}
+% \linenumbers
+% \modulolinenumbers[5]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   BEGIN DOCUMENT
@@ -157,6 +164,8 @@ In this work we apply the Ronen method to resolve the neutron transport in simpl
 % SET RAGGED RIGHT MARGIN
 %
 \raggedright
+
+\linenumbers
 
 \section{INTRODUCTION}
 \label{sec:intro}
@@ -601,7 +610,7 @@ PUb-1-0-SP & Sphere   & 0.935380 & 0.755753 & 0.498843 & 0.192226
 \end{tabular}
 \end{table}
 
-After computing the numerical solution of the diffusion problem by finite differences without corrections at the cell interfaces, we evaluate new current estimates by using escape, transmission and reflection probabilities according to the given geometry type, as derived from the integral equation in section \ref{sec:ce}. Then, the solution by the Ronen method is sought iteratively as explained in section \ref{sec:impl}. Anderson acceleration through the DAAREM algorithm is also used during the iteration process \cite{henderson2019damped}, reducing considerably the number of iterations to achieve residuals on the relative flux differences below $10^{-6}$. Its use is crucial to find the fixed point solution throughout the non-linear iterations of the RM.
+After computing the numerical solution of the diffusion problem by finite differences without corrections at the cell interfaces, we evaluate new current estimates by using escape, transmission and reflection probabilities according to the given geometry type, as derived from the integral equation in section \ref{sec:ce}. Then, the solution by the Ronen method is sought iteratively as explained in section \ref{sec:impl}. Anderson acceleration through the DAAREM algorithm (Damped Anderson Acceleration with Epsilon Monotonicity) is also used during the iteration process \cite{henderson2019damped}, reducing considerably the number of iterations to achieve residuals on the relative flux differences below $10^{-6}$. Its use is crucial to find the fixed point solution throughout the non-linear iterations of the RM.
 
 The calculation of half slab by CPM after setting (white) reflection at the center yields poor results due to missing contributions from the higher flux moments, see Figure \ref{fig:cpm_hslab_err}. The solution obtained by RM takes into account an artificial correction applied to the only second moment, reducing the flux error, but its eigenvalue solution is higher than 1 of 836 pcm on converged meshes. This issue, discussed in section \ref{sec:bc}, is more severe with very thin slab, like in the case PUa-1-0-SL, and disappears when the slab thickness increases beyond a few mean free paths (mfp). This forces the modelling of the full slab when verifying the flux distribution for the case PUb-1-0-SL. Such issue does not appear at the center of the solid cylinder or sphere. % solid = not hollow
 All methods computes a critical configuration for PUa-1-0-SL after unfolding the half-slab. The study to verify the fundamental flux is then only shown for the case PUb-1-0-SL.

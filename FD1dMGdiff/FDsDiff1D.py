@@ -215,13 +215,19 @@ class AndersonAcceleration:
         e = max(0, cls.kappa - sk)
         return 1 / (1 + cls.alpha**e)
     
-    def __init__(self, opts=None, m=-1, betak=-1., size=0):
+    def __init__(self, opts=None, m=-1, betak=-1., size=0,
+                 constrainedLS=False, k_restart=-1):
         if isinstance(opts, solver_options):
             self.m, self.betak = opts.Anderson_depth, opts.Anderson_relaxation
         else:
             self.m, self.betak = m, betak
         if self.m == 'auto':
             self.set_automatic_depth(size)
+        self.constrainedLS = constrainedLS
+        if k_restart == -1:
+            self.k_restart = self.m
+        else:
+            self.k_restart = k_restart
         self.check_input()
         self.Fk = np.zeros((size, self.m),)
         self.Xk = np.zeros_like(self.Fk)
@@ -235,6 +241,8 @@ class AndersonAcceleration:
             raise ValueError('DAAREM alpha parameter must be > 1')
         if self.kappa < 0:
             raise ValueError('DAAREM kappa parameter must be >= 0')
+        if self.k_restart < 0:
+            raise ValueError('restart number of its < 0')
 
     def set_automatic_depth(self, size, check=False):
         self.m = min(int(size / 2), 10)
@@ -244,15 +252,16 @@ class AndersonAcceleration:
                 self.Fk = np.zeros((size, self.m),)
                 self.Xk = np.zeros_like(self.Fk)
 
-    def __call__(self, k, fk, xk, xkp1, constrainedLS=False, k_restart=1):
-        """Call AA with fk, xk, xkp1 = flxres, flxold, flx to be flattened by
-        (*).flatten(); k is the iteration index decreased of noacc_rit. A
-        restart can be enabled with k_restart > depth."""
-        mk, orig_shape = min(np.mod(k - 1, k_restart) + 1, self.m), xkp1.shape
-        fk, xk, xkp1 = map(np.ravel, [fk, xk, xkp1])
+    def __call__(self, k, xk, xkp1):
+        """Call AA with xk, xkp1 = flxold, flx to be flattened by
+        (*).flatten(); k is the iteration index decreased of noacc_rit.
+        A restart can be enabled with k_restart > depth."""
+        orig_shape = xkp1.shape
+        xk, xkp1 = map(np.ravel, [xk, xkp1])
+        fk, mk = xkp1 - xk, min(np.mod(k - 1, self.k_restart) + 1, self.m)
         Fk, Xk, betak = self.Fk, self.Xk, self.betak  # reference to obj attrs
         # ------------------------------------------------------------------
-        if constrainedLS:  # version (a) - constrained L2 minimization
+        if self.constrainedLS:  # version (a) - constrained L2 minimization
             if k > 0:
                 Fr = Fk[:, -mk:] - np.tile(fk, (mk, 1)).T
                 # alphm1 = np.dot(np.linalg.inv(np.dot(Fr.T, Fr)
@@ -1111,7 +1120,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
             flx = slvr_opts.wSOR * flx + (1 - slvr_opts.wSOR) * flxold
         # Anderson implementation to accelerate yet for k < m
         if slvr_opts.Anderson:
-            flx = AA(itr0, flxres, flxold, flx, k_restart=AA.m)
+            flx = AA(itr0, flxold, flx)
             # print(flx[0, :])
             # input('wait')  # debug
         
