@@ -1262,7 +1262,7 @@ FUNCTION {begin.bib}
   if$
   "\begin{thebibliography}{"  longest.label  * "}" *
   write$ newline$
-  "\newcommand{\enquote}[1]{``#1''}"
+  "\providecommand{\enquote}[1]{``#1''}"
   write$ newline$
   "\providecommand{\url}[1]{\texttt{#1}}"
   write$ newline$
