@@ -1,0 +1,272 @@
+\documentclass[%
+%reprint,
+superscriptaddress,
+%groupedaddress,
+%unsortedaddress,
+%runinaddress,
+%frontmatterverbose, 
+%preprint,
+%preprintnumbers,
+%nofootinbib,
+%nobibnotes,
+%bibnotes,
+ amsmath,amssymb,
+%aps,
+%pra,
+%prb,
+%rmp,
+%prstab,
+%prstper,
+%floatfix,
+]{revtex4-2}
+
+\usepackage{graphicx}% Include figure files
+\usepackage{dcolumn}% Align table columns on decimal point
+\usepackage{bm}% bold math
+%\usepackage{hyperref}% add hypertext capabilities
+%\usepackage[mathlines]{lineno}% Enable numbering of text and display math
+%\linenumbers\relax % Commence numbering lines
+\usepackage{xfrac}
+\usepackage{mathtools}
+
+\newcommand{\eq}[1]{Eq.~(\ref{#1})}
+\newcommand{\eqnolabel}[1]{(\ref{#1})}
+\newcommand{\eqs}[1]{Eqs.~(\ref{#1})}
+\newcommand{\eqsthru}[2]{Eqs.~(\ref{#1})--(\ref{#2})}
+\newcommand{\eqsand}[2]{Eqs.~(\ref{#1}) and (\ref{#2})}
+\newcommand{\tbl}[1]{Table~\ref{#1}}
+\newcommand{\tblnolabel}[1]{\ref{#1}}
+\newcommand{\tbls}[1]{Tables~\ref{#1}}
+\newcommand{\tblsthru}[2]{Tables~\ref{#1}--\ref{#2}}
+\newcommand{\tblsand}[2]{Tables~\ref{#1} and \ref{#2}}
+\newcommand{\fig}[1]{Fig.~\ref{#1}}
+\newcommand{\fignolabel}[1]{\ref{#1}}
+\newcommand{\figs}[1]{Figs.~\ref{#1}}
+\newcommand{\figsthru}[2]{Figs.~\ref{#1}--\ref{#2}}
+\newcommand{\figsand}[2]{Figs.~\ref{#1} and \ref{#2}}
+\newcommand{\sxn}[1]{Section~\ref{#1}}
+
+\newcommand{\keff}{{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}}
+\newcommand{\beff}{\ensuremath{\beta_{\textrm{eff}}}}
+\newcommand{\rr}{\ensuremath{\bm{r}}}
+\newcommand{\OO}{\ensuremath{\hat{\bm{\Omega}}}}
+\newcommand{\bnabla}{\ensuremath{\bm{\nabla}}}
+\newcommand{\rE}{\ensuremath{(\rr,E)}}
+
+\newcommand{\ftr}{\ensuremath{\phi_{\textrm{\scriptsize{tr}}}}}
+\newcommand{\jtr}{\ensuremath{\bm{J}_{\textrm{\scriptsize{tr}}}}}
+\newcommand{\jtrr}{\ensuremath{J_{\textrm{\scriptsize{tr}}}}}
+%\newcommand{\mcL}{\mathcal{L}}
+\newcommand{\mcL}{\tau}
+%\newcommand{\pl}[1]{\ensuremath{P_l(#1)}}
+\newcommand{\dx}{\ensuremath{\Delta x}}
+
+\newcommand{\jp}{\ensuremath{J^+}}
+\newcommand{\jm}{\ensuremath{J^-}}
+\newcommand{\jpm}{\ensuremath{J^\pm}}
+\newcommand{\jD}{\ensuremath{J^{\textrm{\scriptsize{D}}}}}
+\newcommand{\bmj}{\ensuremath{\bm{J}}}
+% \newcommand{\jp}{\ensuremath{\bm{J}^+}}
+% \newcommand{\jm}{\ensuremath{\bm{J}^-}}
+% \newcommand{\jpm}{\ensuremath{\bm{J}^\pm}}
+% \newcommand{\jD}{\ensuremath{\bm{J}^{\textrm{\scriptsize{D}}}}}
+
+\newcommand{\hzi}{\ensuremath{\sfrac{1}{2}}}
+
+
+\begin{document}
+	
+%	\preprint{APS/123-QED}
+	
+	\title{The Ronen Method by pCMFD}% Force line breaks with \\
+%	\thanks{A footnote to the article title}%
+	
+	\author{Roy Gross}
+	\affiliation{The Unit of Nuclear Engineering \\
+		Ben-Gurion University of the Negev, 8410501 Beer-Sheva, Israel}	
+	\author{Daniele Tomatis}
+	\affiliation{CEA, DEN, Service d’\'etudes des r\'eacteurs et
+		de math\'ematiques appliqu\'ees (SERMA) \\
+		Universit\'e Paris-Saclay, F-91191, Gif-sur-Yvette, France}%	
+	\author{Erez Gilad}
+	\email{gilade@bgu.ac.il}
+	\affiliation{The Unit of Nuclear Engineering \\
+		Ben-Gurion University of the Negev, 8410501 Beer-Sheva, Israel}%
+	
+	\date{\today}% It is always \today, today,
+	%  but any date may be explicitly specified
+	
+	\begin{abstract}
+		Numerical details of the implementation of the pCMFD for the RM.
+	\end{abstract}
+	
+	%\keywords{Suggested keywords}%Use showkeys class option if keyword
+	%display desired
+	\maketitle
+	
+	%\tableofcontents
+	
+% ------------------------------------------	
+\section{The balance equation}
+	
+	The neutron balance equation for a $k$-eigenvalue problem integrated in the $i$-th element of a one-dimensional mesh is
+	\begin{equation}
+		\label{eq:balance}
+		J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g},
+	\end{equation}
+	where $J$ denotes the accurate net current at the cell surface, $\sigma$ denotes the total cross section and the subscript $g$ denotes the energy group. $q$ is the isotropic neutron source defined as
+	\begin{equation}
+		\label{eq:qsrc}
+		q_{i,g} = \sum\limits_{g'=1}^G\sigma_{s,0,i,g\leftarrow g'}\phi_{i,g'} +
+		\frac{\chi_g}{\keff}\sum\limits_{g'=1}^G\nu\sigma_{f,i,g'}\phi_{i,g'},
+	\end{equation}
+	where $\sigma_0$ is the isotropic scattering cross section, $\chi$ is the fission spectrum, $\keff$ is the effective multiplication factor (the eigenvalue), $\nu$ is the average number of neutrons emitted per thermal fission, and $\sigma_f$ is the fission cross section. As well, integer and rational subscripts indicate node-averaged and interface quantities, respectively.
+	
+% ------------------------------------------
+\subsection{CMFD IMPLEMENTATION} 
+\label{sec:RM-CMFD}
+
+	In standard CMFD implementation, the term $\delta J_{i+\hzi,g}$ is added to the diffusion current $\jD_{i+\hzi,g}$ in order to reproduce the net current $J_{i+\hzi,g}$. Currents are only computed on the surface elements of a coarse mesh in space to save memory and runtime. Besides, the net current can be determined from some other expression which is physically or numerically more accurate. Therefore, this new term acts as a correction for the diffusion current. The diffusion current is generally approximated by finite differences according to
+\begin{equation}
+	\label{eq:JD}
+	\jD_{i+\hzi,g} \cong - D_{i+\hzi,g}
+	\frac{\phi_{i+1,g} - \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2},
+\end{equation}
+where the diffusion coefficient at the interface is volume-averaged as
+\begin{equation}
+	\label{eq:Ds}
+	D_{i+\hzi,g} = \frac{\Delta_i D_{i,g} + \Delta_{i+1} D_{i+1,g}}
+	{\Delta_i + \Delta_{i+1}}.
+\end{equation}
+%
+About the RM, more accurate estimates of the net current come from the integral expressions, still using the scalar flux in the emission source $q_{i,g}$. Once the diffusion currents and the net currents by integral transport are calculated using the most recent flux values, the correction terms can be obtained on the cell interfaces. The discretized form of the terms $\delta J_{i+\hzi,g}$ reproduce a centered drift-advection term to avoid possible indeterminate division by zeros in case of flat flux~\cite{Smith-1983,Tomatis-2011}:
+\begin{equation}
+	\label{eq:dJ}
+	\delta J_{i+\hzi,g} = -\delta D_{i+\hzi,g}
+	\frac{\phi_{i+1,g} + \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2} =
+	J_{i+\hzi,g} - \jD_{i+\hzi,g}.
+\end{equation}
+The division by the spatial differences can be removed because the definition of $\delta D$ is arbitrary. Boundary conditions applies as usual on the diffusion current and on the net (more accurate) current, without any particular change for the definition of the correction term.
+
+
+% ------------------------------------------
+\subsection{pCMFD IMPLEMENTATION} 
+\label{sec:RM-pCMFD}
+
+The CMFD introduces a free parameter in the numerical scheme through the correction term to adjust the diffusive solution locally. Since separate calculations of the partial currents are possible, two free parameters could be used in the discretized form of the diffusion equation.
+
+Thanks to P$_1$ diffusion theory, the partial currents at any point $x$ of the slab are approximated as
+\begin{equation}
+	\label{eq:partial-current}
+	\jpm(x) \cong \frac{\phi(x)}{4} \pm \frac{J (x)}{2},
+\end{equation}
+still verifying the expression for the net current $J = J^+ - J^-$.
+\eq{eq:partial-current} suggests introducing two different correction terms at each cell interface depending on the sign of the partial currents
+\begin{equation}
+	\label{eq:PCCF}
+	\jpm _{i+\hzi} = \frac{1}{4} \phi_{i+\hzi} \pm \frac{1}{2}
+	\left(\jD_{i+\hzi} + \delta \jpm_{i+\hzi}\right),
+\end{equation}
+and they must fulfill again the net current $J = \jD + (\delta \jp + \delta \jm)/2$. An upwind definition with the respect to the direction of flight of neutrons is~\cite{Jarrett-2016,Zhu-2016}
+\begin{equation}
+	\label{eq:CCF-sub}
+	\delta \jp _{i+\hzi} = -2\delta D^+ _{i+\hzi} \phi_i
+	\quad \text{and} \quad
+	\delta \jm _{i+\hzi} = -2\delta D^- _{i+\hzi} \phi_{i+1}.
+\end{equation}
+Solving for the partial current correction factors gives
+\begin{equation}
+	\label{eq:ccfsss1}
+	\delta D^+ _{i+\hzi} = \frac{\frac{1}{4}\phi_{i+\hzi}
+		+ \frac{1}{2}\jD _{i+\hzi} - \jp _{i+\hzi}}{\phi_i}
+	\quad \text{and} \quad
+	\delta D^- _{i+\hzi} = \frac{-\frac{1}{4}\phi_{i+\hzi}
+		+ \frac{1}{2}\jD _{i+\hzi} + \jm _{i+\hzi}}{\phi_{i+1}},
+\end{equation}
+where the flux at the interface can be simply volume-averaged too, see~\eq{eq:Ds} for instance.
+
+% ------------------------------------------
+\section{The discretized equation} 
+\label{sec:disc}
+
+Substituting~\eq{eq:PCCF} into the balance equation~\eq{eq:balance}
+\begin{equation}
+\label{eq:balance+jpm}
+\frac{1}{4} \phi_{i+\hzi} + \frac{1}{2}
+\left(\jD_{i+\hzi} + \delta \jp_{i+\hzi}\right)
+-\left[
+\frac{1}{4} \phi_{i-\hzi} - \frac{1}{2}
+\left(\jD_{i-\hzi} + \delta \jm_{i-\hzi}\right)
+\right]
++\sigma_i\phi_i = q_i.
+\end{equation}
+Recalling Eqs.~\eqref{eq:JD},~\eqref{eq:Ds}, and~\eqref{eq:CCF-sub}
+\begin{align}
+\label{eq:balance-2}
+\frac{1}{4} \phi_{i+\hzi} &+ \frac{1}{2}
+\left(
+- D_{i+\hzi}
+\frac{\phi_{i+1} - \phi_{i}}{(\Delta_{i+1} + \Delta_i)/2}  -2\delta D^+ _{i+\hzi} \phi_i
+\right) \nonumber \\
+&-\left[
+\frac{1}{4} \phi_{i-\hzi} - \frac{1}{2}
+\left(
+- D_{i-\hzi}
+\frac{\phi_{i} - \phi_{i-1}}{(\Delta_{i} + \Delta_{i-1})/2}
+ -2\delta D^- _{i-\hzi} \phi_{i}
+ \right)
+\right]
++\sigma_i\phi_i = q_i.
+\end{align}
+Define $\tilde{D}_{i+\hzi}\coloneqq D_{i+\hzi} / (\Delta_{i+1}+\Delta_i)$, 
+\begin{align}
+\label{eq:balance-3}
+\frac{1}{4} \phi_{i+\hzi} 
+&-\tilde{D}_{i+\hzi}(\phi_{i+1} - \phi_{i})
+  -\delta D^+ _{i+\hzi} \phi_i
+\nonumber \\
+&-\frac{1}{4} \phi_{i-\hzi} 
+- \tilde{D}_{i-\hzi}(\phi_{i} - \phi_{i-1}) 
+-\delta D^- _{i-\hzi} \phi_{i}
++\sigma_i\phi_i = q_i.
+\end{align}
+Recalling that the flux on the interface is volume-averaged, i.e.,
+\begin{equation}
+\label{eq:flxs}
+\phi_{i+\hzi} = \frac{\Delta_i \phi_{i} + \Delta_{i+1} \phi_{i+1}}
+{\Delta_i + \Delta_{i+1}},
+\end{equation} 
+then
+\begin{eqnarray}
+\label{eq:quarter-flx}
+\frac{1}{4} \phi_{i+\hzi} &=& \frac{1}{4} \frac{1}{\Delta_i + \Delta_{i+1}}
+(\Delta_i \phi_{i} + \Delta_{i+1} \phi_{i+1}) \nonumber \\
+-\frac{1}{4} \phi_{i-\hzi} &=& -\frac{1}{4} \frac{1}{\Delta_{i-1} + \Delta_{i}}
+(\Delta_{i-1} \phi_{i-1} + \Delta_{i} \phi_{i}) .
+\end{eqnarray}
+Substituting Eq.~\eqref{eq:quarter-flx} into Eq.~\eqref{eq:balance-3} and collecting terms
+\begin{align}
+\label{eq:balance-4}
+&\left[
+- \tilde{D}_{i-\hzi} - \frac{1}{4} \frac{\Delta_{i-1}}{\Delta_{i-1} + \Delta_{i}}
+\right] \phi_{i-1} 
++ 
+\left[
+- \tilde{D}_{i+\hzi} + \frac{1}{4} \frac{\Delta_{i+1}}{\Delta_{i} + \Delta_{i+1}}
+\right] \phi_{i+1} \nonumber \\
+&+	
+\left[
+\frac{1}{4} \frac{\Delta_{i}}{\Delta_{i} + \Delta_{i+1}}
+- \frac{1}{4} \frac{\Delta_{i}}{\Delta_{i-1} + \Delta_{i}}
++\tilde{D}_{i+\hzi}
+-\tilde{D}_{i-\hzi}
+-\delta D^+ _{i+\hzi}
+-\delta D^- _{i-\hzi}
++ \sigma_i
+\right] \phi_i = q_i .
+\end{align}
+
+% ------------------------------------------
+\bibliography{../RM-bib}% Produces the bibliography via BibTeX.
+
+\end{document}

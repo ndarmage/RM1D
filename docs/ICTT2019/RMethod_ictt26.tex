@@ -30,12 +30,13 @@
 \usepackage{lastpage}
 %\usepackage{cites}
 %\usepackage{epsf}
-\usepackage{amsmath, amssymb}
+\usepackage{amsmath, amssymb, bm}
 \usepackage{multirow}
 \usepackage{tikz}
 \usepackage{tikz-3dplot}
 \usetikzlibrary{arrows,calc}
 \usepackage{subcaption}
+% \usepackage{hyperref}
 %
 % Math commands
 \newcommand{\mcl}[1]{\ensuremath{\Lambda_{#1}}}
@@ -78,10 +79,21 @@
 \newcommand{\authorHead}      % Author's names here
    {Daniele Tomatis et Al.}
 \newcommand{\shortTitle}      % Short title here
-   {The Ronen Method in simple 1-D problems}
+   {The Ronen Method in simple 1-D geometries}
 
-\DeclareMathOperator{\sign}{sign}
+\DeclareMathOperator{\sign}{sgn}
 \newcommand{\pluseq}{\mathrel{+}=}
+
+\providecommand{\keywords}[1]{\textbf{\textit{Keywords ---}} #1}
+
+\graphicspath{{figures/}}
+
+% The lineno packages adds line numbers. Start line numbering with
+% \begin{linenumbers}, end it with \end{linenumbers}. Or switch it
+% on for the whole article with \linenumbers.
+\usepackage[modulo]{lineno}
+% \linenumbers
+% \modulolinenumbers[5]
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
 %   BEGIN DOCUMENT
@@ -120,7 +132,7 @@
 \begin{center}
 \textbf{\large \\%
 %NEUTRON DIFFUSION BY THE RONEN METHOD IN HETEROGENEOUS MEDIA
-ON THE RONEN METHOD IN SIMPLE 1-D PROBLEMS
+ON THE RONEN METHOD IN SIMPLE 1-D GEOMETRIES
 }
 
 %
@@ -128,7 +140,7 @@ ON THE RONEN METHOD IN SIMPLE 1-D PROBLEMS
 %
 \setlength{\baselineskip}{12pt}
 \textbf{Daniele Tomatis}\\
-DEN, Service d'{\'e}tudes des r\'eacteurs et de math\'ematiques appliqu\'ees (SERMA),\\
+DES, Service d'{\'e}tudes des r\'eacteurs et de math\'ematiques appliqu\'ees (SERMA),\\
 CEA, Universit\'e Paris-Saclay, F-91191 Gif-sur-Yvette, France\\
 daniele.tomatis@cea.fr\\
 \vspace{0.25in}
@@ -139,21 +151,28 @@ roygros@post.bgu.ac.il, gilade@bgu.ac.il\\
 \end{center}
 
 \begin{abstract}
-In this work we apply the Ronen method to resolve the neutron transport in simple homogeneous problems. Slab, cylindrical and spherical geometries are studied. This method demands successive resolutions of the diffusion equation, where the local diffusion constants are modified in order to reproduce new estimates of the currents by a transport operator. The diffusion solver employs here finite differences and the transport-corrected currents are forced in the numerical scheme by means of drift terms, like in the CMFD technique. The solution is compared against reference results provided by a discrete ordinate computer code. Boundary conditions are discussed introducing proper approximations to save the particle balance. Slow convergence is reported on the scalar flux, although the results match the reference solutions in the limit of fine meshes.
+In this work we apply the Ronen method to resolve the neutron transport in simple homogeneous problems. Slab, cylindrical and spherical geometries are studied. This method demands successive resolutions of the diffusion equation, where the local diffusion constants are modified in order to reproduce new estimates of the currents by a transport operator. The diffusion solver employs here finite differences and the transport-corrected currents are forced in the numerical scheme by means of drift terms, like in the CMFD scheme. Boundary conditions are discussed introducing proper approximations to save the particle balance in case of reflection in the slab. The solution from the Ronen iterations is compared against reference results provided by the collision probability method (CPM). More accurate estimates of the currents are provided by integral equations using first flight escape probabilities. Slow convergence on the scalar flux is analyzed, although the results match the reference solutions in the limit of fine meshes and far from the bare boundary.
 %
 %In this work we apply the Ronen method in the slab geometry filled with heterogeneous media. Neutron diffusion is solved by a nodal method on a coarse mesh, while reference solutions of the neutron distribution are provided by a discrete ordinate transport solver. The CMFD technique is used for both the implementation of the nodal solver and for the corrections of the diffusion coefficient given by the Ronen method. The presence of discontinuity factors for equivalencing the diffusion solution is investigated jointly with the Ronen method. Results are presented for different levels of material heterogeneity at the slab interfaces.
 \end{abstract}
 %
+\keywords{Ronen method, Collision probability method, Neutron transport, CMFD}
+\clearpage
+\tableofcontents
+\clearpage
+%
 % SET RAGGED RIGHT MARGIN
 %
 \raggedright
+
+\linenumbers
 
 \section{INTRODUCTION}
 \label{sec:intro}
 
 In 2004 Ronen suggested to calculate more accurate currents by means of an integral transport operator still using a neutron flux computed in diffusion theory \cite{ronen2004accurate}. This allowed having new estimates of the diffusion coefficient still using Fick's law. Since these estimates need a known flux distribution, it was also suggested to execute new diffusion calculations, thus updating iteratively the diffusion coefficient in the global calculation. The main reason motivating this method was to overcome the underlying limitation of Fick's law requiring low flux gradients, and so low neutron absorption and high scattering in general. Nevertheless, isotropic scattering remained as a basic postulate.
 
-This idea was later used by Tomatis and Dall'Osso, who provided a numerical demonstration in a simple slab problem \cite{tomatis2011application}. Instead of updating the diffusion coefficient by the ratio of the current exchange and the flux gradient, as in Fick's law, they recurred to the coarse mesh finite differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver.
+This idea was later used by Tomatis and Dall'Osso, who provided a numerical demonstration in a simple slab problem \cite{tomatis2011application}. Instead of updating the diffusion coefficient by the ratio of the current exchange and the flux gradient, as in Fick's law, they recurred to the scheme of the coarse mesh finite differences method (CMFD) for taking into account the new currents estimated by the integral transport operator in the diffusion solver.
 %
 %They proposed to update non-linearly the diffusion coefficients at the cell interfaces of the spatial mesh by the coarse mesh finite differences method (CMFD).
 %
@@ -169,7 +188,7 @@ In this work we investigate further the convergence on the first flux moments, a
 \section{IMPLEMENTATION}
 \label{sec:impl}
 
-The cross sections, as well as the diffusion coefficient, are usually available as volume-averaged data per cell in the mesh. Once the scalar flux is known from the finite differences solver using the original diffusion coefficients, the integral expressions derived in section \ref{sec:ce} can be used to get new estimates of the current $J$ at the cell interfaces. %Alternatively, new current estimates can come from the two-nodes problem resolved by the nodal method in section \ref{sec:nd}.
+The cross sections, as well as the diffusion coefficient, are usually available as volume-averaged data per cell in the mesh. A lattice transport computer code can prepare these data by homogenization. Once the scalar flux is known from the finite differences solver using the original diffusion coefficients, the integral expressions derived in section \ref{sec:ce} can be used to get new estimates of the current $J$ at the cell interfaces. %Alternatively, new current estimates can come from the two-nodes problem resolved by the nodal method in section \ref{sec:nd}.
 Instead of computing new diffusion coefficients on the same interfaces straight by Fick's law, $J = -D \partial_x \phi$, we obtain new corrective currents $\delta J = J - \Upsilon$ that are supplied next to the neutron balance in diffusion. Here $\Upsilon$ is the current obtained with the original values of the diffusion coefficient and with the derivative approximated by finite differences. In 1-D %Cartesian
 geometry and using the notation in Fig. \ref{fig:mesh1D}, it is:
 \begin{equation}
@@ -211,11 +230,6 @@ The divergence operator used in the multi-group balance equation can be describe
 making the approximation that the average group flux $\bar{\phi}_{g,i} \approx \phi_{g,i}$ in the equations above.
 
 
-%\section{NODAL DIFFUSION}
-%\label{sec:nd}
-%
-%Daniele: this topic is postponed to future works.
-%
 \section{CURRENT ESTIMATION}
 \label{sec:ce}
 
@@ -226,43 +240,59 @@ The angular flux from the integral transport equation (with standard notation) i
 \varphi(x, \mu) = \varphi(x_b, \mu) e^{-\tau(x_b, x)/\mu} + \int_{x_0}^x {dx' \frac{q(x', \mu)}{\mu} e^{-\tau(x', x)/\mu}},
 \label{eq:NTE}
 \end{equation}
-with the optical length $\tau(x_1, x_2) = \int_{x_1}^{x_2}{dx' \sigma_t(x')}$. Contrary to other formulations, we do not include $\mu$ in the definition of the optical length to ease the numerical integrations in the following. $x_b = x_{-1/2} = a$ if $\mu > 0$, $x_b = x_{I-1/2} = b$ otherwise. The inclusion of the energy variable in Eq. \ref{eq:NTE} is straightforward; we use hereafter the multi-group theory, writing the source $q_g$ as\footnote{Curly brackets remind the possible use of the $k$-eigenvalue with vanishing external sources.}:
-\begin{equation*}
+with the optical length $\tau(x_1, x_2) = \int_{x_1}^{x_2}{dx' \sigma_t(x')}$. Contrary to other formulations, we do not include the direction cosine of the neutron velocity $\mu$ in the definition of the optical length to ease the numerical integrations in the following. Eq. \ref{eq:NTE} holds for both positive directions $(\mu > 0)$ where $x_0 = x_{-1/2} = a$, and negative ones $(\mu > 0)$ where $x_0 = x_{I-1/2} = b$. The inclusion of the energy variable in Eq. \ref{eq:NTE} is straightforward; we use hereafter the multi-group theory, writing the source $q_g$ as\footnote{Curly brackets remind the possible use of the $k$-eigenvalue in case of vanishing external sources.}:
+\begin{equation}
+\label{eq:srcg}
 q_g = \sum_{g'=1}^G{\left[
   \sum_{l=0}^\infty{ \frac{2l+1}{2}\sigma_{s,l, g' \rightarrow g}(x)P_l(\mu)\varphi_{l,g'}(x)
   + \frac{\chi_g}{2\{k\}} \nu\sigma_{f,g'}(x)\phi_{g'}(x)}\right] + S_g
                  },
-\end{equation*}
-where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that the scalar flux $\phi$ is equal to half of the first moment $\varphi_0$. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1. Hereafter we consider only isotropic sources.
+\end{equation}
+where the subscript $l$ refers to the moments of the expansions of the flux and of the scattering cross section on the Legendre polynomials $P_l$. Fission emission is isotropic, so that only the scalar flux $\phi$ being equal to the first moment $\varphi_0$ is retained for the fission term. Without the external source $S$, the multiplication factor $k$ is used as eigenvalue to avoid the only trivial vanishing solution. Since $q$ is computed by the results of the diffusion equation in the Ronen method, $l$ can only assume the values 0 and 1, with the second moment $\varphi_1$ equal to the net current $J$.% Hereafter we consider only isotropic sources.
 
-Multiplication of Eq. \ref{eq:NTE} by the direction cosine of the neutron velocity $\mu$ and the integration over $[-1, 1]$ provides the expression for the current, see \cite{tomatis2011application}. The integration on $\mu$ yields integral exponential functions by a simple change of variable ($\mu = \pm 1/u$, according to the sign of $\mu$) \cite{AS1964handbook}:
+Multiplication of Eq. \ref{eq:NTE} by $\mu$ and the integration over $[-1, 1]$ provides the expression for the current, see \cite{tomatis2011application}. The integration on $\mu$ yields integral exponential functions by a simple change of variable ($\mu = \pm 1/u$, according to the sign of $\mu$) \cite{AS1964handbook}:
 \begin{equation*}
-E_n(\tau) = \int_0^1{d\mu\, e^{-\tau / \mu} \mu^{n-2}} = \int_1^\infty{du\, e^{-\tau u}u^{-n}}.
+E_n(\tau) = \int_0^1{d\mu\, e^{-\tau / \mu} \mu^{n-2}} = \int_1^\infty{du\, e^{-\tau u}u^{-n}}, \: n \geq 0.
 \end{equation*}
 These special functions are then used to compute the current at the cell interfaces for all $i$:
 \begin{equation}
 \begin{split}
 % J_g(x_{i+1/2}) &=
-J_{g,i+1/2} &= \int_0^1 {d\mu\, \mu \varphi_g(a, \mu) e^{-\tau_g(a, x_{i+1/2})/\mu}}
-       - \int_0^{-1}{d\mu\, \mu \varphi_g(b, \mu) e^{-\tau_g(b, x_{i+1/2})/\mu}}\\
-       & + \sum_{j=0}^{I-1} { \sign(x_{i+1/2} - x_{j+1/2}) \frac{q_{0,g,j}}{2} \int_{x_{j-1/2}}^{x_{j+1/2}}{dx' E_{2}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) } }.
+J_{g,i+1/2} &= \int_0^{ 1}{d\mu\, \mu \varphi_g(a, \mu) e^{-\tau_g(a, x_{i+1/2})/\mu}}
+             - \int_0^{-1}{d\mu\, \mu \varphi_g(b, \mu) e^{-\tau_g(b, x_{i+1/2})/\mu}}\\
+  & + \sum_{j=0}^{I-1} \left[  \sign(x_{i+1/2} - x_{j+1/2}) \frac{q_{0,g,j}}{2} \int_{x_{j-1/2}}^{x_{j+1/2}}{dx' E_{2}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) } \right.\\
+  & \left. \qquad+ \frac{3}{2}q_{1,g,j} \int_{x_{j-1/2}}^{x_{j+1/2}}{dx' E_{3}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) }\right],
 \end{split}
 \label{eq:J_tr}
 \end{equation}
-The $g$-th source $q_{g,j}$ is the volume-average in the cell $j$. The optical lengths show the subscript $g$ because they are evaluated with the corresponding total cross section $\sigma_{t,g}$. For the property $E'_{n+1}(\ell) = -E_n(\ell)$, the spatial integral of the $E_2$ function can be solved analytically by integrating on $\tau$:
+where $q_{(.),g,j}$ are the moments of the source $q_g$ from Eq. \ref{eq:srcg} averaged in the volume of the $j$-th cell:
+\begin{subequations}
+\label{eq:srclg}
+\begin{align}
+   q_{0,g,j} &= \sum_{g'}\left(\sigma_{s,0,g' \rightarrow g,j} +
+                              \chi_g \nu\sigma_{f,g',j}
+                        \right) \phi_{g',j},\label{eq:srclg0}\\
+   q_{1,g,j} &= \sum_{g'}\sigma_{s,1,g' \rightarrow g,j}J_{g',j}.\label{eq:srclg1}
+\end{align}
+\end{subequations}
+The current appearing in $q_{1,g,j}$, that is in case of linearly anisotropic scattering, is also to be considered as volume-averaged in the cell $j$. The optical lengths show the subscript $g$ because they are evaluated with the corresponding total cross section $\sigma_{t,g}$. For the property $E'_{n+1}(\ell) = -E_n(\ell)$, the spatial integrals of the integral exponential functions can be solved analytically by integrating on $\tau$:
 \begin{equation*}
 \begin{aligned}
 \int_{x_{j-1/2}}^{x_{j+1/2}}{ dx' E_{n}\left(\lvert \tau_g(x', x_{i+1/2}) \rvert \right) } =
-\frac{\sign(x_{i+1/2} - x_{j+1/2})}{\sigma_{t,g}} \cdot \\
+\frac{\sign(x_{i+1/2} - x_{j+1/2})}{\sigma_{t,g,j}} \\  \cdot
 \left[
   E_{n+1} \left(\lvert \tau_g(x_{j+1/2}, x_{i+1/2}) \rvert \right)
  -E_{n+1} \left(\lvert \tau_g(x_{j-1/2}, x_{i+1/2}) \rvert \right)
 \right].
 \end{aligned}
 \end{equation*}
-These quantities can be computed only for $i > j$ since the others are simply opposite in sign.
+These quantities can be computed for $i > j$ only, because the others are simply opposite in sign (anti-symmetric). Eq. \ref{eq:J_tr} can be reformulated for the partial currents, thus considering only the contributions coming from the different sides of $x_{i+1/2}$. Omitting the index on groups and keeping only isotropic sources, this is:
+\begin{equation}
+\label{eq:pcslab}
+  J^\pm_{i+1/2} = \sum_{j=1}^I{q_{0,j} \Delta_i \tilde{e}^\pm_{i+1/2,j} + J^\pm(x_b) \tilde{t}_{i+1/2, x_b}}.
+\end{equation}
+$\tilde{e}_{i+1/2, j}$ represents the probability of a neutron emitted isotropically in $\Delta_i$ to escape uncollided at $x_{i+1/2}$, along its positive or negative direction of flight. $\tilde{t}_{i+1/2, x_b}$ is the transmission probability of a neutron to enter isotropically at $x_b$ and to cross the interface at $x_{i+1/2}$ without colliding hitherto.
 
-{\color{red}Roy-Erez: Please add a paragraph or reformulate the previous one to introduce the escape probabilities in the slab.}
 
 \subsection{Cylindrical geometry}
 \label{sec:cylinder}
@@ -272,20 +302,22 @@ The expression of the current in curvilinear geometries is derived in this secti
 \varphi(\mathbf{r}, \mathbf{\Omega}) = \int_0^{S'}{ds'\, q(\mathbf{r} - s' \mathbf{\Omega}, \mathbf{\Omega}) \exp(-\tau(\mathbf{r}, \mathbf{r} - s' \mathbf{\Omega}))} + \varphi(\mathbf{r} - S' \mathbf{\Omega}, \mathbf{\Omega}) \exp(-\tau(\mathbf{r}, \mathbf{r} - S' \mathbf{\Omega})),
 \label{eq:ITE_angflx}
 \end{equation}
-that is considering the contribution of the source $q$ within the distance $S'(\mathbf{r}, \mathbf{\Omega})$ from the boundary, and the possible entering amount of particles therein. We examine first the case of the cylinder. In planar geometry the angular flux and the source do not depend on the coordinate $z$. Hence, the position on the characteristic line identified by $\mathbf{\Omega}$ is projected on the $x$-$y$ plane (see Fig. \ref{fig:fullframe}): $\varphi(\mathbf{r} - s' \mathbf{\Omega},\mathbf{\Omega}) = \varphi(\mathbf{r} - s \mathbf{\Omega}_p,\mathbf{\Omega})$ and likewise for $q$, with the unit vector $\mathbf{\Omega}_p$ lying on the $x$-$y$ plane. $\theta$ is the polar angle measured between $\hat{e}_z$ and $\mathbf{\Omega}$. In absence of incoming particles, this allows to rewrite Eq. \ref{eq:ITE_angflx} as:
+that is considering the contribution of the source $q$ within the distance $S'(\mathbf{r}, \mathbf{\Omega})$ from the boundary and the possible entering amount of particles therein. All contributions are collected at $\mathbf{r}$ by exponential attenuation along the travelled optical path, that is according to the probability of still continuing the first flight after emission. We examine first the case of the cylinder as a particular case of the 2-D frame. In planar geometry the angular flux and the source do not depend on the axial coordinate $z$. Hence, the position on the characteristic line identified by $\mathbf{\Omega}$ is projected on the $x$-$y$ plane (see Fig. \ref{fig:fullframe}): $\varphi(\mathbf{r} - s' \mathbf{\Omega},\mathbf{\Omega}) =\allowbreak \varphi(\mathbf{r} - s \mathbf{\Omega}_p,\mathbf{\Omega})$ and likewise for $q$, with the unit vector $\mathbf{\Omega}_p$ lying on the $x$-$y$ plane. $\theta$ is the polar angle measured between $\hat{e}_z$ and $\mathbf{\Omega}$. In absence of incoming particles, this allows to rewrite Eq. \ref{eq:ITE_angflx} as:
 \begin{equation}
 \varphi(\mathbf{r}, \mathbf{\Omega}) = \int_0^S{ds\, \frac{q(\mathbf{r} - s \mathbf{\Omega}_p, \mathbf{\Omega})}{\sin \theta} \exp \left[ -\frac{\tau(\mathbf{r}, \mathbf{r} - s \mathbf{\Omega}_p)}{\sin \theta} \right]}. % + \varphi(\mathbf{r} - S \mathbf{\Omega}_p, \mathbf{\Omega}) \exp(-\frac{\tau(\mathbf{r}, \mathbf{r} - S' \mathbf{\Omega})}{\sin \theta}).
 \label{eq:ITE_xy}
 \end{equation}
 
-As well, integration of Eq. \ref{eq:ITE_xy} over the solid angle $d\mathbf{\Omega} = \sin \theta d\omega d \theta$ yields the scalar flux. The theory of collision probability methods originates from the use of isotropic sources, which are also considered as uniform in the cells of the spatial mesh. Two integrations in space arise for each direction $\mathbf{\Omega}$, connecting the source in region $j$ to the flux (or its total reaction rate) in region $i$ by means of its collision probability. The incoming flux is considered as isotropic too, or linearly anisotropic in angle as in \cite{hebert2009applied} to relate the partial entering and outgoing currents to the only first flux moments. These partial currents on the boundary must satisfy a condition of albedo. Transfer probabilities across this outer surface are then derived to take into account of incoming particles in the equation for the $i$-th scalar flux. Escape probabilities accounts for neutrons produced in every region and leaving the outer surface uncollided.
+As well, integration of Eq. \ref{eq:ITE_xy} over the solid angle $d\mathbf{\Omega} = \sin \theta d\omega d \theta$ yields the scalar flux at the point $\mathbf{r}$. The theory of collision probability methods originates from the use of flat isotropic sources in the cells of the spatial mesh. The use of anisotropic sources with spatial variation in the same cells, for instance polynomial-like, is possible but leads to much more difficult expressions to solve. Two integrations in space arise for each direction $\mathbf{\Omega}$, connecting the source in region $j$ to the flux (or its total reaction rate) in region $i$ by means of its collision probability. The incoming flux is usually considered as isotropic too, or linearly anisotropic in angle as in \cite{hebert2009applied} to relate the partial entering and outgoing currents to the only first flux moments. These partial currents on the boundary must satisfy a general condition of albedo.
 
-The projections of partial currents on the outward normal $\hat{n}$ to a given surface are obtained from integration of Eq. \ref{eq:ITE_xy} with the weight $| \hat{n} \cdot \mathbf{\Omega} | = \sin \theta | \hat{n} \cdot \mathbf{\Omega}_p |$ on $\hat{n} \cdot \mathbf{\Omega} \lessgtr 0$. Higher moments are obtained by the weights associated to the corresponding spherical harmonics. Integrations along the polar angle are resolved with the introduction of the Bickley-Naylor functions \cite{amos1983uniform}:
+Using standard nomenclature of collision probability methods, transfer probabilities refer to particles entering the problem domain and leaving it without incurring into any collision. They can provide the probability of reflection in case the entering and the leaving surfaces are the same. The probability of escape deals with neutrons produced in a given region and leaving a surface, still uncollided. These probabilities are employed to write the integral transport equations for the volume-averaged scalar flux (or its total reaction rate) in each cell, and the surface-averaged currents at the cell interfaces.
+
+The projections of partial currents on the outward normal $\hat{n}$ to a given surface are obtained from integration of Eq. \ref{eq:ITE_xy} in $d\mathbf{\Omega}$ with the weight $| \hat{n} \cdot \mathbf{\Omega} | = \sin \theta | \hat{n} \cdot \mathbf{\Omega}_p |$ on $\hat{n} \cdot \mathbf{\Omega} \lessgtr 0$. Higher moments can be obtained by the weights associated to the corresponding spherical harmonics. Integration along the polar angle is resolved analytically by the Bickley-Naylor functions \cite{amos1983uniform}:
 \begin{equation}
-\text{Ki}_n(\tau) = \int_0^{\pi/2}{ d\theta \sin^{n-1} \theta \exp\left(-\frac{\tau}{\sin \theta}\right) }.
+\text{Ki}_n(\tau) = \int_0^{\pi/2}{ d\theta \sin^{n-1} \theta \exp\left(-\frac{\tau}{\sin \theta}\right) },\: n \geq 0.
 \label{eq:Kin}
 \end{equation}
-The properties used for the computation of these functions are available elsewhere \cite{lewis1984computational,hebert2009applied,amos1983algorithm}.
+The properties used for the computation of these functions are available elsewhere \cite{lewis1984computational,hebert2009applied}. We use the Fortran library by Amos from 1983 in this work \cite{amos1983algorithm}.
 
 \begin{subequations}
 After introducing these arguments for a bare cylinder, the current leaving the cylindrical surface at $\mathbf{r}$ (with direction $\hat{n}$) given by neutrons flying along $\mathbf{\Omega}_p$ is:
@@ -306,22 +338,25 @@ J^+(\mathbf{r}) = \int_{W^+ \times [0, S]}{
 \end{equation}
 \label{eq:currp_cylinder}
 \end{subequations}
-$J^-$ is obtained with $w \in W^- =  \left\{\omega \mid \hat{n}\cdot \mathbf{\Omega}_p < 0\right\}$ instead.
+$J^-$ is obtained with integration over $w \in W^- =  \left\{\omega \mid \hat{n}\cdot \mathbf{\Omega}_p < 0\right\}$ instead.% The coefficient $1/2\pi$ comes from the probability of isotropic angular redistribution applied to the source $q$.
 
-Another integration on the total surface $S(r) = 2\pi r$ is necessary to obtain the current in the 1-D frame. For a given angle $\omega$, we have then volume integrals to solve numerically along many parallel lines called tracks, see Fig. \ref{fig:cyltracks}. Furthermore, the tracks are identical for any angle $\omega$ in the 1-D cylindrical geometry simplifying the integrals in Eqs. \ref{eq:currp_cylinder}, which can also be limited to half portion of the cylinder thanks to its symmetry. Finally, the outgoing and incoming currents at $r$ become:
+Another integration on the total surface $S(r) = \int{r d\theta'} = 2\pi r$, with $\theta' = \hat{n}\cdot \mathbf{\Omega}_p$, is necessary to obtain the current density in the 1-D frame. For a given angle $\omega$, we have then volume integrals to solve numerically along many parallel lines called tracks, see Fig. \ref{fig:cyltracks}, for $r d\theta' = dh/\cos \theta'$. Furthermore, the tracks are identical for any angle $\omega$ in the 1-D cylindrical geometry factoring out $2\pi$ from the integrals in Eqs. \ref{eq:currp_cylinder}, which can also be limited to half portion of the cylinder thanks to its symmetry. Finally, the outgoing and incoming currents at $r$ become:
 \begin{equation}
-J^\pm(r) = \pm \frac{1}{\pi r^2} \int_0^r { dh\, y \int_{-Y}^{\pm y}{
-  d \ell \, \text{Ki}_2\left[\tau( y, y - \ell )\right] q(h, y - \ell)}}
+% J^\pm(r) = \pm \frac{1}{\pi r^2} \int_0^r { dh\, y
+J^\pm(r) = \pm \frac{1}{\pi r} \int_0^r { dh\,
+    \int_{-Y}^{\pm y}{d \ell \,
+      \text{Ki}_2\left[\tau( y, y - \ell )\right] q(h, y - \ell)}}
 \label{eq:currp_cyl_atr}
 \end{equation}
-with $y(r,h) =\sqrt{r^2 - h^2}$, $Y = y(R,h)$ and the outer radius $R$. After multiplication by $S(r)$ and still with uniform sources, Eq. \ref{eq:currp_cyl_atr} can be written in terms of the escape probability $e_{j}(r)$ for a neutron to be emitted isotropically in ring $j$ and to leave uncollided the semicylinder surface at $r$, being crossed with angle $\omega \in W^\pm$:
+with $y(r,h) =\sqrt{r^2 - h^2}$, $Y = y(R,h)$ and the outer radius $R$. After multiplication by $S(r)$ and still with uniform sources, Eq. \ref{eq:currp_cyl_atr} can be written in terms of the escape probability $\tilde{e}_{j}(r)$ for a neutron to be emitted isotropically in ring $j$ and to leave uncollided along the normal direction the semi-cylinder surface at $r$, being crossed with angle $\omega \in W^\pm$:
 \begin{equation}
-J^\pm(r)S(r) = \sum_j q_j V_j e^\pm_j(r) \mbox{ with }
-e^\pm_j(r) = \pm \frac{2}{r V_j} \int_0^r { dh\, y \int_{L^\pm_j}{
-  d \ell \, \text{Ki}_2\left[\tau( y, y - \ell )\right]}},
+J^\pm(r)S(r) = \sum_j q_j V_j \left[ \pm \tilde{e}^\pm_j(r) \right] \mbox{ with }
+% e^\pm_j(r) = \frac{2}{r V_j} \int_0^r { dh\, y
+\tilde{e}^\pm_j(r) = \frac{2}{V_j} \int_0^r { dh\,
+  \int_{L^\pm_j}{d \ell \, \text{Ki}_2\left[\tau( y, y - \ell )\right]}},
 \label{eq:esc_prob_cyl}
 \end{equation}
-$L^\pm_j(h) = [-Y,\pm y] \cap V_j$ and where $V_j$ is the ring area. The integral on the track $\ell$ is written differently for the convex and for the concave parts of the rings with respect to the direction of flight, see for instance track 1 and 2 in Fig. \ref{fig:cyltracks} where the same notation of Fig. \ref{fig:mesh1D} is used for the radial mesh. The current leaving the $i$-th ring at $r_{i+1/2}$ gets all source contributions weighted with the quantities $\varepsilon^+_{i+1/2,j} = V_j e^+_{i+1/2,j}$:
+$L^\pm_j(h) = [-Y,\pm y] \cap V_j$ and where $V_j$ is the ring area. $\text{Ki}_2\left[\tau( y, y - \ell )\right]$ is the transport kernel expressing the probability of a neutron to travel uncollided along $\omega$ for a length $\tau$, given in mean free path units, from $(y - \ell)$ to $y$ \cite{stamm1983methods}. The integral on the track $\ell$ is written differently for the convex and for the concave parts of the rings with respect to the direction of flight, see for instance track 1 and 2 in Fig. \ref{fig:cyltracks} where the same notation of Fig. \ref{fig:mesh1D} is used for the radial mesh. The current leaving the $i$-th ring at $r_{i+1/2}$ gets all source contributions weighted with the quantities $\varepsilon^+_{i+1/2,j} = V_j \tilde{e}^+_{i+1/2,j}$:
 %
 \newlength{\plussign}
 \settowidth{\plussign}{$+$}
@@ -329,10 +364,12 @@ $L^\pm_j(h) = [-Y,\pm y] \cap V_j$ and where $V_j$ is the ring area. The integra
 \begin{equation}
 \label{eq:esc_prob_cyij}
   \begin{gathered}
-  \varepsilon^+_{i+1/2,j} = \frac{2}{r_{i+1/2}} \cdot\\
+  % \varepsilon^+_{i+1/2,j} = \frac{2}{r_{i+1/2}} \cdot\\
+  \varepsilon^+_{i+1/2,j} = 2\: \cdot\\
   %\left\{
   \begin{cases}
-  \displaystyle ~\int_0^{r_{i-1/2}} { dh\, y
+%  \displaystyle ~\int_0^{r_{i-1/2}} { dh\, y
+  \displaystyle ~\int_0^{r_{i-1/2}} { dh\,
     \int_0^{\ell_j}{ d\ell \bigg[ }}\\[3mm] \qquad
       \displaystyle \hspace{\the\plussign}
         \text{Ki}_2\left(2 \sigma_i \ell_i + \tau_{ii} + \tau_{ij} + \sigma_j \ell \right)
@@ -358,22 +395,23 @@ $L^\pm_j(h) = [-Y,\pm y] \cap V_j$ and where $V_j$ is the ring area. The integra
   %\right.
   \end{gathered}
 \end{equation}
-using the Kronecker function $\delta_{ij} = 1$ only if $i=j$ and null otherwise. $\tau_{ij}$ and $\tau_{ii}$ are respectively the optical lengths between the rings $i$ and $j$, and across the outer diameter of ring $i$. Reciprocity and conservation properties can be applied only after calculating the collision probabilities. The integrals involving the Ki function are solved thanks to the property $d_{\tau}\text{Ki}_n(\tau) = -\text{Ki}_{n-1}(\tau)$.
+using the Kronecker function $\delta_{ij} = 1$ only if $i=j$ and null otherwise. $\tau_{ij}$ and $\tau_{ii}$ are respectively the optical lengths between the rings $i$ and $j$, and across the outer diameter of ring $i$. The radial integral includes all rings within $r_{i+1/2}$. The integrals involving the Ki function are solved thanks to the property $d_{\tau}\text{Ki}_n(\tau) = -\text{Ki}_{n-1}(\tau)$.
 
-The corresponding form for the reduced escape probability for the incoming current is $\varepsilon^-_{i+1/2,j}$:
+The corresponding form for the reduced escape probability for the incoming current is:
 \begin{equation}
 \label{eq:esc_prob_cyij-}
-  \varepsilon^-_{i+1/2,j} = \frac{2}{r_{i+1/2}}
-    \displaystyle ~\int_0^{r_{i+1/2}} { dh\, y
+%  \varepsilon^-_{i+1/2,j} = \frac{2}{r_{i+1/2}}
+  \varepsilon^-_{i+1/2,j} = 2
+    \displaystyle ~\int_0^{r_{i+1/2}} { dh\, % y
         \int_0^{\ell_j}{
             d\ell \text{Ki}_2 \left(\tau_{ji} + \sigma_j \ell \right)
         }
 	},
 \end{equation}
-for $i<j$, where $\varepsilon^-_{i+1/2,j}\equiv 0$ for $i\geq j$ since in this case a neutron born in volume $j$ (or in volume $j=i$) cannot enter volume $i$ through its outer surface at radius $r_{i+1/2}$ without undergoing a collision. 
+for $i<j$, whereas $\varepsilon^-_{i+1/2,j}\equiv 0$ for $i\geq j$ since in this case a neutron born in volume $j$ (or in volume $j=i$) cannot enter volume $i$ through its outer surface at radius $r_{i+1/2}$ without undergoing a collision. The useful reciprocity and conservation properties commonly used in CPM solvers to save the total computational effort can be applied only after calculating the first flight collision probabilities.
 
-Singularity of the integrand for the $h$-integration is noticed in the convex part while computing the collision probabilities \cite{hebert2009applied}; this notably happens at the outer radius of $j$-th ring where $\hat{n}$ is perpendicular to $\mathbf{\Omega}_p$. However, that integral can be regularized by a suitable change of variable. % $\varrho = \sqrt{r - h}$.
-The calculation of the escape probabilities is not affected by this problem because of the factor $y$ that comes from the cosine of the angle described by the normal $\hat{n}$ and $\mathbf{\Omega}_p$, which cancels the endpoint singularity. The integral in $h$ can be resolved numerically with weights and points by the Gauss-Legendre quadrature in absence of endpoint singularities. Gauss-Jacobi quadrature is recommended in that case.
+Singularity of the integrand for the $h$-integration is known in the convex part while computing the collision probabilities \cite{hebert2009applied,stamm1983methods}; this notably happens at the outer radius of the $j$-th ring where $\hat{n}$ is perpendicular to $\mathbf{\Omega}_p$. However, that integral can be regularized by a suitable change of variable, see appendix \ref{sec:apx_Flurig}. The calculation of the escape probabilities as presented in this section is %not affected by this problem because of the factor $y$ that comes from the cosine of the angle described by the normal $\hat{n}$ and $\mathbf{\Omega}_p$, which cancels the endpoint singularity.
+also affected by this endpoint singularity. Because of this singularity, the integral in $h$ can then be resolved numerically with weights and points by the Gauss-Jacobi quadrature, which is one order more accurate than the common Gauss-Legendre quadrature.
 
 \begin{figure}[htbp]
   \centering
@@ -388,7 +426,7 @@ The calculation of the escape probabilities is not affected by this problem beca
     \vfill
     {%
     \input{figures/sphere.tkz}
-    \caption{Use of symmetry in the sphere for integration in angle.}
+    \caption{Use of symmetry in the sphere for integration over the surface.}
     \label{fig:sphere_tracks}
     }%
 \end{minipage}%
@@ -403,49 +441,63 @@ The calculation of the escape probabilities is not affected by this problem beca
 \subsection{Spherical geometry}
 \label{sec:sphere}
 
-The derivation of the scalar flux and current in the sphere follows the same rational adopted in section \ref{sec:cylinder} by angular integration of Eq. \ref{eq:ITE_angflx} and exploiting the symmetries available in the given coordinate frame. It is now convenient to start counting the polar coordinate $\theta$ from the normal $\hat{n}=\hat{e}_r$ and to have the azymuthal angle $\omega$ lying on a plane perpendicular to it, see Fig. \ref{fig:sphere_tracks}. It can be noticed then that by symmetry all tracks crossing a spherical surface in a point with the same polar angle are the same for any azymuthal angle. Therefore, when integrating over the unit solid angle ($d\mathbf{\Omega}=\sin \theta d\omega d\theta$), the integration on $\omega$ is promptly factored out, becoming simply $2\pi$. Positive and negative radial partial currents are obtained respectively by integrating on $\theta \in [0, \pi/2)$ and $\theta \in (\pi/2, \pi]$ with weight $\hat{n} \cdot \mathbf{\Omega} = \cos \theta$. The final integration on the sphere of radius $r$ %and division by the spherical surface $S(r)=4\pi r^2$
-to get the total partial currents yields a situation similar to the case of the cylinder. The integration on the polar angle can be resolved again by the use of regularly spaced tracks at different values of $\theta$ covering the circular cut of the sphere that passes through the origin. Thanks to the central symmetry tracking integrals are the same for all directions, so that integration is carried on a semi-circle only, as in the case of the cylinder in Fig. \ref{fig:cyltracks}. Still by referring to Fig. \ref{fig:cyltracks}, we note that $\sin \theta = h/r$ and $\cos \theta = y/r$ with $y$ defined in Eq. \ref{eq:currp_cyl_atr}. Finally, Eq. \ref{eq:esc_prob_cyl} holds also for the sphere but using the new reduced escape probability:
+The derivation of the scalar flux and of the current in the sphere follows the same rational adopted in section \ref{sec:cylinder} by angular integration of Eq. \ref{eq:ITE_angflx} and exploiting the symmetries available in the given coordinate frame. Because of the rotational symmetry any direction of flight lays on a spherical cut passing through the origin ($\mathbf{\Omega}_p = \mathbf{\Omega}$), see Fig. \ref{fig:sphere_tracks}. The integration to carry for each direction $\mathbf{\Omega}$ over the spherical surface $S(r) = \int{r^2\sin \theta' d\theta' d\omega'} = 4\pi r^2$ shows a case similar to the cylinder of Fig. \ref{fig:cyltracks}, with integration on the semi-circle along the coordinate $h$, thanks to the axial symmetry around $\omega'$ that factors out $2\pi$, but with the new weight $h = r\sin \theta'$. The tracking integrals up to the spherical surface are the same for all directions, so that the integration over the unit solid angle yields simply $4\pi$, cancelling out the probability of isotropic emission used for the source. Fig. \ref{fig:sphere_tracks} is specific to the calculation of the positive radial partial currents. Negative partial currents need to consider the sources outside the depicted sphere of integration.
+
+%Thanks to the central symmetry tracking integrals are the same for all directions, so that integration is carried on a semi-circle only, as in the case of the cylinder in Fig. \ref{fig:cyltracks}. Still by referring to Fig. \ref{fig:cyltracks}, we note that $\sin \theta = h/r$ and $\cos \theta = y/r$ with $y$ defined in Eq. \ref{eq:currp_cyl_atr}.
+Using the same quantities defined in Eq. \ref{eq:currp_cyl_atr}, Eq. \ref{eq:esc_prob_cyl} holds also for the sphere but using the new reduced escape probability:
 \begin{equation}
-\varepsilon_j(r) = \frac{2\pi}{r^2} \int_0^r { dh\, h y \int_{L_j}{
-  d \ell \, \exp\left[-\tau( y, y - \ell )\right]}}.
+% \varepsilon_j(r) = \frac{2\pi}{r} \int_0^r { dh\, y
+\varepsilon_j(r) = 2\pi \int_0^r { dh\,
+  h \int_{L_j}{d \ell \, \exp\left[-\tau( y, y - \ell )\right]}}.
 \label{eq:esc_prob_sph}
 \end{equation}
-Endpoint singularities are avoided also in this case. The derivation of the equation for the current leaving the $i$-th spherical surface can be obtained straightforwardly from Eq. \ref{eq:esc_prob_cyij}.
+Endpoint singularities at integration stand also in this case. The derivation of the equation for the current leaving the $i$-th spherical surface can be obtained straightforwardly from Eq. \ref{eq:esc_prob_cyij}.
 
 \subsection{Derivation of collision probabilities}
 \label{sec:cp}
 
-After all escape and inscape probabilities are known, the first flight collision probabilities can be determined by conservation properties in order to reduce the amount of total operations. For instance, the probability for a neutron emitted isotropically in the region $i$ to collide in the same region must fulfill the following relation:
+The probabilities used to solve the integral transport equation can treat a volume or surface source, and similarly for the target quantity after emission. Indeed, they consider only the first flight of particles until collision in the target or leakage from its boundary (being still uncollided). The first flight collision probability is then the probability that a neutron emitted isotropically in a cell volume suffers its first collision in another or within itself. This is equivalent to count the number of first collisions in the same target volume produced by a unitary source in the starting volume. This number cannot be an integer of course.
+
+After all escape and inscape probabilities are known, the first flight collision probabilities can be determined by conservation properties in order to reduce the amount of total operations. The escape probabilities obtained from Eqs. \ref{eq:esc_prob_cyij} and \ref{eq:esc_prob_cyij-} yield the number of neutrons leaving a surface uncollided. % along its normal direction, that is by weighting with the director cosine between their current direction of flight and the normal itself. This does not yield the total escape probabilities used hereafter to conserve the neutron balance in the cells of the mesh. We must count all contributions arriving to a given point on a surface by $(\mathbf{\Omega}_p \cdot \mathbf{\Omega})$ instead of $(\hat{n} \cdot \mathbf{\Omega})$. Hence, the factor corresponding to the director cosine must be removed from integration in order to get the total escape probabilities. Gauss-Jacobi integration becomes then necessary to overcome the endpoint singularity, see appendix \ref{sec:apx_Flurig}.
+For instance, the probability $\tilde{p}$ for a neutron emitted isotropically in the region $i$ to collide in the same region must fulfill the following relation:
 \begin{subequations}
 \begin{equation}
-p_{ii} + e^+_{i+1/2,i} + e^-_{i-1/2,i} = 1 \; \forall i.
+\tilde{p}_{ii} + \tilde{e}^+_{i+1/2,i} + \tilde{e}^-_{i-1/2,i} = 1, \: \forall i.
 \label{eq:pii}
 \end{equation}
-This can be generalized with neutrons coming from region $j$ and colliding in region $i$ as:
+$\tilde{e}$ denotes a total escape probability introduced above. This can be generalized with neutrons coming from region $j$ and colliding in region $i$ as:
 \begin{equation}
-p_{ij} = e^+_{i-1/2,j} - e^+_{i+1/2,j} + e^-_{i+1/2,j} - e^-_{i-1/2,j},
+\tilde{p}_{ij} = \tilde{e}^+_{i-1/2,j} - \tilde{e}^+_{i+1/2,j} + \tilde{e}^-_{i+1/2,j} - \tilde{e}^-_{i-1/2,j} + \delta_{ij},
 \label{eq:pij}
 \end{equation}
 \label{eq:cps}
 \end{subequations}
-with $e^+_{i-1/2,i} = e^-_{i+1/2,i} = 0$ to find again Eq. \ref{eq:pii}.
+with $\tilde{e}^\pm_{\mp 1/2,j} = 0$, $\forall j$ in the sphere and in the cylinder. A formulation resolving the integral Boltzmann equation by first-flight escape probabilities was already introduced by Bitelli and Turrin%, who also noticed the advantage of simpler numerical integration for avoiding poles at endpoints
+ \cite{bitelli1974evaluation,bitelli1976collision}.
 
-Particle conservation on the full domain requires $\sum_i p_{ij} + e^+_{I+1/2,j} = 1$, $\forall j$. At last, reciprocity implies
-\[
-  \frac{p_{ij}}{V_i \sigma_i} = \frac{p_{ji}}{V_j \sigma_j} \quad \text{and} \quad
-  \frac{p_{j, i+1/2}}{V_j \sigma_j} = \frac{4 e_{i+1/2, j}}{S_{i+1/2}} \quad \text{for } 1 \leq i,j, \leq I,
-\]
-with the escape probability counting for both contributions from partial currents. These expressions can be used to verify Eqs. \ref{eq:cps}.
+Particle conservation on the full domain requires $\sum_i \tilde{p}_{ij} + \tilde{e}^+_{I+1/2,j} = 1$, $\forall j$. At last, reciprocity implies
+\begin{subequations}
+\label{eq:reciprocity}
+\begin{gather}
+  \frac{\tilde{p}_{ij}}{V_i \sigma_i} = \frac{\tilde{p}_{ji}}{V_j \sigma_j} \quad \text{and} \label{eq:reciprocity1}\\
+  \frac{\tilde{p}_{j, i+1/2}}{V_j \sigma_j} = 4 \frac{\tilde{e}^+_{i+1/2, j} + \tilde{e}^-_{i+1/2, j}}{S_{i+1/2}},
+  \label{eq:reciprocity2}
+\end{gather}
+\end{subequations}
+for $1 \leq i,j, \leq I$. % and with the escape probability counting for both contributions from partial currents. These expressions
+Eq. \ref{eq:reciprocity1} can also be used to verify the implementation of the escape probabilities. Collision probabilities with surface source emission from Eq. \ref{eq:reciprocity2} are needed with non-zero entering currents of neutrons at the boundary $x_{I+1/2}$. This probability refers again to an angular flux entering the surface $(i+1/2)$ isotropically, yielding the cosine current typical of white reflection.
 
-Transmission probabilities between surfaces are also needed with boundary conditions different from vacuum. We do not derive them in this work because we only treat bare problems.
+Transmission probabilities between surfaces are also needed in response matrix formulations and with boundary conditions different from vacuum. The response matrix formulation partitions the calculation domain in separate blocks, which exchange out-going and entering partial currents to update their internal distributions of reaction rates. The method to solve the integral transport equation by the collision probability method providing reference solutions for the Ronen method is reported in appendix \ref{sec:CPMsolution}.
+
+It might not be possible to compute the escape probabilities as derived in this work using existing computer codes that employ the collision probability method without code modifications. In fact, existing codes usually calculate directly the collision probabilities, by which all other probabilities are determined next using reciprocity and conservation properties. Besides, these codes only need to calculate the escape probability from the outer boundary surface.
 
 
 \section{BOUNDARY CONDITIONS}
 \label{sec:bc}
 
-A generalized form for the boundary condition of the diffusion equation applying at the left side of the slab follows as $\Upsilon = - D_0 \phi_0 / (\Delta_0 / 2 + \zeta)$, where $\zeta$ is the extrapolation length in case of vacuum. Reflection can be reproduced by $\zeta \rightarrow \infty$, whereas the condition of zero-flux comes with $\zeta = 0$. The boundary $\delta J$ takes the simpler form $\delta J = - \delta D_{-1/2} \phi_0$ without dividing by the spatial width, since no particular extrapolation length is meant for the correction. Indeed, it will be possible to determine the actual extrapolation length only at convergence. The expression for the right boundary is straightforward, implying a non-negative current. Reflection is always reproduced at the center in curvilinear geometries.
+A generalized form for the boundary condition of the diffusion equation applying at the left side of the slab follows as $\Upsilon = - D_0 \phi_0 / (\Delta_0 / 2 + \zeta)$, where $\zeta$ is the extrapolation length in case of vacuum. $\zeta = 2D$ yields the Marshak boundary conditions for instance, but the value $\zeta = 2.13D$ is usually recommended in slab geometry \cite{stamm1983methods}. Reflection can be reproduced by $\zeta \rightarrow \infty$, whereas the condition of zero-flux comes with $\zeta = 0$. The boundary $\delta J$ takes the simpler form $\delta J = - \delta D_{-1/2} \phi_0$ without dividing by the spatial width, since no particular extrapolation length is meant for the correction. Indeed, it will be possible to determine the actual extrapolation length only at convergence. The expression for the right boundary is straightforward, implying a non-negative current. Reflection is always reproduced at the center in curvilinear geometries.
 
-About the currents from Eq. \ref{eq:J_tr}, the boundary conditions must be implemented through the first two terms at the right side due to the incoming flux. They are zero by definition only in case of vacuum. The flux expansion on the Legendre polynomials is necessary to reproduce other types of boundary condition. Again, we can only approximate the flux up to the first order, that is $\varphi \approx \phi/2 + 3/2 J \mu$. This approximation may not reproduce a vanishing current with reflection reproducing a symmetric distribution. At the left boundary for instance, the current can be expressed as $J(a) =  J^+ + J^- = 0$ with the entering current $J^+ = \int_0^1 { d\mu \mu \phi(a, \mu) } = - J^-$. $J^-$ takes into account all contributions coming from the right of $a$ up to $b$, see Eq. \ref{eq:J_tr}. In the absence of higher moments, the angular flux at the boundary becomes simply $\phi(a, \mu) \approx \phi_0(a) / 2$, yielding $J^+(x) = \phi_0(a)/2\, E_3 \left(\tau(a, x)\right)$. This approximation does not guarantee to obtain the expected vanishing current at the boundary when computing the same current at the boundary with symmetric flux distributions. However, it is possible to determine the difference between the partial currents (remind that $J^-$ is negative). The higher (even) flux moments are responsible for this residual quantity, but they are not available unfortunately. A possible solution is considering that this quantity comes artificially from the only second moment, like\footnote{The operator $\pluseq$ assigns to $J$ the sum of itself and quantity to the right.}
+About the currents from Eq. \ref{eq:J_tr}, the boundary conditions must be implemented through the first two terms at the right side due to the incoming flux. They are zero by definition only in case of vacuum. The flux expansion on the Legendre polynomials is necessary to reproduce other types of boundary condition. Again, we can only approximate the flux up to the first order, that is $\varphi \approx \phi/2 + 3/2 J \mu$. This approximation may not reproduce a vanishing current with reflection reproducing a symmetric distribution. Only situations with perfectly isotropic angular flux at the boundary will be described correctly. At the left boundary for instance, the current can be expressed as $J(a) =  J^+ + J^- = 0$ with the entering current $J^+ = \int_0^1 { d\mu \mu \phi(a, \mu) } = - J^-$. $J^-$ takes into account all contributions coming from the right of $a$ up to $b$, see Eq. \ref{eq:J_tr}. In the absence of higher moments, the angular flux at the boundary becomes simply $\phi(a, \mu) \approx \phi_0(a) / 2$, yielding $J^+(x) = E_3 \left(\tau(a, x)\right)\phi_0(a)/2$, or $J^+(x) = \tilde{t}_a(x) \phi(a)/4$ using the CPM formalism (white reflection at $a$). Here, $\tilde{t}$ is the transmission probability of neutrons crossing uniformly and isotropically the surface $a$ to get to the position $x$ uncollided. The value of this probability can be obtained through reciprocity and conservation properties, as shown in section \ref{sec:cp}. Hence, this approximation does not guarantee to obtain the expected vanishing current at the boundary when computing the same current at the boundary with symmetric flux distributions. However, it is possible to determine the difference between the partial currents (remind that $J^-$ is negative). The higher (even) flux moments are responsible for this residual quantity, but they are not available unfortunately. A possible solution is considering that this quantity comes artificially from the only second moment, like\footnote{The operator $\pluseq$ assigns to $J$ the sum of itself and quantity to the right.}
 \begin{equation}
 \begin{split}
 J^+(x) &\pluseq \frac{5}{4} \tilde{\phi}_2(a) \left[ 3 E_5(\tau(a, x)) - E_3(\tau(a, x)) \right],\\ &\text{ with } \tilde{\phi}_2(a) = - \frac{16}{5} \left( \frac{1}{4} \phi_0(a) + J^- \right).
@@ -453,63 +505,272 @@ J^+(x) &\pluseq \frac{5}{4} \tilde{\phi}_2(a) \left[ 3 E_5(\tau(a, x)) - E_3(\ta
 \end{equation}
 The flux expansion at the left boundary is then
 \[ \phi(a, \mu) = \frac{1}{2} \phi_0 + \frac{3}{2} \mu \phi_1 + \frac{5}{4} \left( 3 \mu^2 - 1 \right) \tilde{\phi}_2, \]
-with $\phi_1 = J = 0$ with reflection. The derivation of the correction at the other boundary of the slab can easily be derived. Although this correction improves the results, it cannot yield exactly the same results of the unfolded geometry, that is without reproducing the half symmetry by reflection. This occurs because the small current difference is assumed only on the second moment, neglecting the others which may become relevant on case-dependent basis.
+with $\phi_1 = J = 0$ with reflection. The derivation of the correction at the other boundary of the slab can easily be derived.
+
+Transmission probabilities of neutrons entering with anisotropic (even) distributions are now needed, but this time they can not be derived from the escape probabilities based on isotropic emission. We only give the expression to calculate these quantities in the slab, since white reflection is generally preferred in the 1-D curvilinear geometries for reproducing more accurate physical results.
+
+Although this correction definitely improves the results, it cannot yield exactly the same results of the unfolded geometry, that is without reproducing the half symmetry by reflection. This occurs because the small current difference is allotted only to the second moment, neglecting the others which may become relevant on a case-dependent basis.
 
 
 \section{RESULTS}
 \label{sec:res}
 
-We resume here briefly the results of the two-group slab problem from \cite{tomatis2011application}. New results are also available for having new computer codes implemented with Python3. The reference solution is provided by a S$_{16}$ discrete ordinate computer code. Tab. \ref{tab:kconv} shows the differences on the reactivity by refining the mesh when the Ronen method is called with the diffusion solver. The reactivity is simply given as $\rho = 1 - 1/k$, where $k$ is the multiplication factor. The reference $k$ value from S$_{16}$ is 0.744417 ($I = 200$). Differences at $it=0$ correspond to the initial diffusion calculations without any current correction. Equidistant meshes are used in all calculations.
+%We resume here briefly the results of the two-group slab problem from \cite{tomatis2011application}. New results are also available for having new computer codes implemented in Python v3.8.2 with the numerical libraries NumPy v1.18.2 and SciPy v1.3.2. The reference solution is provided by a S$_{16}$ discrete ordinate computer code. Tab. \ref{tab:kconv} shows the differences on the reactivity by refining the mesh when the Ronen method is called with the diffusion solver. The reactivity is simply given as $\rho = 1 - 1/k$, where $k$ is the multiplication factor. The reference $k$ value from S$_{16}$ is 0.744417 ($I = 200$). Differences at $it=0$ correspond to the initial diffusion calculations without any current correction. Equidistant meshes are used in all calculations.
 %
-\begin{table}[htbp]
+%\begin{table}[htbp]
+%\centering
+%\caption{Reactivity differences in pcm by refining the mesh.\label{tab:kconv}}
+%\begin{tabular}{c|r|r}
+%\multirow{2}{*}{$I$} & \multicolumn{2}{|c}{$\Delta \rho$} \\ \cline{2-3}
+%     & $it=0$ & $it=100$ \\ \hline
+% ~50 & 550.22 & 170.35 \\
+% 100 & 556.85 & ~36.08 \\
+% 200 & 558.50 & ~~1.72
+%\end{tabular}
+%\end{table}
+%
+%The convergence on the flux is rather slow as shown in Fig. \ref{fig:kflx} and Fig. \ref{fig:eflx}. The corrections of the flux become smaller when iterating and a considerable number of iterations is necessary to approach the target results of the S$_{16}$ calculation.
+%
+%\begin{figure}[htbp]
+%  \centering
+%  \includegraphics[width=.8\linewidth]{figures/kflxconv.pdf}
+%  \caption{Behavior of the convergence on the flux (right) and on the reacitivity (left) for $I = 200$.}
+%  \label{fig:kflx}
+%\end{figure}
+%%
+%\begin{figure}[hbtp]
+%  \centering
+%  \includegraphics[width=.8\linewidth]{figures/eflxconv.pdf}
+%  \caption{Relative variation of the flux though the RM iterations ($I = 200$).}
+%  \label{fig:eflx}
+%\end{figure}
+
+New computer programs have been developed in Python v3.8.2 with the numerical libraries NumPy v1.18.2 and SciPy v1.3.2 in order to solve the diffusion and the transport problems after calculating the first flight escape probabilities in the three geometries. The programs can treat heterogeneous media and use the multigroup formalism in energy, being intended mainly for educational purposes.
+
+We present in this section one-group homogeneous critical problems with isotropic scattering to study the behavior of the Ronen method with angular redistribution in the curvilinear geometries. These cases belong to a test set of analytical benchmarks for code verification \cite{sood2003analytical}. The setup of the complete test suite with problems of increasing level of complexity is planned as future research action. Although analytical solutions exist in literature, reference solutions are here provided by the collision probability method, whose implementation takes advantage of the escape probabilities derived in section~\ref{sec:ce}, and whose numerical solution is explained in appendix \ref{sec:CPMsolution}. Besides, reference values of the fundamental flux are provided by the benchmark problems at a few positions.
+
+The problems are resolved in units of optical length according to the change of variable $x \leftarrow \sigma x$. The isotropically multiplying source becomes $q = c \phi_0 / 4\pi$ with the number of secondaries from scattering and fission events $c = (\sigma_s + \nu \sigma_f)/\sigma$. The transport equation to solve is then:
+\[
+\left( \mu \frac{\partial}{\partial x} + 1\right) \varphi(x,\mu)
+ = \frac{c}{4 \pi}\int_{-1}^{1}{\varphi(x,\mu) d\mu}
+\]
+The multiplicity $\nu$ recovers the role of eigenvalue in absence of external sources. The size of the problem is simply $b=r_c$ with $a=0$. %$c$ and $b$ are then the free parameters in the problem.
+The material specifications of the benchmark cases are reported in Table \ref{tab:xs}. The naming convention of the test cases follows by Sood et al., with the critical lengths listed in Table \ref{tab:rc}. All problems use the vacuum boundary condition. %Problem PUa-1-0-SL reproduces the full slab, while PUb-1-0-SL is calculated as half slab, to study the artificial correction introduced on the second flux moment.
+
+\begin{table}[htb]
 \centering
-\caption{Reactivity differences in pcm by refining the mesh.\label{tab:kconv}}
-\begin{tabular}{c|r|r}
-\multirow{2}{*}{$I$} & \multicolumn{2}{|c}{$\Delta \rho$} \\ \cline{2-3}
-     & $it=0$ & $it=100$ \\ \hline
- ~50 & 550.22 & 170.35 \\
- 100 & 556.85 & ~36.08 \\
- 200 & 558.50 & ~~1.72
+\caption{One-group cross section values used in the benchmark problems.}\label{tab:xs}
+\begin{tabular}{c|*{6}{l}}
+Material & \multicolumn{1}{c}{$\nu$} & \multicolumn{1}{c}{$\sigma_f$} & \multicolumn{1}{c}{$\sigma_c$} & \multicolumn{1}{c}{$\sigma_s$} & \multicolumn{1}{c}{$\sigma_t$} & \multicolumn{1}{c}{$c$}\\ \hline
+Pu-239 (PUa)& 3.24 & 0.081600 & 0.019584 & 0.225216 & 0.32640 & 1.50\\
+Pu-239 (PUb)& 2.84 & 0.081600 & 0.019584 & 0.225216 & 0.32640 & 1.40\\
+  H20 (refl)& 0.0 & 0.0 & 0.032640 & 0.293760 & 0.32640 & 0.90\\
 \end{tabular}
 \end{table}
 
-The convergence on the flux is rather slow as shown in Fig. \ref{fig:kflx} and Fig. \ref{fig:eflx}. The corrections of the flux become smaller when iterating and a considerable number of iterations is necessary to approach the target results of the S$_{16}$ calculation.
+\begin{table}[htb]
+\centering
+\caption{Reference critical lengths $r_c$ of the test cases, with the multiplication factor $k_D$ and the geometrical buckling $B^2_G$ of the analytical solution in diffusion.}\label{tab:rc}
+\begin{tabular}{l|c|c|c|c|c}
+\multirow{2}{*}{Problem Id.} & Geometry & \multicolumn{2}{c|}{$r_c$}& \multirow{2}{*}{$k_D$} & \multirow{2}{*}{$B_G^2$}\\ \cline{3-4}
+ & type & (mfp) & (cm) & & \\ \hline
+PUa-l-0-SL  & Slab       & 0.605055     & 1.853722 & 0.891973 & 0.191159\\
+PUb-1-0-SL  & Slab       & 0.736603   & 2.256751 & 0.913739 & 0.149267\\
+%PUb-1-0-SL  & Slab       & 0.73660355   & 2.256751\\
+PUb-1-0-CY  & Cylinder   & 1.396979     & 4.279960 & 0.956090 & 0.138266\\
+PUb-1-0-SP  & Sphere     & 1.985343 & 6.082547 & 0.964129 & 0.136287\\
+%PUb-1-0-SP  & Sphere     & 1.9853434324 & 6.082547\\
+\end{tabular}
+\end{table}
+
+The analytical solutions from diffusion theory are available in Table \ref{tab:adsol}, where the geometrical buckling $B_G^2$ comes as root of the transcendental equations in the last column, see Table \ref{tab:rc}. The multiplication factor $k_D$ of the analytical diffusion problem is obtained by equating the geometrical buckling and the material buckling $B^2_M = (\nu\sigma_f/k - \sigma_a)/D = (k_\infty/k - 1)/L^2$, where $k_\infty = \nu\sigma_f / \sigma_a$ is the multiplication factor in the infinite medium and $L^2 = D/\sigma_a$ is the diffusion area. The benchmark problems communicate the reference transport fundamental flux at given positions, see Table \ref{tab:rff}. The scalar fluxes are all normalized to be unitary at the center.
+
+\begin{table}[hbt]
+\centering
+\caption{Analytical solutions from diffusion in centered, bare and homogeneous one-group problems of length $X$ (vacuum boundary with extrapolation distance $d = \zeta D$).}\label{tab:adsol}
+\begin{tabular}{c|c|c}
+Geometry type & Solution & $B_G$, s.t.\\ \hline[1mm]
+Slab & $\cos{(B_G x)}$ & $\tan{(B_G X)} = 1 / (d B_G), \: B_G \in (0, \pi /(2X))$\\[1mm]
+Cylinder & $J_0 (B_G x)$ & $J_0(B_G X) - d B_G J_1(B_G X), \: B_G \in (0, 2.404825 / X)$ \\[1mm]
+Sphere & $\sin{(B_G x)}/x$ & $B_G X - (1 - X / d) \tan{(B_G X)}, \: B_G \in (\pi/(2X), \pi/X)$ \\
+\end{tabular}
+\end{table}
+
+\begin{table}[hbt]
+\centering
+\caption{Fundamental flux from the reference transport solution of the benchmark.}\label{tab:rff}
+\begin{tabular}{l|c|llll}
+\multirow{2}{*}{Problem Id.} & Geometry & \multicolumn{4}{c}{$r=x/r_c$}\\ \cline{3-6}
+ & type & \multicolumn{1}{c}{$r_1=0.25$} & \multicolumn{1}{c}{$r_2=0.5$} & \multicolumn{1}{c}{$r_3=0.75$} & \multicolumn{1}{c}{$r_4=1$}\\ \hline
+% PUb-1-0-SL & Slab     & 0.9701734 & 0.8810540  & 0.7318131 &  0.4902592\\
+PUb-1-0-SL & Slab     & 0.970173 & 0.881054  & 0.731813 &  0.490259\\
+PUb-1-0-CY & Cylinder & \multicolumn{1}{c}{-} & 0.8093     & \multicolumn{1}{c}{-} & 0.2926\\
+PUb-1-0-SP & Sphere   & 0.935380 & 0.755753 & 0.498843 & 0.192226
+%PUb-1-0-SP & Sphere   & 0.93538006& 0.75575352 & 0.49884364 & 0.19222603
+\end{tabular}
+\end{table}
+
+After computing the numerical solution of the diffusion problem by finite differences without corrections at the cell interfaces, we evaluate new current estimates by using escape, transmission and reflection probabilities according to the given geometry type, as derived from the integral equation in section \ref{sec:ce}. Then, the solution by the Ronen method is sought iteratively as explained in section \ref{sec:impl}. Anderson acceleration through the DAAREM algorithm (Damped Anderson Acceleration with Epsilon Monotonicity) is also used during the iteration process \cite{henderson2019damped}, reducing considerably the number of iterations to achieve residuals on the relative flux differences below $10^{-6}$. Its use is crucial to find the fixed point solution throughout the non-linear iterations of the RM.
+
+The calculation of half slab by CPM after setting (white) reflection at the center yields poor results due to missing contributions from the higher flux moments, see Figure \ref{fig:cpm_hslab_err}. The solution obtained by RM takes into account an artificial correction applied to the only second moment, reducing the flux error, but its eigenvalue solution is higher than 1 of 836 pcm on converged meshes. This issue, discussed in section \ref{sec:bc}, is more severe with very thin slab, like in the case PUa-1-0-SL, and disappears when the slab thickness increases beyond a few mean free paths (mfp). This forces the modelling of the full slab when verifying the flux distribution for the case PUb-1-0-SL. Such issue does not appear at the center of the solid cylinder or sphere. % solid = not hollow
+All methods computes a critical configuration for PUa-1-0-SL after unfolding the half-slab. The study to verify the fundamental flux is then only shown for the case PUb-1-0-SL.
 
 \begin{figure}[htbp]
-  \centering
-  \includegraphics[width=.8\linewidth]{figures/kflxconv.pdf}
-  \caption{Behavior of the convergence on the flux (right) and on the reacitivity (left) for $I = 200$.}
-  \label{fig:kflx}
-\end{figure}
-%
-\begin{figure}[hbtp]
-  \centering
-  \includegraphics[width=.8\linewidth]{figures/eflxconv.pdf}
-  \caption{Relative variation of the flux though the RM iterations ($I = 200$).}
-  \label{fig:eflx}
+\centering
+\includegraphics[width=.8\linewidth]{cpm_hslab_err.pdf}
+\caption{Error in the half slab (PUa-1-0-SL) with white reflection at the right and vacuum at the left.}
+\label{fig:cpm_hslab_err}
 \end{figure}
 
-A one-group homogeneous problem is proposed hereafter in order to study the application of the Ronen method with angular redistribution in curvilinear geometries. Reference solutions are provided by collision probability method solvers, whose development take advantage of the implementation for the escape probabilities derived in section~\ref{sec:ce}. This choice is supported by the use of integral operators in the same Ronen method. Again, the implementation follows H\'ebert's textbook. The problems are solved in units of optical length, which means by simply setting the input total cross section equal to 1. The multiplying source becomes then $q = (c + \nu f) \phi_0 / 4\pi$, thus isotropic in angle, and with $c$ and $\nu f$ respectively as positive real numbers of secondaries per scattering and fission events. These numbers can be interpreted as conditional probabilities as well. The multiplicity $\nu$ acts as the eigenvalue of the problem. After the fundamental eigen-pair is known for given values of the constants and for a given size $L$, it is worthless to change $f$ alone to study the problem since only the product $\nu f$ counts for the balance (associated to the same eigenfunction). We choose then $f = 1$, ending up in only two free parameters for our study: $c_s$ and $L$. Even if this choice is unphysical for the assumed value of the total cross section together with $c > 0$, physical meaning is recovered by the fundamental value of $\nu$.
+About the cases PUb, the relative error on the critical flux computed by CPM against the values from Table \ref{tab:rff} are shown in Figure \ref{fig:cpm_PUb_flxerr} with increasing number of cells ($I$) always using equivolume meshes. The same figure shows also the results obtained by RM. The spherical geometry needs finer meshes to decrease the error, which is always higher near the vacuum boundary. Refined meshes near the boundary, drawn for instance by a geometric progression with ratio less than one, can lower this error, see the program released with this publication. The RM results practically overlaps those obtained by the CPM, but at the vacuum boundary where the monotonic behavior of the error trend is broken with fine meshes, leaving a residual error of about 1-2\% in the slab and in the cylinder, and higher than 3\% in the sphere. The flux at the boundary used to reproduce the current by diffusion is approximated by a quadratic polynomial fitting the midpoint fluxes at the nearest three cells, instead of the only flux of the last cell.
 
-\textcolor{red}{Roy will be able to check these assertions in the coming days.}
+The number of cells in the slab is doubled indeed for taking a thickness of $2r_c$ in the calculations. The deviation of the multiplication factor from unity by refining the mesh is shown in Figure \ref{fig:cpm_PUb_kerr}, instead. The same trend for the three geometries is noticed, with the spherical one needing finer meshes to achieve the same level of error. The multiplication factor computed by RM is about the same as the one given by CPM. Four integration points are used in the Gauss-Jacobi quadratures, yielding an error lower than 0.1\%.
 
-\textcolor{blue}{The source assumes this form because the integration variables also have to the normalized by the mean free path (i.e. multiplied by the total cross section).}
+\begin{figure}[hp]
+\centering
+\includegraphics[width=.8\linewidth]{cpm_PUb_flxerr.pdf}
+\caption{Relative error in percent of the fundamental flux for all PUb cases.}
+\label{fig:cpm_PUb_flxerr}
+\end{figure}
 
-\textcolor{green}{The use of the integral transport eqn. to get reference solutions is motivated by two main reasons. The first is to use again what we're implementing now for the escape probabilities. The second is to get the reference solution by inverting the operator used in the RM. So that we'll really know what is the solution to match. Furthermore, this won't be affected by ray effects of any kind. Lastly, we'll have to be very careful to the endpoint singularity when computing the collision probabilities.}
+\begin{figure}[hp]
+\centering
+\includegraphics[width=.8\linewidth]{cpm_PUb_kerr.pdf}
+\caption{Error in pcm of the multiplication factor $k$ in the PUb critical benchmark problems.}
+\label{fig:cpm_PUb_kerr}
+\end{figure}
+
+The solution by CPM needs a single inversion of a full matrix with the direct solving scheme from appendix \ref{sec:CPMsolution}. This scheme may not be suitable to problems with a high number of energy groups and spatial cells. The RM needs to invert several times a tridiagonal matrix, which is efficiently performed in our code by Thomas TDMA algorithm, a simplified form of Gaussian elimination that can be used to solve tridiagonal systems of equations. Both methods share the calculation part of the first flight escape/collision probabilities. Typical runtimes of the benchmark problems treated in this article are quite fast and they can be run on any laptop computers. The calculation of the first flight probabilities is the most expensive part, especially in curvilinear geometries, and it should be reprogrammed in a compiled language to save runtime.
+
 
 \section{CONCLUSION}
 \label{sec:cncls}
 
-The Ronen Method was firstly proposed for better estimates of the diffusion coefficient by calculating the current with a higher-order transport operator and a known best-estimate neutron flux. This originates an iterative scheme leading to new flux distributions solved by a diffusion solver yet with the aim to fulfill the integral transport equation. The direct resolution of the integral equation would imply the inversion of large matrices, with poor control of their conditioning. The solution of the diffusion equation offers many numerical advantages instead, solution speed and robustness above all.
+The Ronen Method was firstly proposed for better estimates of the diffusion coefficient by calculating the current with a higher-order transport operator and a known best-estimate neutron flux. This originates an iterative scheme leading to new flux distributions solved by a diffusion solver yet with the aim to fulfill the integral transport equation. The direct resolution of the integral equation implies the inversion of full matrices, with poor control of their conditioning. The solution of the diffusion equation offers many numerical advantages instead, solution speed and robustness above all.
 
-Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD, which avoids the numerical issues arising with flat flux. This is the option adopted in this work. The implementation of the boundary conditions is improved to reproduce the expected vanishing current in case of reflection.
+Nonetheless, the same current can be enforced in the discretized form of the diffusion equation as suggested by the CMFD that avoids the numerical issues arising with flat flux. This is the option adopted in this work. The implementation of the boundary conditions is improved to reproduce the expected vanishing current in case of reflection. However, this correction is not sufficient to fix the limitations due to the use of white reflection, which is particularly serious in problems smaller than a mean free path.
 
-We obtain more accurate results for the two-group benchmark problem reported in \cite{tomatis2011application}. The final version of the article will show the results of the application of the method in the curvilinear coordinate systems, still using isotropic sources. In general, slow convergence is observed for the scalar flux, whose larger discrepancy with respect to the reference is always located on the vacuum boundary. Although the method is converging to the reference results provided by a discrete ordinate transport code, the improvement of the convergence rate and the use of coarser meshes are crucial for the advancement of the methodology in practical applications. These topics will be addressed as future developements.
+The RM is developed in this work by following the CPM formalism and theory. Only first flight escape probabilities are computed, by which all other kinds of probabilities are derived using conservation and reciprocity properties. The solutions are verified with simple one-group homogeneous problems from the benchmark test suite by Sood and al. \cite{sood2003analytical}. More benchmark problems will be analyzed in a future work to study the RM with material heterogeneity and with many energy groups. The application of the RM to problems with anisotropic scattering suffers from the lack of the flux moments higher than the first, since diffusion can count only on the net current. This article shows the extension of the RM to linearly anisotropic scattering in the source terms in the case of the slab. The study of anisotropy still needs further developments.
+
+The use of Anderson acceleration in the RM iterations was crucial to find converged results, fixing the issue of slow convergence noticed in the previous published works. The large discrepancy on the scalar flux observed in previous works at bare vacuum boundaries has now been reduced to a few percent with respect to the reference solutions. This suggests that same test problems could have been affected in the past implementations by false convergence for very slowly decreasing convergence rates. Additional tests are on-going to verify this assertion. The upgrade of the RM to coarser meshes and different implementations of the CMFD scheme will be the objects of future research and development. These are considered as central topics for the advancement of the methodology in practical applications.
 
 
 \section*{ACKNOWLEDGMENTS}
 
 The authors express their gratitude to Prof. Yigal Ronen who initiated the method.
+
+\section*{ADDITIONAL MATERIAL}
+
+The theory and results of this article were produced by the computer program available at \texttt{https://github.com/ndarmage/RonenMethod1D.git}. This program is distributed for educational purposes and basic training in transport theory, without containing any confidential material on nuclear data.
+
+\appendix
+\section{APPENDIX. Gauss-quadratures}
+\label{sec:apx_Flurig}
+
+The integrals used in the calculation of the probabilities in the cylindrical and spherical frames are in the form:
+\[
+  I = \int_{r_{i-1/2}}^{r_{i+1/2}}{dh K(\ell(h))},
+\]
+and they are often evaluated numerically by Gauss-quadratures. The integrand can show an endpoint singularity in the first derivative when integrating in the convex regions, since $d_h K = \partial_{\ell} K\, \partial_{\ell}h$ and 
+\[
+  \lim_{h \rightarrow r_{i+1/2}}
+    \frac{-2h}{\sqrt{r_{i+1/2}^2 - h^2}} = -\infty,
+\]
+for $\ell = 2\sqrt{r_{i+1/2}^2 - h^2}$ \cite{hebert2009applied}.
+The use of a Gauss-Legendre quadrature with $N$ points in the integration interval is a good choice only if the integrand is continuous over the interval up to order $2N$. Gauss-Legendre quadrature integrates exactly polynomials of degree less than $2N$. The definite integrals can be regularized by a proper change of variable following the Flurig scheme, which yields a Gauss-Jacobi quadrature scheme \cite{carlvik1966integral}. We propose hereafter a general change of variable to obtain both schemes at once:
+\begin{equation}
+\label{eq:varchange}
+  \varrho = 1 - 2 \left(
+      \frac{r_{i+1/2} - h}{\Delta r_i} \right)^{(1-\alpha/2)}
+\end{equation}
+with $\Delta r_i = r_{i+1/2} - r_{i-1/2}$ that yields
+\begin{equation}
+\label{eq:quad}
+  I = \frac{\Delta r_i}{2}\int_{-1}^{1}{
+    d\varrho (1-\varrho)^\alpha
+%             (1+\varrho)^\beta
+             K(\ell(\varrho))}
+    = \sum_{n=1}^N{w_n K(\ell(h_n))},
+\end{equation}
+with the Gauss-Legendre scheme for $\alpha = 0$ and the Gauss-Jacobi scheme for $\alpha = 1$. %with the Gauss-Legendre scheme for $a=1$ ($\alpha = 0$, $\beta = 0$) and the Gauss-Jacobi scheme for $a=1/2$ ($\alpha = 1$, $\beta = 0$).
+After retrieving the weights $v_n$ and the roots $\varrho_n$ of the selected $N$-point quadrature in $[-1, +1]$, the weights and roots to use in Eq. \ref{eq:quad} are respectively:
+\begin{equation}
+\label{eq:wnrn}
+  w_n = \frac{\Delta r_i}{2} v_n \quad \text{and} \quad
+  h_n = r_{i+1/2}
+      - \left(\frac{1-\varrho_n}{2}\right)^{(1+\alpha)}
+        \Delta r_i.        
+\end{equation}
+Weights and roots are obtained by the Scipy v1.4.1 library (special.roots\_jacobi) and Numpy v1.18.2 (polynomial.legendre.leggauss). We note that the values from these libraries are different from the ones printed in the cited textbooks \cite{hebert2009applied,stamm1983methods}.
+
+
+\section{APPENDIX. Direct solution of integral transport by the collision probability method}
+\label{sec:CPMsolution}
+
+The integral transport equation for the scalar flux with isotropic sources can be written using the first flight collision probabilities as \cite{lewis1984computational,hebert2009applied}:
+\begin{subequations}
+\label{eq:cmp_eqn}
+\begin{equation}
+\label{eq:cmp1_eqn}
+V_i \sigma_i \phi_i = \sum_{j=1}^I {q_j V_j \tilde{p}_{ij}}
+                    + J^{(-)}_{b}S_{b} \tilde{p}_{ib},
+\end{equation}
+where $b$ stands for any boundary with a non-zero entering current $J^{(-)}_{b} = \phi_b / 4$, given as well by an isotropic angular flux. $\tilde{p}_{ij}$ and $\tilde{p}_{ib}$ are the probabilities of a neutron to have its first collision in the volume $V_i$ after being emitted isotropically in the volume $V_j$ or from the surface $S_b$, respectively. $b=I+1/2$ for the cylindrical and for the spherical geometries after placing the center at $x_a = 0$ ($a=-1/2$), whereas two incoming currents can be present in the slab. This equation can be simplified further by using the reciprocity property from Eqs. \ref{eq:reciprocity},
+\begin{equation}
+\label{eq:cmp2_eqn}
+\phi_i = \sum_{j=1}^I {q_j p_{ji}} + 4 J^{(-)}_{b} \tilde{e}_{bi}
+\end{equation}
+\end{subequations}
+with the reduced escape probability $p_{ji} = \tilde{p}_{ji} / \sigma_j$ and the escape probability counting for both the signed terms. The incoming current at the boundary can be given as fixed external source, or being expressed as proportional to the out-going current by means of an albedo $0 \leq \beta \leq 1$, like
+\begin{subequations}
+\label{eq:albedo}
+\begin{align}
+\label{eq:albedo_b}
+ % J^- = \beta J^+ = \beta \left(
+ %     \sum_{j=1}^I {\frac{q_j p_{jb}}{4}} + \tilde{t} J^-
+ %   \right),
+  J_b^- &= \beta_b J_b^+ = \beta_b \left(
+      \sum_{j=1}^I {\frac{q_j p_{jb}}{4}} + \tilde{r}_b J_b^- + \tilde{t}_{ba} \frac{S_a}{S_b} J_a^+
+    \right), \text{ and}\\
+\label{eq:albedo_a}
+  J_a^+ &= \beta_a J_a^- = \beta_a \left(
+      \sum_{j=1}^I {\frac{q_j p_{ja}}{4}} + \tilde{r}_a J_a^+ + \tilde{t}_{ab} \frac{S_b}{S_a} J_b^-
+    \right),
+\end{align}
+\end{subequations}
+with the reduced collision probability from the surface at $x_b$ thanks again to reciprocity. About \ref{eq:reciprocity2}, reciprocity always considers entering neutrons distributed according to the cosine described by the direction of flight and the normal to the same surface, yielding a cosine current by $J^\pm = \phi/4$, suitable to reproduce white reflection with $\beta = 1$. %yields the white reflection, that is isotropic inwards redistribution of the outgoing current, regardless of the outgoing direction.
+The reflection $\tilde{r}$ is the probability that a neutron enters the outer surface with the cosine distribution, travels inwards and leaves it back again without colliding. It must be zero in the slab, but not in the cylinder or in the sphere. Transmission is used instead when the leaving surface to be crossed is different from the entering one, and it is non-vanishing here only in the slab. Conservation applied in the cylinder or in the sphere implies that $\tilde{r}_b = 1 - \sum_j{\tilde{p}_{jb}}$, where we have also assumed implicitly no possible transmission in the derivation of their escape probabilities. Similarly in the slab, it is $\tilde{t}_{ab} = 1 - \sum_j{\tilde{p}_{jb}}$ for instance. Eq. \ref{eq:albedo_a} can be used for Eq. \ref{eq:albedo_b} to obtain an expression for $J_b^-$ that is suitable for substitution in Eq. \ref{eq:cmp1_eqn}. Eqs. \ref{eq:albedo} are in a general form for 1-D geometries, which simplify either in the slab or in the others.
+
+The source term considers only isotropic emission, and it is composed by scattering and fission production as in Eq. \ref{eq:srclg0}. In absence of external sources, the problem becomes homogeneous with the multiplication factor $k$ assuming the role of eigenvalue to avoid the only vanishing solution. Eqs. \ref{eq:cmp_eqn} hold for any energy group, whose index is dropped for simplicity.
+
+We setup hereafter an algebraic system equations for the unknown flux array $\vec{\phi}$ of size $(I \times G)$, flattened with the index of the spatial mesh running first. The extension of the solution method to problems with external sources in submultiplicative media is straightforward. Eq. \ref{eq:cmp2_eqn} for bare bodies, that is in presence of vacuum boundary condition, is rewritten as:
+\begin{equation}
+\label{eq:cpm_syseqns}
+(\mathbf{I} - \mathbf{P}\mathbf{S}) \vec{\phi}^{(n+1)} = \mathbf{P} (\chi \otimes \mathbf{F}) \vec{\phi}^{(n)} / k^{(n)},
+\end{equation}
+where the index $n$ addresses power method iterations to solve the eigenvalue problem. All matrices in Eq. \ref{eq:cpm_syseqns} are constructed by blocks. The matrix $\mathbf{P}$ is block diagonal with all (transposed) matrices of reduced collision probabilities per group, placed in increasing order from the fast groups, which are assigned to the lowest values of the index $g$ as usual. The matrix $\mathbf{S}$ is composed by $G \times G$ diagonal blocks with elements $[\sigma_{s, g \leftarrow g',j}\delta_{ij}, \, i, j=1, \ldots, I]$, contrary to the matrix $\mathbf{F}$ which has only G blocks set by columns and with elements $[\nu\sigma_{f, g, j}\delta_{ij}, \, i, j=1, \ldots, I]$. The new estimate of the flux vector is computed by multiplying the left side of the equation by the inverse of the removal matrix, i.e. $(\mathbf{I} - \mathbf{S} \mathbf{P})^{-1}$, assuming that it is invertible. The new estimate of the eigenvalue can be obtained by enforcing neutron conservation through the iterations, while achieving the convergence:
+\[
+  k^{(n+1)} = k^{(n)}
+    \frac{\langle \vec{\phi}^{(n+1)} | \mathbf{F} \vec{\phi}^{(n+1)} \rangle}{\langle \vec{\phi}^{(n+1)} | \mathbf{F} \vec{\phi}^{(n)} \rangle}.
+\]
+The full eigen-spectrum can be obtained by resolving the problem for the fission production reaction rates, showing smaller rank. First, note that $(\chi \otimes \mathbf{F}) = \mathbf{X} \mathbf{F}$, with $\mathbf{X}$ built by $G$ diagonal blocks stacked per row of the form $[\chi_{g,j}\delta_{ij}, \, i, j=1, \ldots, I]$. The eigen-solver operates then on the matrix $\mathbf{F}(\mathbf{I} - \mathbf{S} \mathbf{P})^{-1} \mathbf{P} \mathbf{X}$.
+
+In case the partial current is given by an albedo relation at the boundary of the cylinder (or of the sphere), the same solving scheme still holds after redefinition of the matrix $\mathbf{P}$:
+\[
+\mathbf{P} \leftarrow \mathbf{P} + \frac{\beta_b}{1 - \beta_b \tilde{r}} \mathbf{E}_b,
+\]
+with $\mathbf{E}_b = [\tilde{e}_{bi} p_{jb},\; 1 \leq i,j \leq I]$. This redefinition holds also for the slab in case of periodic boundary condition, i.e. $J_b^- = J_a^+$. Lastly for the slab, a general relation for the right boundary is
+%\[
+%J_b^- = \beta_b \left[
+%      \sum_{j=1}^I {\frac{q_j p_{jb}}{4}} + \tilde{t} \beta_a \left(
+%      \sum_{j=1}^I {\frac{q_j p_{ja}}{4}} + \tilde{t} J_b^- \right)
+%    \right]
+%\]
+\[ \mathbf{P} \leftarrow \mathbf{P} + 
+\frac{\beta_b}{1 - \beta_a \beta_b \tilde{t}^2}
+\left( \mathbf{E}_b + \beta_a \tilde{t} \mathbf{E}_a \right)
+\]
+with $\mathbf{E}_a = [\tilde{e}_{bi} p_{ja},\; 1 \leq i,j \leq I]$. The corresponding expression at the left boundary is easy to obtain.
 
 \setlength{\baselineskip}{12pt}
 % warning: the style plain may not be the one of the conference

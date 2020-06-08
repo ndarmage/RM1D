@@ -1,0 +1,98 @@
+\documentclass[preprint, authoryear, 12pt, a4paper, onecolumn]{elsarticle}
+%
+%  various packages that you may wish to activate for usage 
+%\usepackage{booktabs}
+%\usepackage{natbib}
+%\usepackage{cite}
+%\usepackage{epsf}
+\usepackage{bm}
+\usepackage[english]{babel}
+%\usepackage[autostyle, english = american]{csquotes}
+%\MakeOuterQuote{"}
+\usepackage{color}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{calrsfs}
+\usepackage{lineno}
+\usepackage[colorlinks=true, a4paper=true, pdfstartview=FitV,%
+            linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+% for algorithms
+% \usepackage{algorithm}
+% \usepackage{algpseudocode}
+
+\usepackage{tikz}
+\usepackage{xfrac}
+\usepackage{units}
+
+% For merging cells in tabulars
+\usepackage{array}
+%\usepackage{booktabs}
+\setlength{\heavyrulewidth}{1.5pt}
+\setlength{\abovetopsep}{4pt}
+
+\usepackage[printonlyused]{acronym}
+
+\journal{Annals of Nuclear Energy}
+
+\input{newcommands}
+
+\renewcommand{\cite}{\citep}
+
+\graphicspath{ {./figures/} }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   BEGIN DOCUMENT
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+	
+\begin{frontmatter}
+        
+  \title{Integral Transport Correction to Diffusion Calculations \\ Using the pCMFD Scheme}
+  
+  %% or include affiliations in footnotes:
+  \author[bgu]{R.~Gross}
+  \author[cea]{D.~Tomatis}
+  \author[bgu]{E.~Gilad\corref{cor1}}
+  \ead{gilade@bgu.ac.il}
+  
+  \cortext[cor1]{Corresponding author}
+  
+  \address[bgu]{The Unit of Nuclear Engineering, Ben-Gurion University of the Negev, Beer-Sheva 8410501, Israel}
+  \address[cea]{CEA, DEN, Service d{'}\'etudes des r\'eacteurs et de math\'ematiques appliqu\'ees (SERMA), \\
+                Universit\'e Paris-Saclay, F-91191, Gif-sur-Yvette, France}
+  
+  %------------------------------------------------------------
+  \input{abstract/abstract}
+  %------------------------------------------------------------
+  \begin{keyword}
+  \input{keywords}
+  \end{keyword}
+  %------------------------------------------------------------
+\end{frontmatter}
+
+%\clearpage
+
+\modulolinenumbers[5]
+\linenumbers
+
+\input{contents}
+
+% ------------------------------------------
+%\section*{ACKNOWLEDGEMENTS}
+%
+%Acknowledge the help of colleagues and sources of funding, as appropriate.
+%
+% ------------------------------------------
+
+\bibliographystyle{elsarticle-harv}
+\bibliography{RM-bib}
+
+% ------------------------------------------
+%\appendix
+%\gdef\thesection{APPENDIX \Alph{section}}
+%\section{Sample Appendix 1}
+%\label{app:a}
+%If necessary, include Appendices numbered in upper case alphabetical order. This is \ref{app:a}.
+%
+\end{document}

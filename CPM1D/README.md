@@ -11,11 +11,5 @@ description: This folder contains services to compute the 1D integral
 
 <!-- [Demo](http://lotabout.github.io/xxx/) -->
 
-A libraty for collision probability method in the 1d reference frames (slab,
+A libraty for collision probability method in 1d reference frames (slab,
 cyclinder and sphere), created by [ndarmage](https://github.com/ndarmage).
-
-## Installation
-
-```
-git clone https://github.com/ndarmage/CPM1D
-```

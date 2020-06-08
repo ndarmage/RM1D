@@ -8,6 +8,34 @@ education purposes of students at the Master program in Nuclear Engineering.
 The solving algorithm is based on the transport sweep and the common diamond
 differences scheme, see chapter 3 of [1].
 
+Cross sections data of different materials must be entered according to
+the following dictionary. Please, use zeroed arrays for chi and nsf for
+non-fissile media.
+
+xs_media = {
+    'name_of_media_1':{
+         'st': np.array with G elements
+         'ss': np.array with G*G*(anisotropy_order + 1) elements
+        'chi': np.array with G elements
+        'nsf': np.array with G elements
+    }
+    'name_of_media_2':{ ... }
+    ...
+}
+
+A list of lists is used to assign the materials to the geometry cells
+of the mesh, like for example:
+
+media = [
+    ['name_of_media_1', x_right_medium_1],
+    ['name_of_media_2', x_right_medium_2],
+    ...
+    ['name_of_media_N', x_right_medium_N]
+]
+where by definition it is always x_left_medium_1 = 0, and
+x_right_medium_(i) = x_left_medium_(i+1) for all i < N.
+
+
 ...
 
 Bibliography
@@ -29,16 +57,19 @@ __status__ = "Dev"
 __credits__ = [__author__]
 __version__ = "0.1.0"
 
+import logging as lg
 import sys, os
 import warnings as wrn
 import numpy as np
 from scipy.special import roots_legendre, legendre
 
-# Quadrature choice
-qtype = "Gauss-Legendre"
+sys.path.append(
+    os.path.join(os.path.dirname(__file__), '..', 'FD1dMGdiff')
+)
+from FDsDiff1D import input_data, solver_options, unfold_xs
 
 
-def get_dirs_and_weights(N=None, L=0):
+def get_dirs_and_weights(N=None, L=0, qtype="Gauss-Legendre"):
     """Compute directions and weights of the S_N quadrature set, and the
     (polynomial) functions for the flux expansion."""
     if N == None: raise ValueError("Missing input nb. of directions.")
@@ -56,6 +87,15 @@ def get_dirs_and_weights(N=None, L=0):
             # remind that the weights must sum to 2
         else: raise ValueError("Unsupported quadrature type")
     return mn, wn, pl
+
+
+class quad_data:
+    """Object collecting quadrature data."""
+    
+    def __init__(self, N=16, L=0, qtype='Gauss-Legendre'):
+        self.N, self.L, self.qtype = N, L, qtype
+        self.mn, self.wn, self.pl = get_dirs_and_weights(N, L, self.qtype)
+        #self.check_input()
 
 
 def differencing_by_SC(aflx, bflx, hm):
@@ -78,7 +118,7 @@ def tr_sweep(dx, st, qli, qdata, lbc=0, rbc=0):
     """Get new flux moments by the transport sweep. Boundary conditions: 0 for
     vacuum, 1 specular reflection, periodic translation otherwise. r/lbc, right
     or left."""
-    mn, wn, pl = qdata # qdata, quadrature data
+    mn, wn, pl = qdata.mn, qdata.wn, qdata.pl # qdata, quadrature data
     N = len(mn)
     L, I = qli.shape
     Nh = N // 2
@@ -180,14 +220,15 @@ def compute_fiss_src(nsf, chi, flxm):
     "Compute the fission source"
     nsff = np.sum(nsf * flxm[:, 0, :], axis=0) # sum on groups!
     # apply the emission spectrum, and add to the final source
-    return (0.5 * np.outer(chi, nsff))
+    return 0.5 * chi * nsff
 
 
-def solve_outers(dx, xs, qdata, flxm, k, oitsmax=20, toll=1.e-5, vrbs=True):
+def solve_outers(dx, xs, qdata, flxm, k, oitsmax=20, toll=1.e-5, 
+                 lbc=0, rbc=0, vrbs=True):
     "Solve the criticality problem by outer iterations."
     it, emax_outers = 0, 1.e+20
-    st, nsf, chi, ss = xs # cross sections data
-    mn, wn, pl = qdata # quadrature data
+    st, ss, chi, nsf = xs  # cross sections data
+    mn, wn, pl = qdata.mn, qdata.wn, qdata.pl # quadrature data
     #flxn = np.sum(flxm[:,0,:]) # volume-norm
     # (initial) compute the fission contribution
     nsff = compute_fiss_src(nsf, chi, flxm)
@@ -215,46 +256,69 @@ def solve_outers(dx, xs, qdata, flxm, k, oitsmax=20, toll=1.e-5, vrbs=True):
     return flxm, k
 
 
+def solve_sn(idata, slvr_opts, qdata):
+    '''Run SN solver.'''
+    lg.info("Prepare input data")
+    # xs = [st, ss, chi, nsf]
+    xs = unfold_xs(idata, diff_calc=False)
+    # initialize the cell-integrated flux moments
+    # (which are the only unknowns stored in memory at this higher level)
+    # and the multiplication factor (eigenvalue)
+    flxm = np.zeros((idata.G, qdata.L+1, idata.I),)
+    flxm[:, 0, :], k = 1., 1.
+    lg.info("-o"*22)
+
+    # start SN iterations
+    lg.info("Start the SN iterations")
+    flxm, k = solve_outers(idata.Di, xs, qdata, flxm, k, 
+                           slvr_opts.oitmax, slvr_opts.toll,
+                           idata.LBC, idata.RBC)
+        
+    lg.info("-o"*22)
+    lg.info("*** NORMAL END OF CALCULATION ***")
+    return flxm, k
+
+
 if __name__ == '__main__':
 
     # input general data
     I = 100 # nb. of cells
     a = 21.5 / 2. # slab width (cm)
-    N = 64 # nb. of directions
+    N = 16 # nb. of directions
     G = 2 # nb. of energy groups
     # L, maximum level of scattering anisotropy
     # (so that we will only compute flux moments up to the order L)
-    L = 2
+    L = 0
 
     # boundary conditions
-    lbc, rbc = 1, 0 # left / right b.c.
+    lbc, rbc = 1, 0  # left / right b.c.
 
     # input cross section data
-    st = np.zeros((G, I),)
-    nsf = np.zeros_like(st)
-    ss = np.zeros((G, G, L+1, I),)
     chi = np.array([1., 0.])
-    st0 = np.array([5.3115e-1, 1.30058e+0])
-    nsf0 = np.array([7.15848e-3, 1.41284e-1])
-    ssi = np.array([[5.04664e-1, 2.03884e-3], [1.62955e-2, 1.19134e+0]])
-    finf = np.linalg.solve(np.diag(st0) - ssi, chi)
-    kinf = np.dot(nsf0, finf)
+    st = np.array([5.3115e-1, 1.30058e+0])
+    nsf = np.array([7.15848e-3, 1.41284e-1])
+    ss0 = np.array([[5.04664e-1, 2.03884e-3], [1.62955e-2, 1.19134e+0]])
+    finf = np.linalg.solve(np.diag(st) - ss0, chi)
+    kinf = np.dot(nsf, finf)
     print("The k-infty of the homogeneous infinite slab is {:8.6f}.".format( \
         kinf))
     # (reference) k_\infty = 1.07838
 
     # fill input containers with the cross sections
-    for g in range(G):
-        st[g,:], nsf[g,:] = st0[g], nsf0[g]
-    for i in range(I): ss[:,:,0,i] = ssi
-    xs = [st, nsf, chi, ss]
+    chi = np.zeros((G, I),)
+    chi[0, :] = 1.
+    st = np.tile(st, (I, 1)).T
+    nsf = np.tile(nsf, (I, 1)).T
+    ss = np.zeros((G, G, L+1, I),)
+    for i in range(I): ss[:,:,0,i] = ss0
+    xs = [st, ss, chi, nsf]
 
     # define the spatial mesh
     dx = np.linspace(0., a, I+1)
     dx = dx[1:] - dx[:-1]
 
     # calculate the directions using the Gauss-Legendre quadrature
-    qdata = get_dirs_and_weights(N, L)
+    qdata = quad_data(N, L)
 
     # initialize the cell-integrated flux moments
     # (which are the only unknowns stored in memory at this higher level)
@@ -263,7 +327,8 @@ if __name__ == '__main__':
     flxm[:, 0, :], k = 1., 1.
 
     # solve the criticality problem by power iterations
-    flxm, k = solve_outers(dx, xs, qdata, flxm, k, oitsmax=100, toll=1.e-7)
+    flxm, k = solve_outers(dx, xs, qdata, flxm, k, oitsmax=100, toll=1.e-7,
+                           lbc=lbc, rbc=rbc)
     basefilen = "LBC%dRBC%d_I%d_N%d" % (lbc, rbc, I, N)
     # np.save(basefilen + ".npy", np.array([k, flxm]), allow_pickle=True)
     np.savez(basefilen + ".npz", k=k, flxm=flxm)
