@@ -14,7 +14,7 @@ docs/EPJP2019/**/*.pdf
 
 docs/ICTT2019/**/*.out
 docs/ICTT2019/**/*.log
-docs/ICTT2019/**/*.pdf
+docs/ICTT2019/**/RMethod_ictt26.pdf
 
 **/*.latexcfg
 docs/ANE2020/*.log

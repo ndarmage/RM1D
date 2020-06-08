@@ -4,6 +4,15 @@ author: Daniele Tomatis
 date: 30/09/2019
 ---
 
+```
+ ____  __  __ _ ____  
+|  _ \|  \/  / |  _ \ 
+| |_) | |\/| | | | | |
+|  _ <| |  | | | |_| |
+|_| \_|_|  |_|_|____/ 
+                      
+```
+
 # RonenMethod1D
 
 This repository contains the source files to implement the Ronen method in a 1D diffusion solver using finite differences. Currents are derived by the theory of collision probability methods following Hébert's and Lewis-and-Miller textbooks.
