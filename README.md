@@ -24,7 +24,7 @@ Three simple 1D geometry frames are studied: slab, cylinder and sphere.
 ## Installation
 
 ```
-git clone https://github.com/ndarmage/RonenMethod1D
+git clone https://github.com/ndarmage/RM1D
 ```
 
 # References
@@ -62,4 +62,3 @@ Please consider the following bibtex entries as references. The documentation to
   publisher={Springer}
 }
 ```
-
