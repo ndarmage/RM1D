@@ -26,3 +26,40 @@ Three simple 1D geometry frames are studied: slab, cylinder and sphere.
 ```
 git clone https://github.com/ndarmage/RonenMethod1D
 ```
+
+# References
+
+Please consider the following bibtex entries as references. The documentation to use this program will be published soon.
+
+```
+@article{ronen2004accurate,
+  title={Accurate relations between the neutron current densities and the neutron fluxes},
+  author={Ronen, Yigal},
+  journal={Nuclear science and engineering},
+  volume={146},
+  number={2},
+  pages={245--247},
+  year={2004},
+  publisher={Taylor \& Francis}
+}
+
+@inproceedings{tomatis2011application,
+  title={Application of a numerical transport correction in diffusion calculations},
+  booktitle={Proc. Int. Conf. on Mathematics and Computational Methods Applied to Nuclear Science and Engineering (M\&C 2011), Rio de Janeiro, RJ Brazil},
+  month={May 8--12},
+  author={Tomatis, Daniele and Dall'Osso, Aldo},
+  year={2011}
+}
+
+@article{gross2020high,
+  title={High-accuracy neutron diffusion calculations based on integral transport theory},
+  author={Gross, Roy and Tomatis, Daniele and Gilad, Erez},
+  journal={The European Physical Journal Plus},
+  volume={135},
+  number={2},
+  pages={235},
+  year={2020},
+  publisher={Springer}
+}
+```
+

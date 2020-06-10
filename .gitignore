@@ -8,20 +8,9 @@
 **/*.pyc
 **/*.synctex.gz
 
-docs/EPJP2019/**/*.log
-docs/EPJP2019/**/*.out
-docs/EPJP2019/**/*.pdf
-
-docs/ICTT2019/**/*.out
-docs/ICTT2019/**/*.log
-docs/ICTT2019/**/*.pdf
+docs/*
 
 **/*.latexcfg
-docs/ANE2020/*.log
-docs/ANE2020/*.out
-docs/ANE2020/*.spl
-docs/ANE2020/*.fdb_latexmk
-docs/ANE2020/**/*.pdf
 
 FD1dMGdiff/tests/output/*.npy
 FD1dMGdiff/tests/output/*.dat
