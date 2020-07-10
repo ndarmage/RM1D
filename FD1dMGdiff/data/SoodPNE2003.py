@@ -17,7 +17,7 @@ Table2 = \
 # Material nu Sf Sc Ss St c
 Pu-239 (a) 3.24 0.081600 0.019584 0.225216 0.32640 1.50
 Pu-239 (b) 2.84 0.081600 0.019584 0.225216 0.32640 1.40
-H20 (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
+H2O (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
 """
 
 Lc = {'PUa-1-0-SL': 1.853722,
@@ -39,11 +39,26 @@ def get_geoid(geo):
 
 
 def set_media(m, L, name):
-    xs_media = {name:{  # homogeneous medium
-        'st': m['st'], 'ss': m['ss'], 'nsf': m['nsf'],
-        'chi': m['chi'], 'D': m['D']}
-    }
-    media = [[name, L]]  # i.e. homogeneously filled
+    if isinstance(L, (tuple, list, np.ndarray)):
+        # hetergeneous media problem
+        if len(name) != len(L):
+            raise ValueError('input args of different size')
+        if not isinstance(m, dict):
+            raise ValueError('dict of materials needed as 1st input arg')
+        media, xs_media = [], dict()
+        for i, n in enumerate(name):
+            xs_media[n] = {
+                'st': m[n]['st'], 'ss': m[n]['ss'], 'nsf': m[n]['nsf'],
+                'chi': m[n]['chi'], 'D': m[n]['D']
+            }
+            media.append([n, L[i]])
+    else:
+        # homogeneous medium problem
+        xs_media = {name:{
+            'st': m['st'], 'ss': m['ss'], 'nsf': m['nsf'],
+            'chi': m['chi'], 'D': m['D']}
+        }
+        media = [[name, L]]
     return xs_media, media
 
 
@@ -110,7 +125,7 @@ get_line = lambda lines, key: [l for l in lines if key in l][0]
 materials = {
     'PUa': set_xs(get_line(tlines, 'Pu-239 (a)')),
     'PUb': set_xs(get_line(tlines, 'Pu-239 (b)')),
-    'H20': set_xs(get_line(tlines, 'H20 (refl)'))
+    'H2O': set_xs(get_line(tlines, 'H2O (refl)'))
 }
 
 G = 1  # nb of energy groups
