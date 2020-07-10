@@ -109,7 +109,7 @@ class input_data:
         if sorted(rbnd) != rbnd:
             raise ValueError('media list must be in order from left to right!')
         if not np.isclose(max(rbnd), self.L):
-            raise ValueError('Please check the right bounds of media (>L?)')
+            raise ValueError('Please check the right bounds of media (!=L?)')
 
     def __str__(self):
         s = ["Geometry type is " + self.geometry_type,
@@ -251,13 +251,15 @@ def equivolume_mesh(I, a=0, b=1, geometry_type="cylinder"):
     elif geometry_type != "slab":
         raise InputError("Unsupported geometry type")
     
-    r = np.cumsum(Vi * np.ones(I))
+    r = np.insert(np.cumsum(np.full(I, Vi)), 0, 0)
     if "cylind" in geometry_type:
-        r = np.sqrt(r - a**2)
+        r = np.sqrt(r + a**2)
     elif "spher" in geometry_type:
-        r = np.cbrt(r - a**3)
+        r = np.cbrt(r + a**3)
+    else:
+        r += a  # (slab)
     
-    return np.insert(r, 0, a)
+    return r
 
 
 def geomprogr_mesh(N=None, a=0, L=None, Delta0=None, ratio=None):
