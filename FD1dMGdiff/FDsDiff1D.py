@@ -845,8 +845,11 @@ def compute_D(Di, flx, pJ, BC=(0, 0), zero=1.e-6, chk=False):
     J, mflx_diff = Jp - Jm, flx[:, :-1] - flx[:, 1:]
     if J.size != G * (I + 1):
         raise ValueError('Unexpected size of input current.')
-    Db = np.array(J[:,1:-1], copy=True)
-    Db *= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1) / 2.
+    # the following two lines are simplified right next
+    # Db = np.array(J[:,1:-1], copy=True)
+    # Db *= np.tile(Di[1:] + Di[:-1], G).reshape(G, I-1) / 2.
+    # multiplication occurs always on last index, so:
+    Db = J[:,1:-1] * (Di[1:] + Di[:-1]) / 2
     # Because of the flux-limiting principle, the current must go to
     # zero faster than the flux. This may not happen in simple
     # diffusion. In this case, a division by zero will occur here.
@@ -860,8 +863,8 @@ def compute_D(Di, flx, pJ, BC=(0, 0), zero=1.e-6, chk=False):
     #: JL = -Db[:,  0] * flx[:, 0] / (0.5 * Di[ 0] + zetal * Db[:, 0])
     #: JR =  Db[:, -1] * flx[:,-1] / (0.5 * Di[-1] + zetar * Db[:,-1])
     a, b = J[:, 0] / flx[:, 0], J[:,-1] / flx[:,-1]
-    DbL = - a * 0.5 * Di[0] / (1. + a * zetal)
-    DbR = b * 0.5 * Di[-1] / (1. - b * zetar)
+    DbL, DbR = - a * 0.5 * Di[ 0] / (1. + a * zetal), \
+                 b * 0.5 * Di[-1] / (1. - b * zetar)
     if LBC == 2: DbL.fill(0.)  # but any value would be fine
     if RBC == 2: DbR.fill(0.)  # ...same as above
     Db = np.insert(Db, 0, DbL, axis=1)
@@ -1093,9 +1096,7 @@ def solve_RMits(data, xs, flx, k, slvr_opts, filename=None):
             # compute the corrective delta-diffusion-coefficients
             dD = compute_delta_D(flxd, J_diff, pJ_tran, slvr_opts.pCMFD)
         else:
-            # print('before',Db)
-            Db, dD = compute_D(Di, flx, pJ_tran, BC), None
-            # print('after', Db)
+            Db, dD = compute_D(Di, flxd, pJ_tran, BC), None
             xs[-1] = Db  # update bnd D coeffs
 
         flxold, kold = np.array(flx, copy=True), k
