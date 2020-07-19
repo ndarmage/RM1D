@@ -43,15 +43,17 @@ def get_fa(faid, ifa, L, nz=3):
 
 
 ########################################
-'''
-Problem to solve? Insert index number from 0 to 2:
-'''
-P = 2                      # Problem index to solve
-P_txt = problem_for_txt[P] # Problem No. according to benchmark
 
-########################################
+P = int(input("Which problem to solve? Insert index number from 0 to 2 \n \
+Index - 0 = Problem 4  - PUa-1-0-SL             \n \
+Index - 1 = Problem 25 - UD2O-H2O(1)-1-0-SL     \n \
+Index - 2 = Problem 26 - UD2O-H2O(10)-1-0-SL    \n \
+===>"))
 if (P < 0) or (P > 2):
     raise TypeError('Invalid test case. Choose between no. [0-2].')
+
+P_txt = problem_for_txt[P] # Problem No. according to benchmark
+########################################
 
 
 # definition of the spatial mesh

@@ -27,17 +27,17 @@ import numpy as np
 def MyWho():
      print([v for v in globals().keys() if not v.startswith('_')])
 
-########################################
-'''
-Problem to solve? Insert index number from 0 to 3:
-'''
-P = 1               # Problem index to solve
+P = int(input("Which problem to solve? Insert index number from 0 to 3 \n \
+Index - 0 = Problem 2  - PUa-1-0-SL   \n \
+Index - 1 = Problem 6  - PUb-1-0-SL   \n \
+Index - 2 = Problem 12 - Ua-1-0-SL    \n \
+Index - 3 = Problem 22 - UD2O-1-0-SL  \n \
+===>"))
+if (P < 0) or (P > 3):
+    raise TypeError('Invalid test case. Choose between no. [0-3].')
+
 P_txt = problem_for_txt[P] # Problem No. according to benchmark
 ########################################
-
-if (P < 0) or (P > 3):
-    raise TypeError('Invalid test case. Choose between no. [1-3].')
-
 
 # How many mfp? - No, of r_c:
 irc = 1
