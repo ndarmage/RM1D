@@ -14,7 +14,7 @@ import sys, os
 import numpy as np
 from scipy import interpolate
 from scipy.optimize import brentq
-from scipy.special import jv as Jv  # Bessel function of the first kind
+from scipy.special import jv as Jv  # Bessel function of teh first kind
 # from scipy.special import sici  # sine and cosine integrals
 # from scipy.special import struve  # Struve function
 J0, J1 = lambda z: Jv(0, z), lambda z: Jv(1, z)
@@ -24,33 +24,28 @@ from data.SoodPNE2003 import *
 from FDsDiff1D import input_data, solver_options, run_calc_with_RM_its
 from GeoMatTools import geomprogr_mesh, equivolume_mesh
 
-odir = "output"
+odir = "../output"
 refdir = os.path.join("..", "..", "CPM1D", "tests", "output")
 
 
-# Table 3
-# Critical Dimensions, rc, for One-Group Bare Pu-239 (c=1.50)
+# Table 14
+# CrItIcal Dimensions, rc, for One-Group Bare U-D2O Reactor (c=1.02)
 # Problem Identifier Geometry r, (mfp) rc (cm) Reference
-# 2 PUa-l-0-SL Slab 0.605055 1.853722 [16]
+# 22 UD2O-1-0-SL Slab 5.6655054562 10.371065 [35]
+# 23 UD2O-1-0-CY Cylinder 9.043255 16.554249 [36],[37]
+# 24 UD2O-1-0-SP Sphere 12.0275320980 22.017156 [35]
 
-# Table 4
-# Critical Dimensions, rc, for One-Group Bare Pu-239 (c=1.40)
-# Problem Identifier Geometry rc (mfp) rc (cm) Reference
-# 6 PUb-1-0-SL Slab     0.73660355   2.256751 [35]
-# 7 PUb-1-0-CY Cylinder 1.396979     4.279960 [36],[37]
-# 8 PUb-1-0-SP Sphere   1.9853434324 6.082547 [35]
-
-# Table 5
-# Normalized Scalar Fluxes for One-Group Bare Pu-239 (c=1.40)
+# Table 15
+# Normalized Scalar Fluxes for One-Group Bare U-D2O Reactor (c=1.02)
 # Problem Identifier Geometry r/rc = 0.25, r/rc = 0.5, r/rc = 0.75, r/rc = 1
-# 6 PUb-1-0-SL Slab     0.9701734  0.8810540  0.7318131  0.4902592
-# 7 PUb-1-0-CY Cylinder     -      0.8093         -      0.2926
-# 8 PUb-1-0-SP Sphere   0.93538006 0.75575352 0.49884364 0.19222603
+# 22 UD2O-1-0-SL Slab         0.93945236   0.76504084  0.49690627  0.13893858
+# 23 UD2O-1-0-CY Cylinder     -            -           -           -
+# 24 UD2O-1-0-SP Sphere       0.91063756   0.67099621  0.35561622  0.04678614
 
 refflx = {
-    'PUb-1-0-SL': np.array([0.9701734, 0.8810540, 0.7318131, 0.4902592]),
-    'PUb-1-0-CY': np.array([np.nan, 0.8093, np.nan, 0.2926]),
-    'PUb-1-0-SP': np.array([0.93538006, 0.75575352, 0.49884364, 0.19222603])
+    'UD2O-1-0-SL': np.array([0.93945236, 0.76504084, 0.49690627, 0.13893858]),
+    'UD2O-1-0-CY': np.array([np.nan, np.nan, np.nan, np.nan]),
+    'UD2O-1-0-SP': np.array([0.91063756, 0.67099621, 0.35561622, 0.04678614])
 }
 
 
@@ -59,7 +54,7 @@ if __name__ == "__main__":
     import logging as lg
     lg.info("***          Sood's test suite          ***")
     lg.info("*** 1G homogeneous isotropic scattering ***")
-    lg.info("***             PUx-1-0-x               ***")
+    lg.info("***             UD2O-1-0-x              ***")
     
     # positions (fractions r/rc) to verify the flux results
     rf = np.linspace(0, 1, 5)
@@ -67,77 +62,14 @@ if __name__ == "__main__":
     flx_tolerance[-1] = 2  # RM cannot fit transport at bare boundary
     
     # -------------------------------------------------------------------------- 
+    m = "UD2O"
+    BM2m, extrap_len = BM2(materials[m]), 2.13 * materials[m]['D'][0]
+    lg.info("Material buckling %.5f" % BM2m)
+    RBC = 0
 
-    # list of cases used for ICTT26 article (must disable tests)
     # [3, 4, 5, 8, 10, 12, 15, 20, 25, 30, 40, 50, 75, 100, 125, 150]
-    for I0 in [40]:
-    
-        # info: show that the PU case in half slab contains error and
-        #       cannot reproduce the expected solution
-               
-        m = 'PUa'  # only one case in the test suite
-        BM2m, extrap_len = BM2(materials[m]), 2.13 * materials[m]['D'][0]
-        lg.info("Material buckling %.5f" % BM2m)
-        geo = "slab"
-        case = "%s-1-0-%s" % (m, get_geoid(geo))
-        lg.info("Test case: " + case)
-        L = Lc[case] # * 2 # 1.853722 cm, critical length
-        lg.info("Critical length from benchmark is %.3f cm" % L)
-        # L = 0.605055  # mfp
-        L_e = L + extrap_len
-        xs_media, media = set_media(materials[m], L, m)
-    
-        # load reference results computed by CPM1D
-        # k_ref, flx_ref  = np.load(os.path.join(refdir, case + "_ref.npy"),
-                                  # allow_pickle=True)
-        I = I0  # number of cells in the spatial mesh (20 in complete slab)
-        r = equivolume_mesh(I, 0, L, geo)
-        # r = np.array([0, 1 / 8., 1 / 6., 0.9, 1]) * L
-        LBC, RBC = 2, 0
-        data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
-        lg.info(' -o-'*15)
-        lg.info('analytical solution of the diffusion equation')
-        BG = brentq(lambda b: np.tan(b*L) - 1 / extrap_len / b,
-                    1.e-5, .5 * np.pi / L - 1.e-5)
-        diffsol_ref = lambda x: np.cos(BG * x)
-        ansol, DFkref = diffsol_ref(data.xim), diffk_ref(BG**2, materials[m])
-        anorm = np.sin(BG * L) / BG
-        lg.info('fund. flx\n' + str(ansol / np.sum(ansol * data.Vi) * G * I))
-        lg.info('kinf = {:.6}, k_DIFF = {:.6f}, BG2 = {:.6f}'.format(
-            materials[m]['kinf'], DFkref, BG**2))
-        lg.info(' -o-'*15)
-        # ks is needed anyway when validating the input solver options
-        # diffusion problem
-        slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=0)
-        filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d_diff" %
-                                (LBC, RBC, I))
-        flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-        flx *= anorm / np.sum(flx) / data.Vi
-        rerr = (1 - flx[0, :] / ansol) * 100
-        np.save(filename.replace('_diff', '_andf') + '.npy', (DFkref, BG, rerr))
-        np.testing.assert_allclose(k, DFkref, atol=1.e-4, err_msg=case +
-            ": criticality against diffusion analytically solved not verified")
-        np.testing.assert_allclose(flx[0, :], ansol, rtol=1.e-4, err_msg=case +
-            ": numerical vs analytical (diffusion) fund. flux not verified")
-        
-        # transport problem
-        slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
-                                   pCMFD=False, Anderson_depth='auto')
-        filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
-                                (LBC, RBC, I))
-        flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-        np.testing.assert_allclose(k, 1.007, atol=1.e-2, err_msg=case +
-                                   ": criticality not verified")
-        # input('press a key to continue...')
-        lg.info('*'*77)
-        # ----------------------------------------------------------------------
-        
-        m = 'PUb'  # only one case in the test suite
-        BM2m, extrap_len = BM2(materials[m]), 2.13 * materials[m]['D'][0]
-        lg.info("Material buckling %.5f" % BM2m)
-        # rc_dict = {'slab': 2.256751,
-        #           'cylinder': 4.279960,
-        #           'sphere': 6.082547}  # critical lengths
+    for I0 in [50]:
+
         for geo in geoms:
             case = "%s-1-0-%s" % (m, get_geoid(geo))
             lg.info("Test case: " + case)
@@ -174,7 +106,7 @@ if __name__ == "__main__":
                     I = I0 #40
                     flx_tolerance *= 2
                     BG = brentq(lambda b: b*L - (1 - L/extrap_len)*np.tan(b*L),
-                        .5 * np.pi / L, np.pi / L)
+                        .5000001 * np.pi / L, np.pi / L)
                     diffsol_ref = lambda x: np.sin(BG * x) / x
                     # integration of sin(x)/x yields 'sine integral func'
                     # anorm, _ = sici(BG * L)
@@ -184,8 +116,8 @@ if __name__ == "__main__":
             # r = geomprogr_mesh(N=I, L=L, ratio=0.95)
             r = equivolume_mesh(I, 0, L, geo)
             
-            lg.info('Reference critical length (L) is %.6f cm' % L)
-            lg.info('Extrapolation distance (zeta*D) is %.3f cm' % extrap_len)
+            lg.info('Reference critical length (L) is %.6f' % L)
+            lg.info('Extrapolation distance (zeta*D) is %.3f' % extrap_len)
             xs_media, media = set_media(materials[m], L, m)
             data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=0,
                               per_unit_angle=True)

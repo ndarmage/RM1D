@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 # --*-- coding:utf-8 --*--
 """
 Data by Sood et al. used to verify MCNP and DANTSYS in the past [Sood2003]_.
@@ -12,18 +13,60 @@ import logging as lg
 
 one_third = 1. / 3.
 
+
 Table2 = \
 """
-# Material nu Sf Sc Ss St c
+# Material nu   Sf       Sc       Ss       St      c
 Pu-239 (a) 3.24 0.081600 0.019584 0.225216 0.32640 1.50
 Pu-239 (b) 2.84 0.081600 0.019584 0.225216 0.32640 1.40
 H2O (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
 """
 
+
+Table9 = \
+"""
+# Material nu       Sf       Sc       Ss       St      c
+U-235  (a) 2.70     0.065280 0.013056 0.248064 0.32640 1.30
+U-235  (b) 2.797101 0.065280 0.013056 0.248064 0.32640 1.3194202
+U-235  (c) 2.707308 0.065280 0.013056 0.248064 0.32640 1.3014616
+U-235  (d) 2.679198 0.065280 0.013056 0.248064 0.32640 1.2958396
+"""
+
+
+# water from Table 13 has same c, but different st
+Table13 = \
+"""
+# Material nu   Sf       Sc       Ss       St      c
+U-D2O      1.7  0.054628 0.027314 0.464338 0.54628 1.02
+H2O (refl) 0.0  0.0      0.054628 0.491652 0.54628 0.90
+"""
+
+
 Lc = {'PUa-1-0-SL': 1.853722,
       'PUb-1-0-SL': 2.256751,
       'PUb-1-0-CY': 4.279960,
-      'PUb-1-0-SP': 6.082547}  # critical lengths
+      'PUb-1-0-SP': 6.082547,
+      'Ua-1-0-SL' : 2.872934,
+      'Ua-1-0-CY' : 5.284935,
+      'Ua-1-0-SP' : 7.428998,
+      'UD2O-1-0-SL': 10.371065,
+      'UD2O-1-0-CY': 16.554249,
+      'UD2O-1-0-SP': 22.017156,
+      'PUa-H2O(1)-1-0-SL': 4.542175,
+      'PUa-H2O(0.5)-1-0-SL': 2.849725,
+      'PUb-H2O(1)-1-0-CY': 6.461335,
+      'PUb-H2O(10)-1-0-CY': 33.714829,
+      'Ub-H2O(1)-1-0-SP': 9.191176,
+      'Uc-H2O(2)-1-0-SP': 12.2549,
+      'Ud-H2O(3)-1-0-SP': 15.318626,
+      'UD2O-1-0-SL': 10.371065, 
+      'UD2O-1-0-CY': 16.554249, 
+      'UD2O-1-0-SP': 22.017156,
+      'UD2O-H2O(1)-1-0-SL': 11.044702,
+      'UD2O-H2O(10)-1-0-SL': 26.733726,
+      'UD2O-H2O(1)-1-0-CY': 17.227479,
+      'UD2O-H2O(10)-1-0-CY': 32.912288,
+      }  # critical lengths
 
 
 def get_geoid(geo):
@@ -65,7 +108,7 @@ def set_media(m, L, name):
 def set_xs(dstr):
     d = dict()
     d['nu'], d['sf'], d['sc'], d['ss'], d['st'], d['c'] = \
-        [np.array([float(v)]) for v in dstr.split()[2:]]
+        [np.array([float(v)]) for v in dstr.split()[-6:]]
     d['chi'], d['nsf'] = np.ones(1), d['nu'] * d['sf']
     d['sa'] = d['sc'] + d['sf']  # = d['st'] - d['ss']
     d['ss'] = np.ones((1,1,1),) * d['ss']
@@ -119,14 +162,23 @@ def analytical_sol(geo, L):
     return diffsol_ref, BG
 
 
-tlines = [l for l in Table2.split('\n')[1:-1] if not l.startswith('#')]
+tlines = lambda Tab: [l for l in Tab.split('\n')[1:-1]
+                      if not l.startswith('#')]
 get_line = lambda lines, key: [l for l in lines if key in l][0]
 
 materials = {
-    'PUa': set_xs(get_line(tlines, 'Pu-239 (a)')),
-    'PUb': set_xs(get_line(tlines, 'Pu-239 (b)')),
-    'H2O': set_xs(get_line(tlines, 'H2O (refl)'))
+    'PUa': set_xs(get_line(tlines(Table2), 'Pu-239 (a)')),
+    'PUb': set_xs(get_line(tlines(Table2), 'Pu-239 (b)')),
+    'H2O': set_xs(get_line(tlines(Table2), 'H2O (refl)')),
+    'Ua': set_xs(get_line(tlines(Table9), 'U-235  (a)')),
+    'Ub': set_xs(get_line(tlines(Table9), 'U-235  (b)')),
+    'Uc': set_xs(get_line(tlines(Table9), 'U-235  (c)')),
+    'Ud': set_xs(get_line(tlines(Table9), 'U-235  (d)')),
+    # 'H2O': set_xs(get_line(tlines(Table13), 'H2O (refl)')),
+    'UD2O': set_xs(get_line(tlines(Table13), 'U-D2O'))
 }
+
+geoms = ["slab", "cylinder", "sphere"]
 
 G = 1  # nb of energy groups
 
@@ -144,12 +196,20 @@ def calc_kinf(nsf, st=None, ss0=None, chi=None, flx_inf=None):
 if __name__ == "__main__":
 
     lg.info("*** Check homogeneous cross sections data ***")
-    ref_kinf = {'PUa': 2.612903, 'PUb': 2.290323}
+    ref_kinf = {'PUa': 2.612903,  # problem 1
+                'PUb': 2.290323,  # problem 5
+                'Ua': 2.250000,   # problem 11
+                'Ub': 2.330917,   # problem 15
+                'Uc': 2.256090,   # problem 17 (communicated 2.256083)
+                'Ud': 2.232665,   # problem 19 (communicated 2.232667)
+                'UD2O': 1.133333  # problem 21
+               }
     
     for m, xs in materials.items():
-        if "H20" in m: continue
-        lg.info(" %s-1-0-IN" % m)
+        if "H2O" in m: continue
+        case = " %s-1-0-IN" % m
+        lg.info(case)
         flx_inf = calc_flx_inf(xs['st'], xs['ss'], xs['chi'])
         kinf = calc_kinf(xs['nsf'], flx_inf=flx_inf)
         np.testing.assert_almost_equal(kinf, ref_kinf[m], decimal=6,
-            err_msg="kinf not verified.")
+            err_msg="kinf of case %s not verified." % case)
