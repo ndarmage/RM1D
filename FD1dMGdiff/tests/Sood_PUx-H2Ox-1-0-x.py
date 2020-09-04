@@ -19,7 +19,7 @@ from data.SoodPNE2003 import *
 from FDsDiff1D import input_data, solver_options, run_calc_with_RM_its
 from GeoMatTools import geomprogr_mesh, equivolume_mesh
 
-odir = "../output"
+odir = "output"  # output folder of test cases
 refdir = os.path.join("..", "..", "CPM1D", "tests", "output")
 
 
@@ -95,7 +95,7 @@ if __name__ == "__main__":
     #     r = np.append(r, equivolume_mesh(Ix, Lb, Le, geo)[1:])
     
     # data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
-    # slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=300, CMFD=True,
+    # slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
     #                            pCMFD=False, Anderson_depth='auto')
     # filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
     #                         (LBC, RBC, I))

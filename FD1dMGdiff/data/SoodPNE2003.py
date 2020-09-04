@@ -22,6 +22,7 @@ Pu-239 (b) 2.84 0.081600 0.019584 0.225216 0.32640 1.40
 H2O (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
 """
 
+
 Table9 = \
 """
 # Material nu       Sf       Sc       Ss       St      c
@@ -30,6 +31,7 @@ U-235  (b) 2.797101 0.065280 0.013056 0.248064 0.32640 1.3194202
 U-235  (c) 2.707308 0.065280 0.013056 0.248064 0.32640 1.3014616
 U-235  (d) 2.679198 0.065280 0.013056 0.248064 0.32640 1.2958396
 """
+
 
 # water from Table 13 has same c, but different st
 Table13 = \
@@ -205,14 +207,14 @@ def calc_kinf(nsf, st=None, ss0=None, chi=None, flx_inf=None):
 if __name__ == "__main__":
 
     lg.info("*** Check homogeneous cross sections data ***")
-    ref_kinf = {'PUa': 2.612903,  # problem 1
-                'PUb': 2.290323,  # problem 5
-                'Ua': 2.250000,   # problem 11
-                'Ub': 2.330917,   # problem 15
-                'Uc': 2.256090,   # problem 17 (communicated 2.256083)
-                'Ud': 2.232665,   # problem 19 (communicated 2.232667)
+    ref_kinf = {'PUa': 2.612903,   # problem 1
+                'PUb': 2.290323,   # problem 5
+                'Ua': 2.250000,    # problem 11
+                'Ub': 2.330917,    # problem 15
+                'Uc': 2.256090,    # problem 17 (communicated 2.256083)
+                'Ud': 2.232665,    # problem 19 (communicated 2.232667)
                 'UD2O': 1.133333,  # problem 21
-                'Ue': 2.1806667  # problem 29
+                'Ue': 2.1806667    # problem 29
                }
     
     for m, xs in materials.items():
