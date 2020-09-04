@@ -99,14 +99,14 @@
 \justify 
 
 \begin{abstract}
-  A comprehensive benchmark is performed for the CMFD and pCMFD implementations of the Ronen method in one-dimensional slab geometry. The CMFD/pCMFD implementations are validated against analytic solutions of homogeneous and heterogeneous configurations using one, two, and three energy groups. The validation is performed for the criticality eigenvalue and in some cases also for the spatial distribution of the neutron flux. The scattering is assumed to be isotropic in all cases. The results indicate that the CMFD/pCMFD implementations of the Ronen method achieve high accuracy in this set of problems. The maximal deviation in criticality is less than 20 pcm, and the maximal deviation in the spatial distribution of the flux is less than 2\% and is located on the boundary.  
+  A comprehensive benchmark is performed for the CMFD and pCMFD implementations of the Ronen method in one-dimensional slab geometry. The CMFD/pCMFD implementations are validated against analytic solutions of homogeneous and heterogeneous configurations using one, two, and three energy groups. The validation is performed for the criticality eigenvalue and, in some cases, also for the spatial distribution of the neutron flux. The scattering is assumed to be isotropic in all cases. The results indicate that the CMFD/pCMFD implementations of the Ronen method achieve high accuracy in this set of problems. The maximal deviation in criticality is less than 20 pcm, and the maximal deviation in the spatial distribution of the flux is less than 2\% and is located on the boundary.  
 \end{abstract}
 \keywords{Ronen method; Integral transport, CMFD, pCMPFD; Neutron diffusion}
 
 \section{INTRODUCTION} 
 \label{sec:intro}
 
-Full core neutron transport calculations are a demanding task and often faster multigroup neutron diffusion solvers are used. However, the diffusion approximation is invalidated near strong absorbing materials, interfaces, and boundaries, where strong gradients appear or in case anisotropic scattering is pronounced. 
+Full core neutron transport calculations are a demanding task, and often faster multigroup neutron diffusion solvers are used. However, the diffusion approximation is invalidated near strong absorbing materials, interfaces, and boundaries, where strong gradients appear or in case anisotropic scattering is pronounced. 
 
 \vspace{-1.5mm}
 
@@ -124,11 +124,11 @@ D^{(k+1)}\rE = \left. - \lvert \bm{J}^{(k)}\rE \rvert \middle/ \lvert \bnabla \p
 
 \vspace{-10.5mm}
 
-The Ronen method was implemented numerically using the Coarse Mesh Finite Difference (CMFD) scheme in the diffusion solver and employing correction factors the for leakage terms in the balance equation~\cite{Tomatis-2011}. The current correction factors were derived from the correction currents, which were estimated by the integral transport theory~\cite{Gross-2020}. This implementation eliminated the divergence problem in Eq.~\eqref{eq:RM-it} for small flux gradients and accurately reproduced the criticality eigenvalue and the associated eigenflux calculated by a reference discrete ordinates code. 
+The Ronen method was implemented numerically using the Coarse Mesh Finite Difference (CMFD) scheme in the diffusion solver and is employing correction factors for the leakage terms in the balance equation~\cite{Tomatis-2011}. The current correction factors were derived from the correction currents, which were estimated by the integral transport theory~\cite{Gross-2020}. This implementation eliminated the divergence problem in Eq.~\eqref{eq:RM-it} for small flux gradients and accurately reproduced the criticality eigenvalue and the associated eigenflux calculated by a reference discrete ordinates code. 
 
 \vspace{-1.5mm}
 
-In this study, the Ronen method is implemented using a variant of the CMFD method, i.e., the partial-currents CMFD (pCMFD)~\cite{Cho-2003}. In a sense, the pCMFD is a more natural choice of the Ronen method scheme, since the implementation of pCMFD can be naturally formulated in terms of partial currents. The performances of both implementations, CMFD and pCMFD, are thoroughly evaluated against an analytic benchmarks for the criticality eigenvalue and the spatial distribution of the associated critical eigenflux~\cite{Sood2003}.    
+In this study, the Ronen method is implemented using a variant of the CMFD method, i.e., the partial-currents CMFD (pCMFD)~\cite{Cho-2003}. In a sense, the pCMFD is a more natural choice of the Ronen method scheme, since the implementation of pCMFD can be naturally formulated in terms of partial currents. The performances of both implementations, CMFD and pCMFD, are thoroughly evaluated against analytic benchmarks for the criticality eigenvalue and the spatial distribution of the associated critical eigenflux~\cite{Sood2003}.    
 
 \section{NUMERICAL IMPLEMENTATION OF THE RONEN METHOD} 
 \label{sec:num-imp}
@@ -189,7 +189,7 @@ In the pCMFD implementation~\cite{Cho-2003}, two correction terms are introduced
 
 \section{RESULTS}
 
-The analytic benchmark of Sood et al. (2003)~\cite{Sood2003} presents one-dimensional homogeneous and heterogeneous critical configurations, including the associated one-, two-, and three-group cross-sections. For some problems, the spatial distribution of the flux is given at certain points. 
+The analytic benchmark of Sood et al. (2003)~\cite{Sood2003} presents one-dimensional homogeneous and heterogeneous critical configurations, including the associated one-, two-, and three-group cross-sections. For some problems, the spatial distribution of the flux is given at specific points. 
 %
 The deviations between the criticality eigenvalues, calculated using the CMFD and pCMFD implementations of the Ronen method ($\krm$, and $\kd$ for pure diffusion), and the reference eigenvalue ($\kref=1$) are shown in Table~\ref{table:res1} for a selected set of problems. The deviations are shown in both units of reactivity ($\Delta\rho = \left(\sfrac{1}{\kref}- \sfrac{1}{\kd,\krm}\right)\times 10^5$ [pcm]), and in relative error in the critical width ($\Delta w = \text{abs}\left[ \sfrac{ \left( \rc-\rcref\right)}{\rcref}\times 100\right]$ [\%]), where $r$ is the critical dimension, i.e., the distance from the fuel's center to one of the boundaries. The number of cells within the water region is $I_w$.
 %
@@ -253,11 +253,11 @@ The deviations between the CMFD normalized flux and the reference analytic solut
 
 \section{CONCLUSIONS}
 
-The Ronen method is implemented as an iterative scheme that employs an integral expression for the current to introduce new corrected currents. These corrections are used in diffusion solver to obtain more accurate solutions. The use of CMFD and pCMFD eliminates the possible division by zero when flux gradient tend to zero. No significant differences are observed between CMFD and pCMFD in terms of relative error in the criticality of the flux. 
+The Ronen method is implemented as an iterative scheme that employs an integral expression for the current to introduce new corrected currents. These corrections are used in a diffusion solver to obtain more accurate solutions. The use of CMFD and pCMFD eliminates the possible division by zero when the flux gradient tends to zero. No significant differences are observed between CMFD and pCMFD in terms of relative error in the criticality of the flux. 
 
 The preliminary results indicate that the CMFD/pCMFD implementations of the Ronen method achieve high accuracy in this set of problems. The maximal deviation in criticality is $\sim$20 pcm, and the maximal deviation in the spatial distribution of the flux is less than 2\% on the boundary.  
 %
-The full paper will include a comprehensive benchmark of the Ronen method that will provide better understanding on its performances, also in terms of numerical stability.
+The full paper will include a comprehensive benchmark of the Ronen method that will provide a better understanding of its performances, also in terms of numerical stability.
 
 %\section*{NOMENCLATURE}
 %If variables are extensively used in the text, a Nomenclature section would be helpful to the readers.
