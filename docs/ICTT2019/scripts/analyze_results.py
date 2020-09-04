@@ -79,11 +79,17 @@ refflx = {
 
 def get_allIs(list_of_files, case, RM=False):
     case_files = [f for f in list_of_files if get_case(f, RM) == case]
-    return sorted(list(set([get_I(c) for c in case_files])))
+    allIs = sorted(list(set([get_I(c) for c in case_files])))
+    if 0 in allIs:
+        allIs.remove(0)
+    return allIs
 
 
 def get_I(fn):
-    return int(fn.split('_I')[1].replace('.npy', ''))
+    if '_I' in fn:
+        return int(fn.split('_I')[1].replace('.npy', ''))
+    else:
+        return 0
 
 
 def get_case(fn, RM=False):
@@ -146,16 +152,19 @@ def plot_cpm1d_hslab_error(L, I_hslab, figname):
                     )
             rerr = (1 - flw[0,:][::-1] / flx[0,:I])*100
             a1.plot(xim(x), rerr, label='$\Delta_{RM} = %.3e$' % V[0]
-                    #, marker=next(ms)
+                    , marker='+'
                     , linestyle = next(ls), color='C2'
                     )
         
     a1.legend()
-    a1.set_xlabel('$x/L_c$')
-    a1.set_ylabel('$1 - \phi_{HS}/\phi_{FS} \: (\%)$')
-    a2.plot(Ds[shw], ks[shw], label='full-slab (FS)')
-    a2.plot(Ds[shw], hs[shw], label='half-slab (HS-CP)', ls='--')
-    # a2.plot(Ds[shw], ws[shw], label='half-slab (HS-RM)', ls='-.')
+    a1.set_xlabel('$x/r_c$')
+    a1.set_ylabel('$| 1 - \phi_{HS}/\phi_{FS} | \: (\%)$')
+    a2.plot(Ds[shw], ks[shw], label='FS-CP')
+    a2.plot(Ds[shw], abs(hs[shw]), label='HS-CP', ls='--')
+    # print(ks[shw])
+    # print(hs[shw])
+    # print(ws[shw])
+    a2.plot(Ds[shw], abs(ws[shw]), label='HS-RM', ls='-.')
     a2.set_ylabel('$1-k$ (pcm)')
     a2.set_xlabel('$\Delta$')
     a2.set_xscale('log')
@@ -305,12 +314,12 @@ if __name__ == "__main__":
         # print(I_hslab)
         # raise RuntimeError('lists differ')
 
-    if False:
+    if True:
         case = 'PUa-1-0-SL'
         plot_cpm1d_hslab_error(Lc[case], I_hslab,
             os.path.join(figdir, "cpm_hslab_err.pdf"))
     
-    if True:
+    if False:
         plot_cpm1d_PUb_flx(os.path.join(figdir, "cpm_PUb_%s.pdf"))
 
     sys.exit()
