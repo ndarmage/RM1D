@@ -1,0 +1,304 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  This is a sample LaTeX input file for your contribution to 
+%  the M&C2021 topical meeting.
+%
+%  Please use it as a template for your full paper 
+%    Accompanying/related file(s) include: 
+%       1. Document class/format file: mc2021.cls
+%       2. Sample PDF/Postscript Figure: figure.pdf,figure.ps
+%       3. A PDF file showing the desired appearance: mc2021_template.pdf
+%       4. cites.sty and citesort.sty that might be needed by some users 
+%    Direct questions about these files to: brantley1@llnl.gov
+%
+%    Notes: 
+%      (1) You can use the "dvips" utility to convert .dvi 
+%          files to PostScript.  Then, use either Acrobat 
+%          Distiller or "ps2pdf" to convert to PDF format. 
+%      (2) Different versions of LaTeX have been observed to 
+%          shift the page down, causing improper margins.
+%          If this occurs, adjust the "topmargin" value in the
+%          mc2021.cls file to achieve the proper margins. 
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\documentclass[letterpaper]{mc2021}
+%
+%  various packages that you may wish to activate for usage 
+\usepackage{tabls}
+\usepackage{cites}
+\usepackage{epsf}
+\usepackage{appendix}
+\usepackage{ragged2e}
+\usepackage[top=1in, bottom=1in, left=1in, right=1in]{geometry}
+\usepackage{enumitem}
+\setlist[itemize]{leftmargin=*}
+\usepackage{caption}
+\captionsetup{width=1.0\textwidth,font={bf,normalsize},skip=0.3cm,within=none,justification=centering}
+\usepackage{bm}
+\usepackage{xfrac}
+\usepackage{multirow}
+
+%\usepackage[justification=centering]{caption}
+
+%
+% Define title...
+%
+\title{COMPREHENSIVE BENCHMARK OF THE RONEN METHOD\\IN ONE-DIMENSIONAL PLAIN GEOMETRY}
+%
+% ...and authors
+%
+\author{%
+  % FIRST AUTHORS 
+  %
+  \textbf{Roy Gross$^1$, Daniele Tomatis$^2$, and Erez Gilad$^1$}\footnote{Corresponding author: Erez Gilad (gilade@bgu.ac.il)} \\
+  $^1$The Unit of Nuclear Engineering, Ben-Gurion University of the Negev\\ Beer-Sheva 8410501, Israel\\
+\\
+  $^2$DES, Service d'{\'e}tudes des r\'eacteurs et de math\'ematiques appliqu\'ees (SERMA)\\
+  CEA, Universit\'e Paris-Saclay, F-91191 Gif-sur-Yvette, France\\ 
+\\
+  \url{roygros@post.bgu.ac.il}, \url{daniele.tomatis@cea.fr}, \url{gilade@bgu.ac.il}
+}
+%
+% Insert authors' names and short version of title in lines below
+%
+\newcommand{\authorHead}{Roy Gross, Daniele Tomatis, Erez Gilad}
+\newcommand{\shortTitle}{Comprehensive benchmark of the Ronen Method}
+
+\newcommand{\tsup}[1]{\textsuperscript{#1}}
+\newcommand{\tsub}[1]{\textsubscript{#1}}
+\newcommand{\rr}{\bm{r}}
+\newcommand{\rE}{\ensuremath{(\rr,E)}}
+\newcommand{\bnabla}{\ensuremath{\bm{\nabla}}}
+\newcommand{\hzi}{\ensuremath{\sfrac{1}{2}}}
+\newcommand{\jD}{\ensuremath{J^{\textrm{\scriptsize{D}}}}}
+\newcommand{\jp}{\ensuremath{J^+}}
+\newcommand{\jm}{\ensuremath{J^-}}
+\newcommand{\keff}{\ensuremath{k_{\textrm{\scriptsize{eff}}}}}
+
+\newcommand{\kref}{\ensuremath{k_{\textrm{\scriptsize{ref}}}}}
+\newcommand{\kd}{\ensuremath{k_{\textrm{\scriptsize{D}}}}}
+\newcommand{\krm}{\ensuremath{k_{\textrm{\scriptsize{RM}}}}}
+\newcommand{\kinf}{\ensuremath{k_{\textrm{\scriptsize{$\infty$}}}}}
+\newcommand{\rcref}{\ensuremath{r_{\textrm{\scriptsize{c,ref}}}}}
+\newcommand{\rc}{\ensuremath{r_{\textrm{\scriptsize{c}}}}}
+\newcommand{\phiref}{\ensuremath{\phi_{\textrm{\scriptsize{ref}}}}}
+\newcommand{\phirm}{\ensuremath{\phi_{\textrm{\scriptsize{RM}}}}}
+
+\graphicspath{ {./figures/} }
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%   BEGIN DOCUMENT
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\begin{document}
+\maketitle
+\justify 
+
+\begin{abstract}
+  A comprehensive benchmark is performed for the CMFD and pCMFD implementations of the Ronen method in one-dimensional slab geometry. The CMFD/pCMFD implementations are validated against analytic solutions of homogeneous and heterogeneous configurations using one, two, and three energy groups. The validation is performed for the criticality eigenvalue and in some cases also for the spatial distribution of the neutron flux. The scattering is assumed to be isotropic in all cases. The results indicate that the CMFD/pCMFD implementations of the Ronen method achieve high accuracy in this set of problems. The maximal deviation in criticality is less than 20 pcm, and the maximal deviation in the spatial distribution of the flux is less than 2\% and is located on the boundary.  
+\end{abstract}
+\keywords{Ronen method; Integral transport, CMFD, pCMPFD; Neutron diffusion}
+
+\section{INTRODUCTION} 
+\label{sec:intro}
+
+Full core neutron transport calculations are a demanding task and often faster multigroup neutron diffusion solvers are used. However, the diffusion approximation is invalidated near strong absorbing materials, interfaces, and boundaries, where strong gradients appear or in case anisotropic scattering is pronounced. 
+
+\vspace{-1.5mm}
+
+The Ronen method (RM) is designed to overcome the inaccuracies of the diffusion approximation by correcting the diffusion currents, using the integral transport theory~\cite{Tomatis-2011,Gross-2020,Tomatis-2020}. The underlying hypothesis of the Ronen method is the modification of the current such that the neutron current approximated by Fick's law, $\bm{J}^D\rE$, will approach the accurate one, calculated by transport theory $\bm{J}\rE$, with the addition of a correction current $\delta\bm{J}\rE$,
+\begin{align}
+\label{eq:Fick}
+& \bm{J}\rE \cong \bm{J}^D\rE + \delta\bm{J}\rE \\ 
+& \bm{J}^D\rE = -D\rE\bnabla\phi\rE  \,\,.
+\end{align}
+Ronen also suggested an iterative update of the diffusion coefficients ($k$ is the iteration index) ~\cite{Ronen-2004},
+\begin{equation}
+\label{eq:RM-it}
+D^{(k+1)}\rE = \left. - \lvert \bm{J}^{(k)}\rE \rvert \middle/ \lvert \bnabla \phi^{(k)}\rE \rvert. \right.
+\end{equation}
+
+\vspace{-10.5mm}
+
+The Ronen method was implemented numerically using the Coarse Mesh Finite Difference (CMFD) scheme in the diffusion solver and employing correction factors the for leakage terms in the balance equation~\cite{Tomatis-2011}. The current correction factors were derived from the correction currents, which were estimated by the integral transport theory~\cite{Gross-2020}. This implementation eliminated the divergence problem in Eq.~\eqref{eq:RM-it} for small flux gradients and accurately reproduced the criticality eigenvalue and the associated eigenflux calculated by a reference discrete ordinates code. 
+
+\vspace{-1.5mm}
+
+In this study, the Ronen method is implemented using a variant of the CMFD method, i.e., the partial-currents CMFD (pCMFD)~\cite{Cho-2003}. In a sense, the pCMFD is a more natural choice of the Ronen method scheme, since the implementation of pCMFD can be naturally formulated in terms of partial currents. The performances of both implementations, CMFD and pCMFD, are thoroughly evaluated against an analytic benchmarks for the criticality eigenvalue and the spatial distribution of the associated critical eigenflux~\cite{Sood2003}.    
+
+\section{NUMERICAL IMPLEMENTATION OF THE RONEN METHOD} 
+\label{sec:num-imp}
+
+The neutron balance in the $i$\tsup{th} cell of a one-dimensional mesh is
+\begin{equation}
+\label{eq:balance}
+J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g},
+\end{equation}
+where $J$ is the net current at the cell's interfaces, $\sigma$ is the total cross-section, and the subscript $g$ denotes the energy group. The isotropic (scattering and fission) source term is denoted by $q$.
+
+\vspace{-1.5mm}
+
+\subsection{Formulation of the CMFD Scheme} 
+\label{sec:cmfd}
+
+In order to obtain a more accurate net current $J_{i+\hzi,g}$, a correction term $\delta J_{i+\hzi,g}$ is added to the diffusion-approximated current $\jD_{i+\hzi,g}$, which is is evaluated by a discretization of Fick's law, 
+\begin{equation}
+\label{eq:JD}
+\jD_{i+\hzi,g} \cong - D_{i+\hzi,g}
+\frac{\phi_{i+1,g} - \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2},
+\quad \text{where }
+D_{i+\hzi,g} = \frac{\Delta_i D_{i,g} + \Delta_{i+1} D_{i+1,g}}
+{\Delta_i + \Delta_{i+1}}.
+\end{equation}
+
+\vspace{-1.5mm}
+
+The integral expressions for the net current is used with the scalar flux in the emission source to obtain a more accurate estimation of the net current. In the Ronen method implementation, the correction terms $\delta J$ are obtained  iteratively as the difference between the net current $J$ and the diffusion-approximated current $\jD$, 
+\begin{equation}
+\label{eq:dJ}
+\delta J_{i+\hzi,g} = -\delta D_{i+\hzi,g}
+\frac{\phi_{i+1,g} + \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2} =
+J_{i+\hzi,g} - \jD_{i+\hzi,g},
+\end{equation}
+where discretized form of the correction term $\delta J_{i+\hzi,g}$ is the centered drift-advection term to avoid divergence due to small flux gradients~\cite{Tomatis-2011,Smith-1983}.
+
+\vspace{-1.5mm}
+
+\subsection{Formulation of the pCMFD Scheme} 
+\label{sec:pcmfd}
+
+In the pCMFD implementation~\cite{Cho-2003}, two correction terms are introduced per interface, consistent with the partition of the net current into two partial ones, i.e., $J = \jp - \jm = \jD + \delta J^+ + \delta J^-$, defined by $\delta \jp _{i+\hzi} = -\delta D^+ _{i+\hzi} \phi_i$ and $\delta \jm _{i+\hzi} = -\delta D^- _{i+\hzi} \phi_{i+1}$~\cite{Jarrett-2016,Zhu-2016}. By equally distributing the diffusion-approximated current on the partial currents, the relations between the net current, the diffusion-approximated currents and the correction terms are given by
+\begin{equation}
+\label{eq:delta-D-pCMFD}
+\pm \delta D^{\pm} _{i+\hzi} \phi_{i+(1\mp 1)/2} = 
+- J^\pm_{i+\hzi} \pm \frac{1}{2}\jD_{i+\hzi} .
+\end{equation}
+
+\vspace{-5.5mm}
+
+%\begin{figure}[!htb]
+%  \centering
+%  \includegraphics[scale=0.46]{./Figures/MCD-poster-2016}
+%  \caption{The Mathematics and Computation Division of the American Nuclear Society}
+%  \label{fig:mcd}
+%\end{figure}
+
+\section{RESULTS}
+
+The analytic benchmark of Sood et al. (2003)~\cite{Sood2003} presents one-dimensional homogeneous and heterogeneous critical configurations, including the associated one-, two-, and three-group cross-sections. For some problems, the spatial distribution of the flux is given at certain points. 
+%
+The deviations between the criticality eigenvalues, calculated using the CMFD and pCMFD implementations of the Ronen method ($\krm$, and $\kd$ for pure diffusion), and the reference eigenvalue ($\kref=1$) are shown in Table~\ref{table:res1} for a selected set of problems. The deviations are shown in both units of reactivity ($\Delta\rho = \left(\sfrac{1}{\kref}- \sfrac{1}{\kd,\krm}\right)\times 10^5$ [pcm]), and in relative error in the critical width ($\Delta w = \text{abs}\left[ \sfrac{ \left( \rc-\rcref\right)}{\rcref}\times 100\right]$ [\%]), where $r$ is the critical dimension, i.e., the distance from the fuel's center to one of the boundaries. The number of cells within the water region is $I_w$.
+%
+The deviations between the CMFD normalized flux and the reference analytic solutions,  $\Delta\phi = \left[\sfrac{\left(\phirm - \phiref\right)}{\phiref}\right]\times 100$ [\%], are shown in Table~\ref{table:res2} for a selected set of problems. 
+%
+\begin{table}[!htb]
+	\vspace{-7.5mm}	
+	\centering
+	\small
+	\caption{\bf Deviations of the eigenvalues \keff \ calculated by the RM from criticality.}
+	\label{table:res1} 
+  \begin{tabular}{|l|l|c|c|c|c|c|} \hline 
+	\multirow{2}{*}{Problem ID} & \multirow{2}{*}{Method} & \multicolumn{4}{c|}{$\Delta\rho$ [pcm], ($\Delta w$ [\%])} & \multirow{2}{*}{Comments} \\ 
+	\cline{3-6}
+	&  	 & $I_1 = 50$   & $I_2 = 100$ & $I_3 = 150$ & $I_4 = 200$    & \\ 
+	\hline
+	\multirow{3}{*}{PUa-1-0-SL} 		 & Diffusion  & -12,099,(-)  & -12,108,(-) & -12,109,(-) &-12,110,(-)   & \multirow{2}{*}{}\\ 
+	\cline{2-6}
+	& RM-CMFD  & -10, (0.016) & -3, (0.005) & -1, (0.002) & 0, (0.002)      & \multirow{2}{*}{}\\ 
+	\cline{2-6}
+	& RM-pCMFD & -10, (0.016) & -3, (0.005) & -1, (0.002) & -1, (0.0) & \\ 
+	\hline
+	\multirow{3}{*}{Ua-1-0-SL} 		     & Diffusion  & -7,541, (-)  & -7,550, (-) & -7,552, (-)  & -7553, (-)  & \multirow{2}{*}{}\\ 
+	\cline{2-6}
+	& RM-CMFD  & -19, (0.027)  & -5, (0.006) & -2, (0.002)  & -1, (0.0)  & \multirow{2}{*}{}\\ 
+	\cline{2-6}
+	& RM-pCMFD & -19, (0.027)  & -5, (0.006) & -2, (0.002)  & -1, (0.0)	  & \\ 
+	\hline
+	\multirow{2}{*}{PUa-H2O(0.5)-1-0-SL} & Diffusion  & -15,921, (-) & -15,927, (-) & -15,928, (-) & -15,928, (-) & \multirow{2}{*}{$I_w = 0.5\times I_f$} \\ 
+	\cline{2-6}
+	& RM-CMFD  & -8, (0.011)  & -3, (0.005) & -3, (0.001)	& -1, (0.001) &  \\ 
+	\cline{2-6}
+	& RM-pCMFD &-8, (0.011)	& -3, (0.005) & -1, (0.001)	& -1, (0.001) & \\ 
+	\hline
+\end{tabular}
+\end{table}
+%
+\begin{table}[!htb]
+	\vspace{-5.5mm}
+	\centering
+	\small
+	\caption{\bf Deviations of the normalized flux calculated by the RM from the analytic solution.}
+	\label{table:res2} 
+	\begin{tabular}{|c|c|c|c|c|c|c|} \hline 
+	\multirow{2}{*}{Problem ID} & \multirow{2}{*}{Method} & \multicolumn{4}{c|}{$\Delta\phi$ [\%]} & \multirow{2}{*}{Comments} \\
+	\cline{3-6}
+	& & $r_1 = 0.25$ & $r_2 = 0.5$ & $r_3 = 0.75$ & $r_4 = 1.0$ & \\
+	\hline
+	\multirow{2}{*}{Pub-1-0-SL} & Diffusion  & 0.63 & 2.88 & 8.46 & 31.25 & \multirow{2}{*}{$I=100$} \\
+	\cline{2-6}
+	& RM-CMFD 	     & 0.0 & 0.0 & 0.0 & 0.8 & \\ \hline
+	\multirow{2}{*}{Ua-1-0-SL}  & Diffusion  & 0.53 & 2.42 & 7.39 & 30.72 & \multirow{2}{*}{$I=100$}\\
+	\cline{2-6} 
+	& RM-CMFD       & 0.0 & 0.0 & 0.01 & 1.44 & \\ \hline 
+	\multirow{2}{*}{UD20-1-0-SL} & Diffusion & 1.14 & 4.1 & 7.85 & 35.58 & \multirow{2}{*}{$I=200$} \\ 
+	\cline{2-6} 		
+	& RM-CMFD      & 0.0 & 0.0 & 0.0 & 1.89 & \\ \hline 		
+\end{tabular}
+\vspace{-5.0mm}
+\end{table}
+
+\section{CONCLUSIONS}
+
+The Ronen method is implemented as an iterative scheme that employs an integral expression for the current to introduce new corrected currents. These corrections are used in diffusion solver to obtain more accurate solutions. The use of CMFD and pCMFD eliminates the possible division by zero when flux gradient tend to zero. No significant differences are observed between CMFD and pCMFD in terms of relative error in the criticality of the flux. 
+
+The preliminary results indicate that the CMFD/pCMFD implementations of the Ronen method achieve high accuracy in this set of problems. The maximal deviation in criticality is $\sim$20 pcm, and the maximal deviation in the spatial distribution of the flux is less than 2\% on the boundary.  
+%
+The full paper will include a comprehensive benchmark of the Ronen method that will provide better understanding on its performances, also in terms of numerical stability.
+
+%\section*{NOMENCLATURE}
+%If variables are extensively used in the text, a Nomenclature section would be helpful to the readers.
+
+\section*{ACKNOWLEDGEMENTS}
+
+This research was supported by the Ministry of Energy as part of the scholarship program for undergraduate and graduate students in energy-related fields, contract no. 219-01-045.
+% You can enter a bibliography into the document using either BibTex with the bibliography
+% style file "mc2021.bst" found in the template directory or using the standard LaTeX
+% thebibliography environment.
+
+\newif\ifusebibtex
+%\usebibtexfalse
+\usebibtextrue
+
+\ifusebibtex
+\setlength{\baselineskip}{12pt}
+\bibliographystyle{mc2021}
+\bibliography{RM-MC2021}
+\else
+\setlength{\baselineskip}{12pt}
+\begin{thebibliography}{300}
+\bibitem{journal} B. Author(s), ``Title,'' \emph{Journal Name in Italic}, 
+  \textbf{Volume in Bold}, pp. 34-89 (19xx).
+\bibitem{proc_paper} C. D. Author(s), ``Article Title,'' \emph{Proceedings of
+  Meeting in Italic}, Location, Dates of Meeting, Vol. n, pp. 134-156 
+  (19xx).
+\bibitem{book} E. F. Author, \emph{Book Title in Italic}, Publisher, City \&
+  Country (19xx). 
+\bibitem{website} ``Spallation Neutron Source: The next-generation 
+  neutron-scattering facility in the United States,'' 
+  \url{http://www.sns.gov/documentation/sns\_brochure.pdf} (2002).
+\end{thebibliography}
+\fi
+
+%\appendix
+%\gdef\thesection{APPENDIX \Alph{section}}
+%\section{Sample Appendix 1}
+%\label{app:a}
+%If necessary, include Appendices numbered in upper case alphabetical order. This is \ref{app:a}. 
+
+
+
+\end{document}
