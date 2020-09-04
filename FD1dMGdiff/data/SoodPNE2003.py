@@ -22,7 +22,6 @@ Pu-239 (b) 2.84 0.081600 0.019584 0.225216 0.32640 1.40
 H2O (refl) 0.0  0.0      0.032640 0.293760 0.32640 0.90
 """
 
-
 Table9 = \
 """
 # Material nu       Sf       Sc       Ss       St      c
@@ -32,7 +31,6 @@ U-235  (c) 2.707308 0.065280 0.013056 0.248064 0.32640 1.3014616
 U-235  (d) 2.679198 0.065280 0.013056 0.248064 0.32640 1.2958396
 """
 
-
 # water from Table 13 has same c, but different st
 Table13 = \
 """
@@ -41,6 +39,13 @@ U-D2O      1.7  0.054628 0.027314 0.464338 0.54628 1.02
 H2O (refl) 0.0  0.0      0.054628 0.491652 0.54628 0.90
 """
 
+Table17 = \
+"""
+# Material nu   Sf         Sc         Ss          St          c
+U-235 (e)  2.50 0.06922744 0.01013756 0.328042    0.407407    1.230
+Fe (refl)  0.0  0.0        0.00046512 0.23209488  0.23256     0.9980
+Na  (mod)  0.0  0.0        0.0        0.086368032 0.086368032 1.0
+"""
 
 Lc = {'PUa-1-0-SL': 1.853722,
       'PUb-1-0-SL': 2.256751,
@@ -66,6 +71,7 @@ Lc = {'PUa-1-0-SL': 1.853722,
       'UD2O-H2O(10)-1-0-SL': 26.733726,
       'UD2O-H2O(1)-1-0-CY': 17.227479,
       'UD2O-H2O(10)-1-0-CY': 32.912288,
+      'Ue-Fe-Na-1-0-SL' : 7.757166007, # total critical length 
       }  # critical lengths
 
 
@@ -175,7 +181,10 @@ materials = {
     'Uc': set_xs(get_line(tlines(Table9), 'U-235  (c)')),
     'Ud': set_xs(get_line(tlines(Table9), 'U-235  (d)')),
     # 'H2O': set_xs(get_line(tlines(Table13), 'H2O (refl)')),
-    'UD2O': set_xs(get_line(tlines(Table13), 'U-D2O'))
+    'UD2O': set_xs(get_line(tlines(Table13), 'U-D2O')),
+    'Ue': set_xs(get_line(tlines(Table17), 'U-235 (e)')),
+    'Fe': set_xs(get_line(tlines(Table17), 'Fe (refl)')),
+    'Na': set_xs(get_line(tlines(Table17), 'Na  (mod)'))
 }
 
 geoms = ["slab", "cylinder", "sphere"]
@@ -202,7 +211,8 @@ if __name__ == "__main__":
                 'Ub': 2.330917,   # problem 15
                 'Uc': 2.256090,   # problem 17 (communicated 2.256083)
                 'Ud': 2.232665,   # problem 19 (communicated 2.232667)
-                'UD2O': 1.133333  # problem 21
+                'UD2O': 1.133333,  # problem 21
+                'Ue': 2.1806667  # problem 29
                }
     
     for m, xs in materials.items():

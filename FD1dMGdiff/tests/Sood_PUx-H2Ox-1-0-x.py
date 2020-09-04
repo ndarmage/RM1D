@@ -19,7 +19,7 @@ from data.SoodPNE2003 import *
 from FDsDiff1D import input_data, solver_options, run_calc_with_RM_its
 from GeoMatTools import geomprogr_mesh, equivolume_mesh
 
-odir = "output"
+odir = "../output"
 refdir = os.path.join("..", "..", "CPM1D", "tests", "output")
 
 
@@ -55,121 +55,95 @@ if __name__ == "__main__":
     
     # Problem 3
     m, geo = 'PUa', 'slab'
-    LBC, RBC = 2, 0
+    LBC, RBC = 0, 0
     case = "%s-H2O(1)-1-0-%s" % (m, get_geoid(geo))
-    L0, L1, L = 1.478450, 3.063725, Lc[case]
-    I0 = 40  # nb. of cells in the fuel
+    L0, L1, L = 1.47840, 3.063725, Lc[case]
+    I0 = 80  # nb. of cells in the fuel
     I1 = I0*2
     I = I0 + I1
     
-    # attempts to understand the problem specifications, which are not
-    # sufficiently clear
     
-    # option 1
-    # widths_of_buffers = [L0, L]
-    # repetitions = 2
-    # for i in range(repetitions - 1):
-        # widths_of_buffers += [(i + 1) * L + L0, (i + 2)*L]
-    # xs_media, media = set_media(materials,
-        # widths_of_buffers, [m, 'H2O'] * repetitions)
-    # r = equivolume_mesh(I0, 0, widths_of_buffers[0], geo)
-    # for i in range(repetitions * 2 - 1):
-        # Lb, Le = widths_of_buffers[i], widths_of_buffers[i+1]
-        # Ix = I1 if i % 2 == 0 else I0
-        # r = np.append(r, equivolume_mesh(Ix, Lb, Le, geo)[1:])
-    
-    # option 2
-    # widths_of_buffers = [L1, L, L+L1]
-    # xs_media, media = set_media(materials,
-        # widths_of_buffers, ['H2O', m, 'H2O'])
-    # r = equivolume_mesh(I1, 0, widths_of_buffers[0], geo)
-    # for i in range(2):
-        # Lb, Le = widths_of_buffers[i], widths_of_buffers[i+1]
-        # Ix = I0 if i % 2 == 0 else I1
-        # r = np.append(r, equivolume_mesh(Ix, Lb, Le, geo)[1:])
-    
-    # option 3
-    # widths_of_buffers = [L0, L]
-    # xs_media, media = set_media(materials,
-        # widths_of_buffers, [m, 'H2O'])
-    # r = equivolume_mesh(I0, 0, widths_of_buffers[0], geo)
-    # r = np.append(r, equivolume_mesh(I1, *widths_of_buffers, geo)[1:])
-    
-    # data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
-    # slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
-                               # pCMFD=False, Anderson_depth='auto')
-    # filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
-                            # (LBC, RBC, I))
-    # flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-    # np.testing.assert_allclose(k, 1.0, atol=1.e-5, err_msg=case +
-                               # ": criticality not verified")
-    
-    # Problem 4
-    I0 = 180  # to get 5 significative digits, i.e. error below 1 pcm.
-    case = "%s-H2O(0.5)-1-0-%s" % (m, get_geoid(geo))
-    L0, L1, L = 1.317862, 1.531863, Lc[case]
-    LBC = RBC = 0
-    I1 = I0
-    I = I1 + I0
-    widths_of_buffers = [L1, L + L0, 2*L]
+    widths_of_buffers = [2*L0, 2*L0+L1]
     xs_media, media = set_media(materials,
-        widths_of_buffers, ['H2O', m, 'H2O'])
-    r = equivolume_mesh(I1, 0, widths_of_buffers[0], geo)
-    for i in range(2):
-        Lb, Le = widths_of_buffers[i], widths_of_buffers[i+1]
-        Ix = I0 if i % 2 == 0 else I1
-        r = np.append(r, equivolume_mesh(Ix, Lb, Le, geo)[1:])
+        widths_of_buffers, [m, 'H2O'])
+    r = equivolume_mesh(I0, 0, widths_of_buffers[0], geo)
+    r = np.append(r, equivolume_mesh(I1, *widths_of_buffers, geo)[1:])
     
     data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
-    slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=300, CMFD=True,
-                               pCMFD=False, Anderson_depth='auto')
-    filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
-                            (LBC, RBC, I))
-    flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-    np.testing.assert_allclose(k, 1.0, atol=1.e-4, err_msg=case +
-                               ": criticality not verified")
-    
-    # Problem 9
-    m, geo = 'PUb', 'cylinder'
-    case = "%s-H2O(1)-1-0-%s" % (m, get_geoid(geo))
-    L0, L1, L = 3.397610, 3.063725, Lc[case]
-    LBC, RBC = 2, 0
-    I1 = I0 = 50  # to get error on k less than 10 pcm
-    I = I1 + I0
-    nks = 4
-    xs_media, media = set_media(materials, [L0, L], [m, 'H2O'])
-    r = equivolume_mesh(I0, 0, L0, geo)
-    r = np.append(r, equivolume_mesh(I1, L0, L, geo)[1:])
-    
-    data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC,
-                      per_unit_angle=True)
     slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
-                               pCMFD=False, Anderson_depth='auto',
-                               ks=np.full(I, nks))
+                                pCMFD=False, Anderson_depth='auto')
     filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
                             (LBC, RBC, I))
     flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-    np.testing.assert_allclose(k, 1.0, atol=1.e-4, err_msg=case +
-                               ": criticality not verified")
+    np.testing.assert_allclose(k, 1.0, atol=1.e-5, err_msg=case +
+                                ": criticality not verified")
     
-    # Problem 10 ... a big number of cells might be necessary
-    case = "%s-H2O(10)-1-0-%s" % (m, get_geoid(geo))
-    L0, L1, L = 3.077574, 30.637255, Lc[case]
-    LBC, RBC = 2, 0
-    I1 = I0 = 30  # ? to get error on k less than 10 pcm
-    I = I1 + I0
-    nks = 4
-    xs_media, media = set_media(materials, [L0, L], [m, 'H2O'])
-    r = equivolume_mesh(I0, 0, L0, geo)
-    r = np.append(r, equivolume_mesh(I1, L0, L, geo)[1:])
+    # # Problem 4
+    # I0 = 180  # to get 5 significative digits, i.e. error below 1 pcm.
+    # case = "%s-H2O(0.5)-1-0-%s" % (m, get_geoid(geo))
+    # L0, L1, L = 1.317862, 1.531863, Lc[case]
+    # LBC = RBC = 0
+    # I1 = I0
+    # I = I1 + I0
+    # widths_of_buffers = [L1, L + L0, 2*L]
+    # xs_media, media = set_media(materials,
+    #     widths_of_buffers, ['H2O', m, 'H2O'])
+    # r = equivolume_mesh(I1, 0, widths_of_buffers[0], geo)
+    # for i in range(2):
+    #     Lb, Le = widths_of_buffers[i], widths_of_buffers[i+1]
+    #     Ix = I0 if i % 2 == 0 else I1
+    #     r = np.append(r, equivolume_mesh(Ix, Lb, Le, geo)[1:])
     
-    data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC,
-                      per_unit_angle=True)
-    slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
-                               pCMFD=False, Anderson_depth='auto',
-                               ks=np.full(I, nks))
-    filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
-                            (LBC, RBC, I))
-    flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
-    np.testing.assert_allclose(k, 1.0, atol=1.e-4, err_msg=case +
-                               ": criticality not verified")
+    # data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC)
+    # slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=300, CMFD=True,
+    #                            pCMFD=False, Anderson_depth='auto')
+    # filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
+    #                         (LBC, RBC, I))
+    # flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
+    # np.testing.assert_allclose(k, 1.0, atol=1.e-4, err_msg=case +
+    #                            ": criticality not verified")
+    
+    # # Problem 9
+    # m, geo = 'PUb', 'cylinder'
+    # case = "%s-H2O(1)-1-0-%s" % (m, get_geoid(geo))
+    # L0, L1, L = 3.397610, 3.063725, Lc[case]
+    # LBC, RBC = 2, 0
+    # I1 = I0 = 50  # to get error on k less than 10 pcm
+    # I = I1 + I0
+    # nks = 4
+    # xs_media, media = set_media(materials, [L0, L], [m, 'H2O'])
+    # r = equivolume_mesh(I0, 0, L0, geo)
+    # r = np.append(r, equivolume_mesh(I1, L0, L, geo)[1:])
+    
+    # data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC,
+    #                   per_unit_angle=True)
+    # slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
+    #                            pCMFD=False, Anderson_depth='auto',
+    #                            ks=np.full(I, nks))
+    # filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
+    #                         (LBC, RBC, I))
+    # flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
+    # np.testing.assert_allclose(k, 1.0, atol=1.e-4, err_msg=case +
+    #                            ": criticality not verified")
+    
+    # # Problem 10 ... a big number of cells might be necessary
+    # case = "%s-H2O(10)-1-0-%s" % (m, get_geoid(geo))
+    # L0, L1, L = 3.077574, 30.637255, Lc[case]
+    # LBC, RBC = 2, 0
+    # I1 = I0 = 30  # ? to get error on k less than 10 pcm
+    # I = I1 + I0
+    # nks = 4
+    # xs_media, media = set_media(materials, [L0, L], [m, 'H2O'])
+    # r = equivolume_mesh(I0, 0, L0, geo)
+    # r = np.append(r, equivolume_mesh(I1, L0, L, geo)[1:])
+    
+    # data = input_data(xs_media, media, r, geo, LBC=LBC, RBC=RBC,
+    #                   per_unit_angle=True)
+    # slvr_opts = solver_options(iitmax=5, oitmax=5, ritmax=200, CMFD=True,
+    #                            pCMFD=False, Anderson_depth='auto',
+    #                            ks=np.full(I, nks))
+    # filename = os.path.join(odir, case + "_LBC%dRBC%d_I%d" %
+    #                         (LBC, RBC, I))
+    # flx, k = run_calc_with_RM_its(data, slvr_opts, filename)
+    # np.testing.assert_allclose(k, 1.0, atol=1.e-4, err_msg=case +
+    #                            ": criticality not verified")
