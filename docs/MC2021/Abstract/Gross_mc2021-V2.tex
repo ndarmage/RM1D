@@ -117,9 +117,12 @@ The Ronen method (RM) is designed to overcome the inaccuracies of the diffusion 
 \vspace{-1.5mm}
 
 Originally, Ronen suggested to update the diffusion coefficient as ($k$ is the iteration index)~\cite{Ronen-2004}
-\begin{equation}
-\label{eq:RM-it}
-D^{(k+1)}\rE = \left. - \lvert \bm{J}^{(k)}\rE \rvert \middle/ \lvert \bnabla \phi^{(k)}\rE \rvert. \right.
+\begin{equation}\label{eq:RM-it}
+	D^{(k+1)}(x,E) = -\frac{\displaystyle \frac{1}{2}\int_0^a dx' E_2[\sigma(E)\lvert
+		x-x'\rvert]\operatorname{Sgn}(x-x')q^{(k)}(x',E)}
+	{\partial \phi^{(k)}(x,E)/\partial x}.
+%\label{eq:RM-it}
+%D^{(k+1)}\rE = \left. - \lvert \bm{J}^{(k)}\rE \rvert \middle/ \lvert \bnabla \phi^{(k)}\rE \rvert. \right.
 \end{equation}
 
 \vspace{-10.5mm}
@@ -142,7 +145,7 @@ In this study, the RM is implemented using a variant of the CMFD method, i.e., t
 The neutron balance in the $i$\tsup{th} cell of a one-dimensional mesh is
 \begin{equation}
 \label{eq:balance}
-J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g} \quad \forall i,
+J_{i+\hzi,g} - J_{i-\hzi,g} + \sigma_{i,g} \phi_{i,g} = q_{i,g} \quad \forall i,g,
 \end{equation}
 where $J$ is the net current at the cell's interfaces, $\sigma$ is the total cross-section, and the subscript $g$ denotes the energy group. The isotropic (scattering and fission) source term is denoted by $q$.
 
@@ -156,7 +159,11 @@ In order to obtain a more accurate net current $J_{i+\hzi,g}$, a correction term
 \label{eq:JD}
 \jD_{i+\hzi,g} \cong - D_{i+\hzi,g}
 \frac{\phi_{i+1,g} - \phi_{i,g}}{(\Delta_{i+1} + \Delta_i)/2},
-\quad \text{where }
+\,\, \text{where }
+%D_{i+\hzi,g} = \left\{\begin{array}{ll}
+%	-J_{i+\hzi,g} \frac{(\Delta_{i+1} + \Delta_i)/2}{\phi_{i+1,g} - \phi_{i,g}}, & \text{for } J_{i+\hzi,g} \ne 0\\
+%	0, & \text{otherwise}
+%\end{array}\right.
 D_{i+\hzi,g} = \frac{\Delta_i D_{i,g} + \Delta_{i+1} D_{i+1,g}}
 {\Delta_i + \Delta_{i+1}}.
 \end{equation}
@@ -197,62 +204,62 @@ In the pCMFD implementation~\cite{Cho-2003}, two correction terms are introduced
 
 The analytic benchmark of Sood et al. (2003)~\cite{Sood2003} presents one-dimensional homogeneous and heterogeneous critical configurations, including the associated one-, two-, and three-group cross-sections. For some problems, the spatial distribution of the flux is given at specific points. 
 %
-The deviations between the criticality eigenvalues, calculated using the CMFD and pCMFD implementations of the RM ($\krm$, and $\kd$ for pure diffusion), and the reference eigenvalue ($\kref=1$) are shown in Table~\ref{table:res1} for a selected set of problems. The deviations are shown in both units of reactivity ($\Delta\rho = \left(\sfrac{1}{\kref}- \sfrac{1}{\kd,\krm}\right)\times 10^5$ [pcm]), and in relative error in the critical width ($\Delta w = \text{abs}\left[ \sfrac{ \left( \rc-\rcref\right)}{\rcref}\times 100\right]$ [\%]), where $r_c$ is the critical dimension, i.e., the distance from the fuel's center to one of the boundaries. The number of cells within the water region is $I_w$.
+The deviations between the criticality eigenvalues, calculated using the CMFD and pCMFD implementations of the RM ($\krm$, and $\kd$ for pure diffusion), and the reference eigenvalue ($\kref=1$) are shown in Table~\ref{table:res1} for a selected set of problems. The deviations are shown in both units of reactivity ($\Delta\rho =  (\kref^{-1}-k^{-1})\times 10^5$ [pcm]), and in relative error in the critical width ($\Delta L =  (L_c-L_{c,\text{ref}}) / L_{c,\text{ref}}$ [\%]), where $L_c$ is the critical dimension, i.e., the distance from the fuel's center to one of the boundaries. The number of cells in the water region is half of that in the fuel region (where applied).
 %
-The deviations between the CMFD normalized flux and the reference analytic solutions,  $\Delta\phi = \left[\sfrac{\left(\phirm - \phiref\right)}{\phiref}\right]\times 100$ [\%], are shown in Table~\ref{table:res2} for a selected set of problems. 
+The deviations between the CMFD normalized flux and the reference analytic solutions,  $\Delta\phi = (\phirm - \phiref)/\phiref$ [\%], are shown in Table~\ref{table:res2} for a selected set of problems at positions $L_i$. 
 %
 \begin{table}[hbt]
 	\vspace{-7.5mm}	
 	\centering
-	\small
 	\caption{\bf Deviations of the eigenvalues \keff \ calculated by the RM from criticality.}
 	\label{table:res1} 
-  \begin{tabular}{|l|l|c|c|c|c|c|} \hline 
-	\multirow{2}{*}{Problem ID} & \multirow{2}{*}{Method} & \multicolumn{4}{c|}{$\Delta\rho$ [pcm], ($\Delta w$ [\%])} & \multirow{2}{*}{Comments} \\ 
-	\cline{3-6}
-	&  	 & $I_1 = 50$   & $I_2 = 100$ & $I_3 = 150$ & $I_4 = 200$    & \\ 
+	\small
+\begin{tabular}{|l|l|c|c|c|c|c|c|} \hline 
+	\multirow{2}{*}{Problem ID} & \multirow{2}{*}{Method} & \multicolumn{6}{c|}{$\Delta\rho$ [pcm], ($\Delta L$ [\%])} \\ 
+	\cline{3-9}
+	&  	 & $I = 5$ & $I = 10$ & $I = 25$ & $I = 50$ & $I = 100$ & $I = 200$ \\ 
 	\hline
-	\multirow{3}{*}{PUa-1-0-SL} 		 & Diffusion  & -12,099,(-)  & -12,108,(-) & -12,109,(-) &-12,110,(-)   & \multirow{2}{*}{}\\ 
-	\cline{2-6}
-	& RM-CMFD  & -10, (0.016) & -3, (0.005) & -1, (0.002) & 0, (0.002)      & \multirow{2}{*}{}\\ 
-	\cline{2-6}
-	& RM-pCMFD & -10, (0.016) & -3, (0.005) & -1, (0.002) & -1, (0.0) & \\ 
+	\multirow{3}{*}{} & Diffusion & -10,983,(-) & -11,826,(-) & -12,065,(-) & -12,099,(-) & -12,108,(-) & -12,110,(-) \\ 
+	\cline{2-9}
+	PUa-1-0-SL & CMFD  & -851,(1.257) & -241,(0.353) & -41,(0.062) & -10,(0.016) & -3,(0.005) & 0,(0.002) \\ 
+	\cline{2-9}
+	& pCMFD & -847,(1.257) & -241,(0.353) & -41,(0.062) & -10,(0.016) & -3,(0.005) & -1,(0.0) \\ 
 	\hline
-	\multirow{3}{*}{Ua-1-0-SL} 		     & Diffusion  & -7,541, (-)  & -7,550, (-) & -7,552, (-)  & -7553, (-)  & \multirow{2}{*}{}\\ 
-	\cline{2-6}
-	& RM-CMFD  & -19, (0.027)  & -5, (0.006) & -2, (0.002)  & -1, (0.0)  & \multirow{2}{*}{}\\ 
-	\cline{2-6}
-	& RM-pCMFD & -19, (0.027)  & -5, (0.006) & -2, (0.002)  & -1, (0.0)	  & \\ 
+	\multirow{3}{*}{} & Diffusion & -6,309,(-) & -7,239,(-) & -7,503,(-) & -7,541,(-) & -7,550,(-) & -7553,(-) \\ 
+	\cline{2-9}
+	Ua-1-0-SL & CMFD  & -1,507,(2.286) & -435,(0.644) & -75,(0.109) & -19,(0.027) & -5,(0.006) & -1,(0.0) \\ 
+	\cline{2-9}
+	& pCMFD & -1,507,(2.286) & -435,(0.644) & -75,(0.109) & -19,(0.027) & -5,(0.006) & -1,(0.0) \\ 
 	\hline
-	\multirow{2}{*}{PUa-H2O(0.5)-1-0-SL} & Diffusion  & -15,921, (-) & -15,927, (-) & -15,928, (-) & -15,928, (-) & \multirow{2}{*}{$I_w = 0.5\times I_f$} \\ 
-	\cline{2-6}
-	& RM-CMFD  & -8, (0.011)  & -3, (0.005) & -3, (0.001)	& -1, (0.001) &  \\ 
-	\cline{2-6}
-	& RM-pCMFD &-8, (0.011)	& -3, (0.005) & -1, (0.001)	& -1, (0.001) & \\ 
+	\multirow{2}{*}{} & Diffusion & -15,244,(-) & -15,756,(-) & -15,901,(-) & -15,921,(-) & -15,927,(-) & -15,928,(-)  \\ 
+	\cline{2-9}
+	PUa-H2O & CMFD  & -319,(0.531) & -86,(0.144) & -15,(0.022) & -8,(0.011) & -3,(0.005) & -1,(0.001) \\ 
+	\cline{2-9}
+	(0.5)-1-0-SL & pCMFD & -320,(0.531) & -86,(0.142) & -14,(0.022) & -8,(0.011) & -3,(0.005) & -1,(0.001) \\ 
 	\hline
 \end{tabular}
 \end{table}
-%
+\vspace{-5.0mm}
 \begin{table}[htb]
 	\vspace{-5.5mm}
-	\centering
-	\small
+	\centering	
 	\caption{\bf Deviations of the normalized flux calculated by the RM from the analytic solution.}
 	\label{table:res2} 
-	\begin{tabular}{|c|c|c|c|c|c|c|} \hline 
-	\multirow{2}{*}{Problem ID} & \multirow{2}{*}{Method} & \multicolumn{4}{c|}{$\Delta\phi$ [\%]} & \multirow{2}{*}{Comments} \\
+	\small
+	\begin{tabular}{|c|c|c|c|c|c|} \hline 
+	\multirow{2}{*}{Problem ID} & \multirow{2}{*}{Method} & \multicolumn{4}{c|}{$\Delta\phi$ [\%]}  \\
 	\cline{3-6}
-	& & $r_1 = 0.25$ & $r_2 = 0.5$ & $r_3 = 0.75$ & $r_4 = 1.0$ & \\
+	& & $L_1 = 0.25$ & $L_2 = 0.5$ & $L_3 = 0.75$ & $L_4 = 1.0$  \\
 	\hline
-	\multirow{2}{*}{Pub-1-0-SL} & Diffusion  & 0.63 & 2.88 & 8.46 & 31.25 & \multirow{2}{*}{$I=100$} \\
+	\multirow{2}{*}{Pub-1-0-SL} & Diffusion  & 0.6392 & 2.8850 & 8.4621 & 31.2535  \\
 	\cline{2-6}
-	& RM-CMFD 	     & 0.0 & 0.0 & 0.0 & 0.8 & \\ \hline
-	\multirow{2}{*}{Ua-1-0-SL}  & Diffusion  & 0.53 & 2.42 & 7.39 & 30.72 & \multirow{2}{*}{$I=100$}\\
+	$(I=100)$ & CMFD 	     & 0.0048 & 0.0002 & 0.0039 & 0.8033  \\ \hline
+	\multirow{2}{*}{Ua-1-0-SL}  & Diffusion  & 0.5307 & 2.4284 & 7.3924 & 30.7287 \\
 	\cline{2-6} 
-	& RM-CMFD       & 0.0 & 0.0 & 0.01 & 1.44 & \\ \hline 
-	\multirow{2}{*}{UD20-1-0-SL} & Diffusion & 1.14 & 4.1 & 7.85 & 35.58 & \multirow{2}{*}{$I=200$} \\ 
+	$(I=100)$ & CMFD       & 0.0053 & 0.0002 & 0.0096 & 1.4473  \\ \hline 
+	\multirow{2}{*}{UD20-1-0-SL} & Diffusion & 1.1404 & 4.1067 & 7.8579 & 35.5854  \\ 
 	\cline{2-6} 		
-	& RM-CMFD      & 0.0 & 0.0 & 0.0 & 1.89 & \\ \hline 		
+	$(I=200)$& CMFD      & 0.0006 & 0.0030 & 0.0091 & 1.8900  \\ \hline 		
 \end{tabular}
 \vspace{-5.0mm}
 \end{table}
@@ -276,7 +283,7 @@ The full paper will include a comprehensive benchmark of the Ronen method that w
 
 \section*{ACKNOWLEDGEMENTS}
 
-This research was supported by the Ministry of Energy as part of the scholarship program for undergraduate and graduate students in energy-related fields, contract no. 219-01-045.
+This research was supported by the Ministry of Energy as part of the scholarship program for undergraduate and graduate students in energy-related fields, contract no. 219-11-045.
 % You can enter a bibliography into the document using either BibTex with the bibliography
 % style file "mc2021.bst" found in the template directory or using the standard LaTeX
 % thebibliography environment.
