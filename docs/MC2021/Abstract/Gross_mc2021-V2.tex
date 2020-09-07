@@ -117,11 +117,12 @@ The Ronen method (RM) is designed to overcome the inaccuracies of the diffusion 
 \vspace{-1.5mm}
 
 Originally, Ronen suggested to update the diffusion coefficient as ($k$ is the iteration index)~\cite{Ronen-2004}
-\begin{equation}\label{eq:RM-it}
-	D^{(k+1)}(x,E) = -\frac{\displaystyle \frac{1}{2}\int_0^a dx' E_2[\sigma(E)\lvert
-		x-x'\rvert]\operatorname{Sgn}(x-x')q^{(k)}(x',E)}
+\begin{equation}
+\label{eq:RM-it}
+  D^{(k+1)}(x,E) = -\frac{\displaystyle
+    \frac{1}{2}\int_0^a dx' E_2[\sigma(E)
+       \lvert x-x'\rvert] \operatorname{Sgn}(x-x')q^{(k)}(x',E)}
 	{\partial \phi^{(k)}(x,E)/\partial x}.
-%\label{eq:RM-it}
 %D^{(k+1)}\rE = \left. - \lvert \bm{J}^{(k)}\rE \rvert \middle/ \lvert \bnabla \phi^{(k)}\rE \rvert. \right.
 \end{equation}
 
@@ -242,7 +243,7 @@ The deviations between the CMFD normalized flux and the reference analytic solut
 \vspace{-5.0mm}
 \begin{table}[htb]
 	\vspace{-5.5mm}
-	\centering	
+	\centering
 	\caption{\bf Deviations of the normalized flux calculated by the RM from the analytic solution.}
 	\label{table:res2} 
 	\small
