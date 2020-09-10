@@ -20,6 +20,7 @@ from FDsDiff1D import input_data, solver_options, run_calc_with_RM_its
 from GeoMatTools import geomprogr_mesh, equivolume_mesh
 
 odir = "output"  # output folder of test cases
+
 refdir = os.path.join("..", "..", "CPM1D", "tests", "output")
 
 
@@ -111,6 +112,7 @@ if __name__ == "__main__":
     # I1 = I0 = 50  # to get error on k less than 10 pcm
     # I = I1 + I0
     # nks = 4
+    
     # xs_media, media = set_media(materials, [L0, L], [m, 'H2O'])
     # r = equivolume_mesh(I0, 0, L0, geo)
     # r = np.append(r, equivolume_mesh(I1, L0, L, geo)[1:])

@@ -1,6 +1,6 @@
 ---
 title: FD1dMGdiff
-author: Daniele tomatis
+author: Daniele Tomatis
 date: 30/09/2019
 description: This module resolves the diffusion equation in the main 1D
              geometries (slab, sphere and cylinder) by finite differences.
