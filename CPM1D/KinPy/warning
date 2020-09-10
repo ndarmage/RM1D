@@ -1,0 +1,6 @@
+Mingw64 gcc is recommended when producing the pyd library on a Windows-10
+machine. Use Dependency-Walker to check for missing linked DLL files in
+case you get the following message at import of algo609,
+   from KinPy.algo609 import dbskin as Ki
+   ImportError: DLL load failed while importing algo609.
+After finding these files on your computer, copy them to this directory. 
